@@ -11,27 +11,49 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 export default function AdminPage() {
-  const { user } = useAuth();
+  const { user, loadingAuth } = useAuth(); // Correctly destructure loadingAuth
   const router = useRouter();
 
-  // Basic protection: redirect if not logged in.
-  // Proper role-based protection would be a next step.
   useEffect(() => {
-    if (!user) {
-      router.push('/login');
+    if (!loadingAuth) { // Only check/redirect once authentication status is resolved
+      if (!user) {
+        // If authentication is resolved and there's no user, redirect to login
+        router.push('/login');
+      }
+      // The following role-based redirect is INTENTIONALLY COMMENTED OUT
+      // to prevent redirection to the home page based on a missing 'Admin' role.
+      // else if (user && user.role !== 'Admin') { // Assuming user object has a 'role' property
+      //   router.push('/'); 
+      // }
     }
-    // Add role check here when available, e.g., if (user && user.role !== 'Admin') router.push('/');
-  }, [user, router]);
+  }, [user, loadingAuth, router]);
+
+  if (loadingAuth) {
+    // If authentication is still loading, show a loading message.
+    return <AppLayout><div className="text-center p-10">Loading authentication...</div></AppLayout>;
+  }
 
   if (!user) {
-    return <AppLayout><div className="text-center p-10">Redirecting...</div></AppLayout>;
+    // If authentication has resolved and there's still no user (e.g., useEffect hasn't redirected yet or as a fallback)
+    // show a message indicating redirection to login. The useEffect will handle the actual redirect.
+    return <AppLayout><div className="text-center p-10">Redirecting to login...</div></AppLayout>;
   }
   
-  // Placeholder for actual admin role check
+  // Placeholder for actual admin role check.
+  // This conditional rendering block is INTENTIONALLY COMMENTED OUT
+  // to prevent blocking access based on a missing 'Admin' role for now.
   // if (user.role !== 'Admin') { // Assuming user object has a 'role' property
-  //   return <AppLayout><div className="text-center p-10">Access Denied. Administrator access required.</div></AppLayout>;
+  //   return (
+  //     <AppLayout>
+  //       <div className="text-center p-10">
+  //         Access Denied. Administrator access required. Redirecting to home...
+  //       </div>
+  //     </AppLayout>
+  //   );
   // }
 
+  // If loadingAuth is false and user exists, render the admin panel.
+  // No role check is performed here that would redirect to '/'.
   return (
     <AppLayout>
       <div className="space-y-8">
