@@ -1,3 +1,4 @@
+
 'use client';
 
 import AppLayout from "@/components/AppLayout";
@@ -12,13 +13,13 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft } from "lucide-react";
 
 const depositMethods = [
-  { id: 'bkash', name: 'Bkash', logoUrl: 'https://placehold.co/100x100.png?text=Bkash', description: 'Popular mobile financial service in Bangladesh.', type: 'mobile' as const },
-  { id: 'nagad', name: 'Nagad', logoUrl: 'https://placehold.co/100x100.png?text=Nagad', description: 'Digital financial service by Bangladesh Post Office.', type: 'mobile' as const },
-  { id: 'rocket', name: 'Rocket', logoUrl: 'https://placehold.co/100x100.png?text=Rocket', description: 'Mobile banking by Dutch-Bangla Bank.', type: 'mobile' as const },
-  { id: 'upay', name: 'Upay', logoUrl: 'https://placehold.co/100x100.png?text=Upay', description: 'Mobile financial service by UCB.', type: 'mobile' as const },
-  { id: 'phonepe', name: 'PhonePe', logoUrl: 'https://placehold.co/100x100.png?text=PhonePe', description: 'Indian digital payments platform.', type: 'upi' as const },
-  { id: 'upi', name: 'UPI', logoUrl: 'https://placehold.co/100x100.png?text=UPI', description: 'Unified Payments Interface for India.', type: 'upi' as const },
-  { id: 'bank', name: 'Bank Transfer', logoUrl: 'https://placehold.co/100x100.png?text=Bank', description: 'Direct deposit from your bank account.', type: 'bank' as const },
+  { id: 'bkash', name: 'Bkash', logoUrl: 'https://placehold.co/100x100.png?text=Bkash', description: 'Popular mobile financial service in Bangladesh.', type: 'mobile' as const, dataAiHint: 'Bkash logo' },
+  { id: 'nagad', name: 'Nagad', logoUrl: 'https://placehold.co/100x100.png?text=Nagad', description: 'Digital financial service by Bangladesh Post Office.', type: 'mobile' as const, dataAiHint: 'Nagad logo' },
+  { id: 'rocket', name: 'Rocket', logoUrl: 'https://placehold.co/100x100.png?text=Rocket', description: 'Mobile banking by Dutch-Bangla Bank.', type: 'mobile' as const, dataAiHint: 'Rocket logo' },
+  { id: 'upay', name: 'Upay', logoUrl: 'https://placehold.co/100x100.png?text=Upay', description: 'Mobile financial service by UCB.', type: 'mobile' as const, dataAiHint: 'Upay logo' },
+  { id: 'phonepe', name: 'PhonePe', logoUrl: 'https://placehold.co/100x100.png?text=PhonePe', description: 'Indian digital payments platform.', type: 'upi' as const, dataAiHint: 'PhonePe logo' },
+  { id: 'upi', name: 'UPI', logoUrl: 'https://placehold.co/100x100.png?text=UPI', description: 'Unified Payments Interface for India.', type: 'upi' as const, dataAiHint: 'UPI logo' },
+  { id: 'bank', name: 'Bank Transfer', logoUrl: 'https://placehold.co/100x100.png?text=Bank', description: 'Direct deposit from your bank account.', type: 'bank' as const, dataAiHint: 'Bank logo' },
 ];
 
 export default function DepositPage() {

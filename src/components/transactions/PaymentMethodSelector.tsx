@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +12,7 @@ interface PaymentMethod {
   logoUrl: string;
   description?: string;
   type: 'mobile' | 'upi' | 'bank' | 'crypto'; // Extended types
+  dataAiHint?: string; // Added for better image generation hints
 }
 
 interface PaymentMethodSelectorProps {
@@ -34,7 +36,14 @@ const PaymentMethodSelector: FC<PaymentMethodSelectorProps> = ({ methods, onSele
           >
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-lg font-medium">{method.name}</CardTitle>
-              <Image src={method.logoUrl} alt={`${method.name} logo`} width={40} height={40} className="rounded" data-ai-hint={`${method.name} logo`} />
+              <Image 
+                src={method.logoUrl} 
+                alt={`${method.name} logo`} 
+                width={40} 
+                height={40} 
+                className="rounded" 
+                data-ai-hint={method.dataAiHint || `${method.name} logo`}
+              />
             </CardHeader>
             <CardContent>
               {method.description && (

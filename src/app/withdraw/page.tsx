@@ -1,3 +1,4 @@
+
 'use client';
 
 import AppLayout from "@/components/AppLayout";
@@ -13,10 +14,13 @@ import { ArrowLeft } from "lucide-react";
 
 
 const withdrawalMethods = [
-  { id: 'bkash', name: 'Bkash', logoUrl: 'https://placehold.co/100x100.png?text=Bkash', description: 'Withdraw to your Bkash account.', type: 'mobile' as const },
-  { id: 'nagad', name: 'Nagad', logoUrl: 'https://placehold.co/100x100.png?text=Nagad', description: 'Withdraw to your Nagad account.', type: 'mobile' as const },
-  { id: 'rocket', name: 'Rocket', logoUrl: 'https://placehold.co/100x100.png?text=Rocket', description: 'Withdraw to your Rocket account.', type: 'mobile' as const },
-  { id: 'bank', name: 'Bank Transfer', logoUrl: 'https://placehold.co/100x100.png?text=Bank', description: 'Direct withdrawal to your bank account.', type: 'bank' as const },
+  { id: 'bkash', name: 'Bkash', logoUrl: 'https://placehold.co/100x100.png?text=Bkash', description: 'Withdraw to your Bkash account.', type: 'mobile' as const, dataAiHint: 'Bkash logo' },
+  { id: 'nagad', name: 'Nagad', logoUrl: 'https://placehold.co/100x100.png?text=Nagad', description: 'Withdraw to your Nagad account.', type: 'mobile' as const, dataAiHint: 'Nagad logo' },
+  { id: 'rocket', name: 'Rocket', logoUrl: 'https://placehold.co/100x100.png?text=Rocket', description: 'Withdraw to your Rocket account.', type: 'mobile' as const, dataAiHint: 'Rocket logo' },
+  { id: 'upay', name: 'Upay', logoUrl: 'https://placehold.co/100x100.png?text=Upay', description: 'Withdraw to your Upay account.', type: 'mobile' as const, dataAiHint: 'Upay logo' },
+  { id: 'phonepe', name: 'PhonePe', logoUrl: 'https://placehold.co/100x100.png?text=PhonePe', description: 'Withdraw to your PhonePe account.', type: 'upi' as const, dataAiHint: 'PhonePe logo' },
+  { id: 'upi', name: 'UPI', logoUrl: 'https://placehold.co/100x100.png?text=UPI', description: 'Withdraw using UPI.', type: 'upi' as const, dataAiHint: 'UPI logo' },
+  { id: 'bank', name: 'Bank Transfer', logoUrl: 'https://placehold.co/100x100.png?text=Bank', description: 'Direct withdrawal to your bank account.', type: 'bank' as const, dataAiHint: 'Bank logo' },
 ];
 
 export default function WithdrawPage() {
