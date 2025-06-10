@@ -13,16 +13,20 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { Mail, Phone } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { auth, signInWithEmailAndPassword, sendEmailVerification } from '@/lib/firebase';
+import { useEffect } from 'react';
 
+
+// Ensure emailOrPhone is a valid email for this flow
 const loginSchema = z.object({
-  emailOrPhone: z.string().min(1, { message: 'Email or Phone is required' }),
+  emailOrPhone: z.string().email({ message: 'Please enter a valid email address' }),
   password: z.string().min(6, { message: 'Password must be at least 6 characters' }),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login: loginToAppContext, user: appUser, loadingAuth, firebaseUser } = useAuth(); // Renamed to avoid confusion
   const router = useRouter();
   const { toast } = useToast();
 
@@ -34,33 +38,105 @@ export default function LoginPage() {
     },
   });
 
+  useEffect(() => {
+    if (!loadingAuth && appUser) {
+      router.push('/');
+    }
+  }, [appUser, loadingAuth, router]);
+
+
   async function onSubmit(data: LoginFormValues) {
-    form.clearErrors(); // Clear previous errors
-    // This is still using a mock user ID. For real Firebase Auth,
-    // you'd signInWithEmailAndPassword, get the UID, then call context's login.
-    const mockUserForLogin = {
-      id: data.emailOrPhone === "admin@example.com" ? "admin001" : `user-${Date.now()}`, // Use a consistent mock admin ID or generate one for others
-      email: data.emailOrPhone.includes('@') ? data.emailOrPhone : undefined,
-      phone: !data.emailOrPhone.includes('@') ? data.emailOrPhone : undefined,
-      // Name, currency, etc., will be fetched from Firestore by AuthContext.login
-      // We only need to provide enough to identify the user for fetchUserDocument.
-      // For a mock system, we assume currency is already set in Firestore.
-      // If not, AuthContext.login might need a default or fetch logic.
-      currency: 'USD', // Dummy, as it's primarily managed by Firestore data
-    };
+    form.clearErrors();
+    form.setValue('emailOrPhone', data.emailOrPhone.trim());
 
     try {
-      await login(mockUserForLogin, false); // isNewUser is false for login
+      // 1. Sign in with Firebase Auth
+      const userCredential = await signInWithEmailAndPassword(auth, data.emailOrPhone, data.password);
+      const fbUser = userCredential.user;
+
+      // 2. Check email verification
+      if (!fbUser.emailVerified) {
+        toast({
+          title: "Email Not Verified",
+          description: "Please check your inbox to verify your email. You can request a new verification email if needed.",
+          variant: "destructive",
+          duration: 10000,
+          action: (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                try {
+                  await sendEmailVerification(fbUser);
+                  toast({ title: "Verification Email Sent", description: "A new verification email has been sent to your address." });
+                } catch (resendError) {
+                  console.error("Error resending verification email:", resendError);
+                  toast({ title: "Error", description: "Could not resend verification email. Please try again later.", variant: "destructive" });
+                }
+              }}
+            >
+              Resend Email
+            </Button>
+          )
+        });
+        return; // Stop login process
+      }
+
+      // 3. Email is verified, proceed to log into app context (fetches/creates Firestore doc)
+      const userPayloadForAppContext = {
+        id: fbUser.uid,
+        email: fbUser.email,
+        // Other fields like name, phone, currency, country will be fetched from Firestore by loginToAppContext
+        // For now, we only need enough to identify the user and confirm email verification status
+        currency: 'USD', // Dummy, will be overwritten by Firestore if doc exists
+        emailVerified: fbUser.emailVerified,
+      };
+      
+      await loginToAppContext(userPayloadForAppContext, false); // false for isNewUser
+      
       toast({ title: "Login Successful", description: "Welcome back!" });
       router.push('/');
-    } catch (error) {
+
+    } catch (error: any) {
       console.error("Login failed on page:", error);
-      const errorMessage = error instanceof Error ? error.message : "Could not log in. Please check credentials or try again.";
+      let errorMessage = "Could not log in. Please check credentials or try again.";
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+        errorMessage = "Invalid email or password. Please try again.";
+        form.setError("emailOrPhone", { type: "manual", message: " " }); // Clearer indication
+        form.setError("password", { type: "manual", message: "Invalid email or password." });
+      } else if (error.code === 'auth/too-many-requests') {
+        errorMessage = "Too many login attempts. Please try again later.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
       toast({ title: "Login Failed", description: errorMessage, variant: "destructive" });
-      form.setError("emailOrPhone", { type: "manual", message: "Login failed. Check credentials." });
-      form.setError("password", { type: "manual", message: " " }); // Clearer indication for password too
     }
   }
+  
+  // If auth is still loading, show a generic loading message
+  if (loadingAuth) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-md shadow-xl">
+          <CardHeader className="text-center">
+            <CardTitle className="font-headline text-3xl text-primary">Loading...</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-center text-muted-foreground">Checking your session...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+
+  // If user is already logged in (and verified), redirect from login page
+  // This check is now mostly handled by onAuthStateChanged, but as a fallback
+  if (appUser && appUser.emailVerified) {
+     router.push('/'); // Should ideally be caught by useEffect, but good to have
+     return <div className="text-center p-10">Redirecting...</div>; // Or a loading spinner
+  }
+
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
@@ -77,17 +153,11 @@ export default function LoginPage() {
                 name="emailOrPhone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email or Phone</FormLabel>
+                    <FormLabel>Email</FormLabel>
                     <FormControl>
                       <div className="relative">
-                        <span className="absolute inset-y-0 left-0 flex items-center pl-3">
-                          {field.value.includes('@') || field.value === '' ? (
-                            <Mail className="h-5 w-5 text-muted-foreground" />
-                          ) : (
-                            <Phone className="h-5 w-5 text-muted-foreground" />
-                          )}
-                        </span>
-                        <Input placeholder="your@email.com or +1234567890" {...field} className="pl-10" />
+                        <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+                        <Input type="email" placeholder="your@email.com" {...field} className="pl-10" />
                       </div>
                     </FormControl>
                     <FormMessage />
@@ -115,7 +185,7 @@ export default function LoginPage() {
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">Or login with</p>
             <div className="mt-2 flex justify-center space-x-3">
-              <Button variant="outline" className="w-full">
+              <Button variant="outline" className="w-full" disabled>
                 <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24" fill="currentColor" data-ai-hint="google logo">
                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
                   <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
@@ -123,7 +193,7 @@ export default function LoginPage() {
                   <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                   <path d="M1 1h22v22H1z" fill="none" />
                 </svg>
-                Google
+                Google (Coming Soon)
               </Button>
             </div>
           </div>

@@ -3,7 +3,7 @@
 
 import type React from 'react';
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { db, doc, getDoc, setDoc, updateDoc, serverTimestamp } from '@/lib/firebase'; // Import Firestore functions
+import { db, doc, getDoc, setDoc, updateDoc, serverTimestamp, auth, signOut, onAuthStateChanged, type FirebaseUserType } from '@/lib/firebase';
 
 export interface User {
   id: string; // Firebase UID
@@ -11,7 +11,8 @@ export interface User {
   email?: string;
   phone?: string;
   avatarUrl?: string;
-  isVerified?: boolean;
+  isVerified?: boolean; // This is for identity verification (e.g., ID upload)
+  emailVerified?: boolean; // From Firebase Auth
   currency: string;
   country?: string;
   balance?: number;
@@ -20,19 +21,21 @@ export interface User {
 
 interface AuthContextType {
   user: User | null;
-  login: (userData: User, isNewUser?: boolean) => Promise<void>;
-  logout: () => void;
+  login: (userData: User, isNewUser?: boolean) => Promise<void>; // This is now primarily for Firestore and app state
+  logout: () => Promise<void>;
   balance: number;
   currency: string;
   setCurrency: (currency: string) => Promise<void>;
   updateBalance: (amount: number) => Promise<void>;
   loadingAuth: boolean;
+  firebaseUser: FirebaseUserType | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [firebaseUser, setFirebaseUser] = useState<FirebaseUserType | null>(null);
   const [balance, setLocalBalance] = useState<number>(0);
   const [currency, setLocalCurrency] = useState<string>('USD');
   const [loadingAuth, setLoadingAuth] = useState(true);
@@ -54,99 +57,84 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   useEffect(() => {
-    let isMounted = true;
-    setLoadingAuth(true);
-
-    const performAuthCheck = async () => {
-      try {
-        const storedUserString = localStorage.getItem('betbabu-user');
-        if (storedUserString) {
-          const storedUserMinimal = JSON.parse(storedUserString) as { id: string, name?: string, email?: string, phone?: string, currency?: string };
-          if (storedUserMinimal && storedUserMinimal.id) {
-            const firestoreUser = await fetchUserDocument(storedUserMinimal.id);
-            if (isMounted) {
-              if (firestoreUser) {
-                setUser(firestoreUser);
-                setLocalCurrency(firestoreUser.currency || 'USD');
-                setLocalBalance(firestoreUser.balance || 0);
-              } else {
-                // User in localStorage but not in Firestore or fetch failed
-                localStorage.removeItem('betbabu-user');
-                setUser(null);
-                setLocalCurrency('USD');
-                setLocalBalance(0);
-              }
-            }
+    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+      setLoadingAuth(true);
+      if (fbUser) {
+        setFirebaseUser(fbUser);
+        if (fbUser.emailVerified) {
+          const firestoreUser = await fetchUserDocument(fbUser.uid);
+          if (firestoreUser) {
+            setUser({ ...firestoreUser, emailVerified: fbUser.emailVerified });
+            setLocalCurrency(firestoreUser.currency || 'USD');
+            setLocalBalance(firestoreUser.balance || 0);
+            localStorage.setItem('betbabu-user-uid', fbUser.uid); // Store only UID
           } else {
-            // Invalid stored data
-            if (isMounted) {
-              localStorage.removeItem('betbabu-user');
-              setUser(null);
-              setLocalCurrency('USD');
-              setLocalBalance(0);
-            }
-          }
-        } else {
-          // No user in localStorage
-          if (isMounted) {
+            // Firebase user exists but no Firestore doc (should ideally not happen if signup is correct)
+            // Or if admin deleted Firestore doc. For now, treat as logged out from app perspective.
+            console.warn("Firestore document missing for authenticated Firebase user:", fbUser.uid);
             setUser(null);
+            setFirebaseUser(null);
             setLocalCurrency('USD');
             setLocalBalance(0);
+            localStorage.removeItem('betbabu-user-uid');
           }
-        }
-      } catch (error) {
-        console.error("AuthContext initial check error:", error);
-        if (isMounted) {
-          localStorage.removeItem('betbabu-user');
-          setUser(null);
+        } else {
+          // Email not verified, don't fully log into app context
+          setUser(null); 
+          // firebaseUser is set, so login page can react if needed
           setLocalCurrency('USD');
           setLocalBalance(0);
+          localStorage.removeItem('betbabu-user-uid');
+           console.log("User email not verified, clearing app user state.");
         }
-      } finally {
-        if (isMounted) {
-          setLoadingAuth(false);
-        }
+      } else {
+        // No Firebase user
+        setUser(null);
+        setFirebaseUser(null);
+        setLocalCurrency('USD');
+        setLocalBalance(0);
+        localStorage.removeItem('betbabu-user-uid');
       }
-    };
+      setLoadingAuth(false);
+    });
 
-    performAuthCheck();
-
-    return () => {
-      isMounted = false;
-    };
+    return () => unsubscribe();
   }, [fetchUserDocument]);
 
-  const login = async (userData: User, isNewUser: boolean = false) => {
+
+  // This function is now primarily for setting up Firestore data and app state AFTER Firebase auth & email verification
+  const login = async (userDataFromAuth: { id: string; email?: string; phone?: string; name?: string; currency: string; country?: string; emailVerified?: boolean }, isNewUser: boolean = false) => {
     setLoadingAuth(true);
     try {
       let finalUserData: User | null = null;
+      const uid = userDataFromAuth.id;
 
       if (isNewUser) {
-        const userDocRef = doc(db, "users", userData.id);
+        const userDocRef = doc(db, "users", uid);
         const initialBalance = 0;
         const newUserDocData = {
-          name: userData.name || '',
-          email: userData.email || '',
-          phone: userData.phone || '',
-          currency: userData.currency,
-          country: userData.country || '',
+          name: userDataFromAuth.name || '',
+          email: userDataFromAuth.email || '', // This should be the verified email
+          phone: userDataFromAuth.phone || '',
+          currency: userDataFromAuth.currency,
+          country: userDataFromAuth.country || '',
           balance: initialBalance,
-          isVerified: false,
+          isVerified: false, // Identity verification
           createdAt: serverTimestamp(),
         };
         await setDoc(userDocRef, newUserDocData);
         finalUserData = { 
-          ...userData, 
           ...newUserDocData,
-          id: userData.id 
+          id: uid,
+          emailVerified: userDataFromAuth.emailVerified, // Pass this through
         };
       } else {
-        const firestoreUser = await fetchUserDocument(userData.id);
+        const firestoreUser = await fetchUserDocument(uid);
         if (firestoreUser) {
-          finalUserData = { ...firestoreUser, ...userData, id: firestoreUser.id }; // Prioritize Firestore, then allow userData to override (e.g. if local form data is more recent for non-auth fields)
+          finalUserData = { ...firestoreUser, id: uid, emailVerified: userDataFromAuth.emailVerified };
         } else {
-          console.error("Login failed: User document not found in Firestore for ID:", userData.id);
-          throw new Error("User data not found. Please check your credentials or sign up.");
+          console.error("Login failed: User document not found in Firestore for UID:", uid);
+          throw new Error("User data not found. Your account might not be fully set up or was removed.");
         }
       }
       
@@ -154,70 +142,78 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(finalUserData);
         setLocalCurrency(finalUserData.currency);
         setLocalBalance(finalUserData.balance || 0);
-        localStorage.setItem('betbabu-user', JSON.stringify({ 
-          id: finalUserData.id, 
-          name: finalUserData.name,
-          email: finalUserData.email,
-          phone: finalUserData.phone,
-          currency: finalUserData.currency 
-        }));
+        localStorage.setItem('betbabu-user-uid', uid);
       } else {
-         // Should not happen if logic above is correct, but as a safeguard:
-        throw new Error("Failed to establish user session.");
+        throw new Error("Failed to establish user session in app context.");
       }
 
     } catch (error) {
-      console.error("Error during login/signup in AuthContext:", error);
+      console.error("Error during app context login/signup:", error);
       setUser(null);
+      setFirebaseUser(null); // Also clear firebaseUser if app login fails
       setLocalBalance(0);
       setLocalCurrency('USD');
-      localStorage.removeItem('betbabu-user');
+      localStorage.removeItem('betbabu-user-uid');
+      await signOut(auth).catch(e => console.error("Signout error during context login failure:", e)); // Attempt to sign out from Firebase too
       throw error; 
     } finally {
       setLoadingAuth(false);
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    setLocalBalance(0);
-    setLocalCurrency('USD');
-    localStorage.removeItem('betbabu-user');
-    setLoadingAuth(false); 
+  const logout = async () => {
+    setLoadingAuth(true);
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error("Firebase signOut error:", error);
+    } finally {
+      setUser(null);
+      setFirebaseUser(null);
+      setLocalBalance(0);
+      setLocalCurrency('USD');
+      localStorage.removeItem('betbabu-user-uid');
+      setLoadingAuth(false); 
+    }
   };
 
   const setCurrency = async (newCurrency: string) => {
     if (user) {
       const updatedUser = { ...user, currency: newCurrency };
-      setUser(updatedUser);
+      setUser(updatedUser); // Optimistic update
       setLocalCurrency(newCurrency);
       const userDocRef = doc(db, "users", user.id);
       try {
         await updateDoc(userDocRef, { currency: newCurrency });
-        localStorage.setItem('betbabu-user', JSON.stringify({ id: updatedUser.id, currency: updatedUser.currency, name: updatedUser.name, email: updatedUser.email, phone: updatedUser.phone }));
+        // No need to update localStorage here as it only stores UID
       } catch (error) {
         console.error("Failed to update currency in Firestore:", error);
+        // Revert optimistic update if needed or show error
+        setUser(user); 
+        setLocalCurrency(user.currency);
       }
     }
   };
   
   const updateBalance = async (amountChange: number) => {
     if (user) {
-      const newBalance = (balance || 0) + amountChange; // Use context balance directly
-      const updatedUser = { ...user, balance: newBalance };
-      setUser(updatedUser);
+      const newBalance = (user.balance || 0) + amountChange;
+      setUser({ ...user, balance: newBalance }); // Optimistic update
       setLocalBalance(newBalance);
       const userDocRef = doc(db, "users", user.id);
       try {
         await updateDoc(userDocRef, { balance: newBalance });
       } catch (error) {
         console.error("Failed to update balance in Firestore:", error);
+        // Revert optimistic update
+        setUser(user);
+        setLocalBalance(user.balance || 0);
       }
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, balance, currency, setCurrency, updateBalance, loadingAuth }}>
+    <AuthContext.Provider value={{ user, firebaseUser, login, logout, balance, currency, setCurrency, updateBalance, loadingAuth }}>
       {children}
     </AuthContext.Provider>
   );
@@ -230,4 +226,3 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
-

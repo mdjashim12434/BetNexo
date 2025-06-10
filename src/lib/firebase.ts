@@ -3,7 +3,7 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAnalytics, isSupported } from "firebase/analytics";
 import { getFirestore, collection, doc, setDoc, getDoc, serverTimestamp, updateDoc } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, signOut, onAuthStateChanged, type User as FirebaseUserType } from "firebase/auth";
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -37,4 +37,5 @@ if (typeof window !== 'undefined') {
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-export { app, auth, analytics, db, collection, doc, setDoc, getDoc, serverTimestamp, updateDoc, firebaseConfig };
+export { app, auth, analytics, db, collection, doc, setDoc, getDoc, serverTimestamp, updateDoc, firebaseConfig, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, signOut, onAuthStateChanged, type FirebaseUserType };
+
