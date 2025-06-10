@@ -38,71 +38,82 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loadingAuth, setLoadingAuth] = useState(true);
 
   const fetchUserDocument = useCallback(async (uid: string): Promise<User | null> => {
-    if (!uid) return null; // Prevent fetching with undefined/null uid
+    if (!uid) return null;
     const userDocRef = doc(db, "users", uid);
     try {
       const userDocSnap = await getDoc(userDocRef);
       if (userDocSnap.exists()) {
         return { id: uid, ...userDocSnap.data() } as User;
       }
+      console.warn("User document not found in Firestore for UID:", uid);
       return null;
     } catch (error) {
       console.error("Error fetching user document:", error);
-      return null; // Return null on error to handle gracefully
+      return null;
     }
   }, []);
 
   useEffect(() => {
     let isMounted = true;
     setLoadingAuth(true);
-    const storedUserString = localStorage.getItem('betbabu-user');
 
-    const cleanup = () => {
-      if (isMounted) {
-        setUser(null);
-        setLocalBalance(0);
-        setLocalCurrency('USD');
-        setLoadingAuth(false);
-      }
-    };
-
-    if (storedUserString) {
+    const performAuthCheck = async () => {
       try {
-        const storedUserMinimal = JSON.parse(storedUserString) as { id: string, name?: string, email?: string, phone?: string, currency?: string };
-        if (storedUserMinimal && storedUserMinimal.id) {
-          fetchUserDocument(storedUserMinimal.id).then(firestoreUser => {
-            if (!isMounted) return;
-            if (firestoreUser) {
-              setUser(firestoreUser);
-              setLocalCurrency(firestoreUser.currency || 'USD');
-              setLocalBalance(firestoreUser.balance || 0);
-            } else {
-              // User in localStorage but not in Firestore
-              localStorage.removeItem('betbabu-user');
-              setUser(null);
+        const storedUserString = localStorage.getItem('betbabu-user');
+        if (storedUserString) {
+          const storedUserMinimal = JSON.parse(storedUserString) as { id: string, name?: string, email?: string, phone?: string, currency?: string };
+          if (storedUserMinimal && storedUserMinimal.id) {
+            const firestoreUser = await fetchUserDocument(storedUserMinimal.id);
+            if (isMounted) {
+              if (firestoreUser) {
+                setUser(firestoreUser);
+                setLocalCurrency(firestoreUser.currency || 'USD');
+                setLocalBalance(firestoreUser.balance || 0);
+              } else {
+                // User in localStorage but not in Firestore or fetch failed
+                localStorage.removeItem('betbabu-user');
+                setUser(null);
+                setLocalCurrency('USD');
+                setLocalBalance(0);
+              }
             }
-          }).catch(() => {
-            // Error fetching document
+          } else {
+            // Invalid stored data
             if (isMounted) {
               localStorage.removeItem('betbabu-user');
               setUser(null);
+              setLocalCurrency('USD');
+              setLocalBalance(0);
             }
-          }).finally(() => {
-            if (isMounted) setLoadingAuth(false);
-          });
+          }
         } else {
-          localStorage.removeItem('betbabu-user'); // Invalid stored data
-          cleanup();
+          // No user in localStorage
+          if (isMounted) {
+            setUser(null);
+            setLocalCurrency('USD');
+            setLocalBalance(0);
+          }
         }
-      } catch (error) { // JSON.parse error or other
-        localStorage.removeItem('betbabu-user');
-        cleanup();
+      } catch (error) {
+        console.error("AuthContext initial check error:", error);
+        if (isMounted) {
+          localStorage.removeItem('betbabu-user');
+          setUser(null);
+          setLocalCurrency('USD');
+          setLocalBalance(0);
+        }
+      } finally {
+        if (isMounted) {
+          setLoadingAuth(false);
+        }
       }
-    } else {
-      // No user in localStorage
-      cleanup();
-    }
-    return () => { isMounted = false; };
+    };
+
+    performAuthCheck();
+
+    return () => {
+      isMounted = false;
+    };
   }, [fetchUserDocument]);
 
   const login = async (userData: User, isNewUser: boolean = false) => {
@@ -122,46 +133,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           balance: initialBalance,
           isVerified: false,
           createdAt: serverTimestamp(),
-          // avatarUrl can be added later or taken from userData if provided
         };
         await setDoc(userDocRef, newUserDocData);
-        // Construct finalUserData with the ID from userData and data written
         finalUserData = { 
-          ...userData, // Contains id, and potentially name, email, phone if passed
-          ...newUserDocData, // Contains fresh data like balance, isVerified, createdAt
-          id: userData.id // Ensure the original ID is preserved
+          ...userData, 
+          ...newUserDocData,
+          id: userData.id 
         };
-      } else { // Existing user
+      } else {
         const firestoreUser = await fetchUserDocument(userData.id);
         if (firestoreUser) {
-          // Merge incoming userData (e.g., from login form) with authoritative Firestore data
-          finalUserData = { ...userData, ...firestoreUser, id: firestoreUser.id };
+          finalUserData = { ...firestoreUser, ...userData, id: firestoreUser.id }; // Prioritize Firestore, then allow userData to override (e.g. if local form data is more recent for non-auth fields)
         } else {
           console.error("Login failed: User document not found in Firestore for ID:", userData.id);
           throw new Error("User data not found. Please check your credentials or sign up.");
         }
       }
-
-      // If finalUserData is successfully determined (not null)
-      setUser(finalUserData);
-      setLocalCurrency(finalUserData!.currency);
-      setLocalBalance(finalUserData!.balance || 0);
-      // Store minimal, non-sensitive info for re-hydration hint
-      localStorage.setItem('betbabu-user', JSON.stringify({ 
-        id: finalUserData!.id, 
-        name: finalUserData!.name,
-        email: finalUserData!.email,
-        phone: finalUserData!.phone,
-        currency: finalUserData!.currency 
-      }));
+      
+      if (finalUserData) {
+        setUser(finalUserData);
+        setLocalCurrency(finalUserData.currency);
+        setLocalBalance(finalUserData.balance || 0);
+        localStorage.setItem('betbabu-user', JSON.stringify({ 
+          id: finalUserData.id, 
+          name: finalUserData.name,
+          email: finalUserData.email,
+          phone: finalUserData.phone,
+          currency: finalUserData.currency 
+        }));
+      } else {
+         // Should not happen if logic above is correct, but as a safeguard:
+        throw new Error("Failed to establish user session.");
+      }
 
     } catch (error) {
-      console.error("Error during login/signup:", error);
+      console.error("Error during login/signup in AuthContext:", error);
       setUser(null);
       setLocalBalance(0);
       setLocalCurrency('USD');
       localStorage.removeItem('betbabu-user');
-      throw error; // Re-throw so the calling page (Login/Signup) can handle it (e.g., show toast)
+      throw error; 
     } finally {
       setLoadingAuth(false);
     }
@@ -172,12 +183,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLocalBalance(0);
     setLocalCurrency('USD');
     localStorage.removeItem('betbabu-user');
-    setLoadingAuth(false); // Ensure loading is false on logout
+    setLoadingAuth(false); 
   };
 
   const setCurrency = async (newCurrency: string) => {
     if (user) {
-      // setLoadingAuth(true); // Optional: manage loading state for this specific action
       const updatedUser = { ...user, currency: newCurrency };
       setUser(updatedUser);
       setLocalCurrency(newCurrency);
@@ -187,17 +197,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.setItem('betbabu-user', JSON.stringify({ id: updatedUser.id, currency: updatedUser.currency, name: updatedUser.name, email: updatedUser.email, phone: updatedUser.phone }));
       } catch (error) {
         console.error("Failed to update currency in Firestore:", error);
-        // Optionally revert local state or notify user
-      } finally {
-        // setLoadingAuth(false);
       }
     }
   };
   
   const updateBalance = async (amountChange: number) => {
     if (user) {
-      // setLoadingAuth(true); // Optional: manage loading state
-      const newBalance = (user.balance || 0) + amountChange;
+      const newBalance = (balance || 0) + amountChange; // Use context balance directly
       const updatedUser = { ...user, balance: newBalance };
       setUser(updatedUser);
       setLocalBalance(newBalance);
@@ -206,9 +212,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         await updateDoc(userDocRef, { balance: newBalance });
       } catch (error) {
         console.error("Failed to update balance in Firestore:", error);
-        // Optionally revert local state or notify user
-      } finally {
-        // setLoadingAuth(false);
       }
     }
   };
@@ -227,3 +230,4 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
+
