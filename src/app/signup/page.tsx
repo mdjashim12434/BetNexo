@@ -14,8 +14,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { Mail, Phone, User as UserIcon, Lock, Globe } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-// No direct Firebase Auth import here, AuthContext handles it if using Firebase Auth SDK for user creation.
-// We are creating a mock user ID for now for Firestore.
 
 const currencies = [
   { value: 'USD', label: 'USD - United States Dollar' },
@@ -31,7 +29,7 @@ const signupSchema = z.object({
   password: z.string().min(6, { message: 'Password must be at least 6 characters' }),
   confirmPassword: z.string().min(6, { message: 'Please confirm your password' }),
   currency: z.string().min(1, { message: 'Please select a currency' }),
-  country: z.string().min(2, { message: 'Country is required' }), // Added country
+  country: z.string().min(2, { message: 'Country is required' }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ['confirmPassword'],
@@ -40,7 +38,7 @@ const signupSchema = z.object({
 type SignupFormValues = z.infer<typeof signupSchema>;
 
 export default function SignupPage() {
-  const { login } = useAuth();
+  const { login } = useAuth(); // login from AuthContext handles new user creation in Firestore
   const router = useRouter();
   const { toast } = useToast();
 
@@ -52,36 +50,41 @@ export default function SignupPage() {
       password: '',
       confirmPassword: '',
       currency: '',
-      country: '', // Added country
+      country: '',
     },
   });
 
   async function onSubmit(data: SignupFormValues) {
+    form.clearErrors(); // Clear previous errors
     // For a real app with Firebase Auth:
-    // 1. Use createUserWithEmailAndPassword(auth, email, password) or equivalent for phone.
-    // 2. On success, `userCredential.user.uid` is the Firebase UID.
-    // 3. Then, create the Firestore document in users/{uid} with additional data.
+    // 1. Call createUserWithEmailAndPassword(auth, email, password) or similar for phone.
+    // 2. Get the Firebase UID from the successful auth operation.
+    // 3. Pass this UID as `id` in the newUser object below.
 
-    // Mocking user creation for now, AuthContext's login will handle Firestore doc.
-    const mockUserId = `mock-uid-${Date.now()}`; // Replace with actual Firebase UID
-    
-    const newUser = {
-      id: mockUserId, // This should be the Firebase UID
+    const mockUserId = `mock-uid-${Date.now()}`; // Replace with actual Firebase UID in a real app
+
+    const newUserPayload = {
+      id: mockUserId, // This MUST be the Firebase UID in a real app
       name: data.name,
       email: data.emailOrPhone.includes('@') ? data.emailOrPhone : undefined,
       phone: !data.emailOrPhone.includes('@') ? data.emailOrPhone : undefined,
       currency: data.currency,
-      country: data.country, // Pass country
-      // balance, isVerified, createdAt will be set by AuthContext/Firestore logic
+      country: data.country,
+      // balance, isVerified, createdAt will be set by AuthContext's login method for new users
     };
 
     try {
-      await login(newUser, true); // Pass true for isNewUser
+      await login(newUserPayload, true); // true for isNewUser
       toast({ title: "Signup Successful", description: "Welcome to BETBABU! Your account has been created." });
       router.push('/');
     } catch (error) {
-      console.error("Signup error:", error);
-      toast({ title: "Signup Failed", description: "Could not create your account. Please try again.", variant: "destructive" });
+      console.error("Signup error on page:", error);
+      const errorMessage = error instanceof Error ? error.message : "Could not create your account. Please try again.";
+      toast({ title: "Signup Failed", description: errorMessage, variant: "destructive" });
+      // Optionally set form errors based on the error type
+      if (errorMessage.toLowerCase().includes("email") || errorMessage.toLowerCase().includes("phone")) {
+        form.setError("emailOrPhone", { type: "manual", message: errorMessage });
+      }
     }
   }
 

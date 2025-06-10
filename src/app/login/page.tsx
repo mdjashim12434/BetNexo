@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -33,21 +34,32 @@ export default function LoginPage() {
     },
   });
 
-  function onSubmit(data: LoginFormValues) {
-    // Mock login
-    console.log('Login data:', data);
-    // In a real app, you'd call an API here
-    const mockUser = {
-      id: 'user123',
+  async function onSubmit(data: LoginFormValues) {
+    form.clearErrors(); // Clear previous errors
+    // This is still using a mock user ID. For real Firebase Auth,
+    // you'd signInWithEmailAndPassword, get the UID, then call context's login.
+    const mockUserForLogin = {
+      id: data.emailOrPhone === "admin@example.com" ? "admin001" : `user-${Date.now()}`, // Use a consistent mock admin ID or generate one for others
       email: data.emailOrPhone.includes('@') ? data.emailOrPhone : undefined,
       phone: !data.emailOrPhone.includes('@') ? data.emailOrPhone : undefined,
-      name: 'Demo User',
-      currency: 'USD', // Default or based on a previous selection
-      isVerified: false,
+      // Name, currency, etc., will be fetched from Firestore by AuthContext.login
+      // We only need to provide enough to identify the user for fetchUserDocument.
+      // For a mock system, we assume currency is already set in Firestore.
+      // If not, AuthContext.login might need a default or fetch logic.
+      currency: 'USD', // Dummy, as it's primarily managed by Firestore data
     };
-    login(mockUser);
-    toast({ title: "Login Successful", description: "Welcome back!" });
-    router.push('/');
+
+    try {
+      await login(mockUserForLogin, false); // isNewUser is false for login
+      toast({ title: "Login Successful", description: "Welcome back!" });
+      router.push('/');
+    } catch (error) {
+      console.error("Login failed on page:", error);
+      const errorMessage = error instanceof Error ? error.message : "Could not log in. Please check credentials or try again.";
+      toast({ title: "Login Failed", description: errorMessage, variant: "destructive" });
+      form.setError("emailOrPhone", { type: "manual", message: "Login failed. Check credentials." });
+      form.setError("password", { type: "manual", message: " " }); // Clearer indication for password too
+    }
   }
 
   return (
@@ -95,8 +107,8 @@ export default function LoginPage() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full font-semibold">
-                Login
+              <Button type="submit" className="w-full font-semibold" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting ? 'Logging In...' : 'Login'}
               </Button>
             </form>
           </Form>
