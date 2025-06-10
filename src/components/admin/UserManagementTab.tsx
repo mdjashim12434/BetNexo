@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { MoreHorizontal, Edit2, ShieldCheck, UserX, UserCheck, DollarSign, Phone, Mail } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/contexts/AuthContext'; // Assuming User type includes currency
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface AdminManagedUser extends User {
   role: 'User' | 'Agent' | 'Admin';
