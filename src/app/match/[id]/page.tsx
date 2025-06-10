@@ -1,3 +1,4 @@
+
 'use client';
 
 import AppLayout from '@/components/AppLayout';
@@ -7,12 +8,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, BarChart2, Info, MessageSquare, Users } from 'lucide-react';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
-import type { Match } from '@/components/sports/MatchCard'; // Assuming Match type is exported
+import type { Match } from '@/components/sports/MatchCard'; 
 import { useEffect, useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { Input } from '@/components/ui/input';
 
-// Mock function to get match details by ID
+
 const getMatchDetails = async (id: string): Promise<Match | null> => {
-  // In a real app, fetch this from an API or Opticodds
   const mockMatches: Match[] = [
     { id: '1', teamA: 'India', teamB: 'Australia', time: '14:00 Local', sport: 'Cricket', league: 'World Cup', oddsA: '1.80', oddsB: '2.10', status: 'upcoming', imageUrl: 'https://placehold.co/800x400.png?text=Cricket+Stadium' },
     { id: '3', teamA: 'Real Madrid', teamB: 'Barcelona', time: 'Tomorrow 19:00 GMT', sport: 'Football', league: 'La Liga', oddsA: '2.20', oddsDraw: '3.20', oddsB: '3.00', status: 'upcoming', imageUrl: 'https://placehold.co/800x400.png?text=Football+Pitch' },
@@ -25,23 +27,31 @@ const getMatchDetails = async (id: string): Promise<Match | null> => {
 export default function MatchDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { user, loadingAuth } = useAuth();
   const matchId = typeof params.id === 'string' ? params.id : '';
   const [match, setMatch] = useState<Match | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loadingMatch, setLoadingMatch] = useState(true);
+
+  useEffect(() => {
+    if (!loadingAuth && !user) {
+      router.push('/login');
+    }
+  }, [user, loadingAuth, router]);
 
   useEffect(() => {
     if (matchId) {
+      setLoadingMatch(true);
       getMatchDetails(matchId).then(data => {
         setMatch(data);
-        setLoading(false);
+        setLoadingMatch(false);
       });
     } else {
-      setLoading(false);
+      setLoadingMatch(false);
     }
   }, [matchId]);
 
-  if (loading) {
-    return <AppLayout><div className="text-center p-10">Loading match details...</div></AppLayout>;
+  if (loadingAuth || !user || loadingMatch) {
+    return <AppLayout><div className="text-center p-10">Loading match details or redirecting...</div></AppLayout>;
   }
 
   if (!match) {
@@ -119,7 +129,6 @@ export default function MatchDetailPage() {
                   <CardHeader><CardTitle className="font-headline flex items-center"><BarChart2 className="mr-2 h-5 w-5"/>Match Statistics</CardTitle></CardHeader>
                   <CardContent>
                     <p className="text-muted-foreground">Detailed match statistics will be available here. (e.g., possession, shots, score history)</p>
-                    {/* Placeholder for stats */}
                     <div className="mt-4 space-y-2">
                         <p>Possession: {match.teamA} 55% - {match.teamB} 45%</p>
                         <p>Score: {match.teamA} 1 - {match.teamB} 0 (If live)</p>
@@ -145,7 +154,6 @@ export default function MatchDetailPage() {
                   <CardHeader><CardTitle className="font-headline flex items-center"><MessageSquare className="mr-2 h-5 w-5"/>Live Chat</CardTitle></CardHeader>
                   <CardContent>
                     <p className="text-muted-foreground">Live chat feature coming soon! Discuss the match with other fans.</p>
-                    {/* Placeholder for chat */}
                      <div className="mt-4 h-40 border rounded p-2 overflow-y-auto">
                         <p className="text-sm">Fan123: Go Team A!</p>
                         <p className="text-sm">ProBetPlayer: Team B looks strong today.</p>

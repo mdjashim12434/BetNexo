@@ -1,9 +1,13 @@
+
 'use client';
 import AppLayout from '@/components/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import { Dice1, Dice2, Dice3, Dice4, Dice5, Dice6, Gem, Spade, Club, Heart, Diamond } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 const casinoGames = [
   { id: 'slots', name: 'Slot Machines', description: 'Spin the reels for exciting wins!', icon: Gem, imageHint: "slot machine casino" },
@@ -15,6 +19,19 @@ const casinoGames = [
 ];
 
 export default function CasinoPage() {
+  const { user, loadingAuth } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loadingAuth && !user) {
+      router.push('/login');
+    }
+  }, [user, loadingAuth, router]);
+
+  if (loadingAuth || !user) {
+    return <AppLayout><div className="text-center p-10">Loading or redirecting...</div></AppLayout>;
+  }
+
   return (
     <AppLayout>
       <div className="space-y-8">

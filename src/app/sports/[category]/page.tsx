@@ -1,3 +1,4 @@
+
 'use client';
 
 import AppLayout from '@/components/AppLayout';
@@ -8,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Mock data for matches - Opticodds API would provide this
 const allMatches: Match[] = [
@@ -32,12 +34,19 @@ const categoryMapping: { [key: string]: string } = {
 export default function SportCategoryPage() {
   const params = useParams();
   const router = useRouter();
+  const { user, loadingAuth } = useAuth();
   const categorySlug = typeof params.category === 'string' ? params.category : 'all-sports';
   const categoryName = categoryMapping[categorySlug] || 'Sports';
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterSport, setFilterSport] = useState('all'); // 'all', 'cricket', 'football', etc.
   const [filteredMatches, setFilteredMatches] = useState<Match[]>([]);
+
+  useEffect(() => {
+    if (!loadingAuth && !user) {
+      router.push('/login');
+    }
+  }, [user, loadingAuth, router]);
 
   useEffect(() => {
     let matches = allMatches;
@@ -64,6 +73,10 @@ export default function SportCategoryPage() {
   }, [categorySlug, searchTerm, filterSport]);
 
   const availableSports = ['all', ...new Set(allMatches.map(m => m.sport.toLowerCase()))];
+
+  if (loadingAuth || !user) {
+    return <AppLayout><div className="text-center p-10">Loading or redirecting...</div></AppLayout>;
+  }
 
   return (
     <AppLayout>

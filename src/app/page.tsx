@@ -1,3 +1,4 @@
+
 'use client';
 
 import AppLayout from '@/components/AppLayout';
@@ -8,6 +9,9 @@ import { ArrowRight, Dice5, Goal, ListChecks, RadioTower, CalendarClock } from '
 import Image from 'next/image';
 import Link from 'next/link';
 import { CricketIcon } from '@/components/icons/CricketIcon';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 interface SportCategory {
   name: string;
@@ -29,13 +33,26 @@ const categories: SportCategory[] = [
 ];
 
 export default function HomePage() {
+  const { user, loadingAuth } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loadingAuth && !user) {
+      router.push('/login');
+    }
+  }, [user, loadingAuth, router]);
+
+  if (loadingAuth || !user) {
+    return <AppLayout><div className="text-center p-10">Loading or redirecting...</div></AppLayout>;
+  }
+
   return (
     <AppLayout>
       <div className="space-y-8 pb-16"> {/* Add padding-bottom for BottomNav */}
         {/* Hero Section - Optional */}
         <Card className="bg-gradient-to-r from-primary/80 to-accent/80 text-primary-foreground shadow-xl">
           <CardContent className="p-6">
-            <h1 className="font-headline text-3xl font-bold">Welcome to BETBABU!</h1>
+            <h1 className="font-headline text-3xl font-bold">Welcome to BETBABU, {user.name || 'Player'}!</h1>
             <p className="mt-2 text-lg">Your ultimate destination for sports and casino action.</p>
             <Button className="mt-4 bg-background text-foreground hover:bg-background/90" asChild>
               <Link href="/all-sports">Explore Games</Link>
@@ -87,7 +104,7 @@ export default function HomePage() {
                       <Button variant="outline" size="sm">2: 2.80</Button>
                     </div>
                     <Button variant="ghost" size="sm" asChild>
-                      <Link href="/match/123">Details <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                      <Link href="/match/1">Details <ArrowRight className="ml-2 h-4 w-4" /></Link>
                     </Button>
                   </div>
                 </CardContent>

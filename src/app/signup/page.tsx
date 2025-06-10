@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -11,8 +12,10 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { Mail, Phone, User as UserIcon, Lock } from 'lucide-react';
+import { Mail, Phone, User as UserIcon, Lock, Globe } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+// No direct Firebase Auth import here, AuthContext handles it if using Firebase Auth SDK for user creation.
+// We are creating a mock user ID for now for Firestore.
 
 const currencies = [
   { value: 'USD', label: 'USD - United States Dollar' },
@@ -20,7 +23,6 @@ const currencies = [
   { value: 'GBP', label: 'GBP - British Pound Sterling' },
   { value: 'INR', label: 'INR - Indian Rupee' },
   { value: 'BDT', label: 'BDT - Bangladeshi Taka' },
-  // Add more currencies as needed
 ];
 
 const signupSchema = z.object({
@@ -29,6 +31,7 @@ const signupSchema = z.object({
   password: z.string().min(6, { message: 'Password must be at least 6 characters' }),
   confirmPassword: z.string().min(6, { message: 'Please confirm your password' }),
   currency: z.string().min(1, { message: 'Please select a currency' }),
+  country: z.string().min(2, { message: 'Country is required' }), // Added country
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ['confirmPassword'],
@@ -37,7 +40,7 @@ const signupSchema = z.object({
 type SignupFormValues = z.infer<typeof signupSchema>;
 
 export default function SignupPage() {
-  const { login } = useAuth(); // Using login for mock signup as well
+  const { login } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -49,23 +52,37 @@ export default function SignupPage() {
       password: '',
       confirmPassword: '',
       currency: '',
+      country: '', // Added country
     },
   });
 
-  function onSubmit(data: SignupFormValues) {
-    console.log('Signup data:', data);
-    // Mock signup:
+  async function onSubmit(data: SignupFormValues) {
+    // For a real app with Firebase Auth:
+    // 1. Use createUserWithEmailAndPassword(auth, email, password) or equivalent for phone.
+    // 2. On success, `userCredential.user.uid` is the Firebase UID.
+    // 3. Then, create the Firestore document in users/{uid} with additional data.
+
+    // Mocking user creation for now, AuthContext's login will handle Firestore doc.
+    const mockUserId = `mock-uid-${Date.now()}`; // Replace with actual Firebase UID
+    
     const newUser = {
-      id: `user-${Date.now()}`,
+      id: mockUserId, // This should be the Firebase UID
       name: data.name,
       email: data.emailOrPhone.includes('@') ? data.emailOrPhone : undefined,
       phone: !data.emailOrPhone.includes('@') ? data.emailOrPhone : undefined,
       currency: data.currency,
-      isVerified: false, // Default to not verified
+      country: data.country, // Pass country
+      // balance, isVerified, createdAt will be set by AuthContext/Firestore logic
     };
-    login(newUser); // Use login to set the user context
-    toast({ title: "Signup Successful", description: "Welcome to BETBABU! Please verify your account." });
-    router.push('/'); // Redirect to home or a verification page
+
+    try {
+      await login(newUser, true); // Pass true for isNewUser
+      toast({ title: "Signup Successful", description: "Welcome to BETBABU! Your account has been created." });
+      router.push('/');
+    } catch (error) {
+      console.error("Signup error:", error);
+      toast({ title: "Signup Failed", description: "Could not create your account. Please try again.", variant: "destructive" });
+    }
   }
 
   return (
@@ -148,6 +165,22 @@ export default function SignupPage() {
                   </FormItem>
                 )}
               />
+               <FormField
+                control={form.control}
+                name="country"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Country</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Globe className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+                        <Input placeholder="Your Country" {...field} className="pl-10" />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="currency"
@@ -172,8 +205,8 @@ export default function SignupPage() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full font-semibold">
-                Sign Up
+              <Button type="submit" className="w-full font-semibold" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting ? 'Signing Up...' : 'Sign Up'}
               </Button>
             </form>
           </Form>
