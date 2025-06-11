@@ -4,8 +4,13 @@
 import AppLayout from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ShieldAlert, Users, DollarSign, Settings as SettingsIcon, Briefcase, BarChartHorizontalBig, History } from "lucide-react";
+import { Users, DollarSign, Briefcase, Settings2, History, ShieldAlert } from "lucide-react";
 import UserManagementTab from "@/components/admin/UserManagementTab";
+import BalanceControlTab from "@/components/admin/BalanceControlTab";
+import AgentManagementTab from "@/components/admin/AgentManagementTab";
+import MatchControlTab from "@/components/admin/MatchControlTab";
+import TransactionsLogTab from "@/components/admin/TransactionsLogTab";
+
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -32,6 +37,8 @@ export default function AdminPage() {
   }
 
   if (!user) {
+    // This case should ideally be caught by the useEffect redirect, 
+    // but it's a safeguard.
     return <AppLayout><div className="text-center p-10">Redirecting to login...</div></AppLayout>;
   }
   
@@ -51,36 +58,30 @@ export default function AdminPage() {
   return (
     <AppLayout>
       <div className="space-y-8">
-        <Card className="shadow-xl">
-          <CardHeader>
-            <CardTitle className="font-headline text-3xl flex items-center">
-              <ShieldAlert className="mr-3 h-8 w-8 text-primary" />
-              Admin Panel
+        <Card className="shadow-xl bg-card">
+          <CardHeader className="border-b">
+            <CardTitle className="font-headline text-3xl flex items-center text-primary">
+              <ShieldAlert className="mr-3 h-8 w-8" />
+              BETBABU Admin Panel
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 md:p-6">
             <Tabs defaultValue="userManagement" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-2 mb-6">
-                <TabsTrigger value="userManagement" className="flex items-center gap-2">
-                  <Users className="h-4 w-4" /> User Management
+              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 mb-6">
+                <TabsTrigger value="userManagement" className="flex items-center gap-2 py-2.5">
+                  <Users className="h-5 w-5" /> User Management
                 </TabsTrigger>
-                <TabsTrigger value="balanceControl" className="flex items-center gap-2">
-                  <DollarSign className="h-4 w-4" /> Balance Control
+                <TabsTrigger value="balanceControl" className="flex items-center gap-2 py-2.5">
+                  <DollarSign className="h-5 w-5" /> Balance Control
                 </TabsTrigger>
-                <TabsTrigger value="transactions" className="flex items-center gap-2">
-                  <BarChartHorizontalBig className="h-4 w-4" /> Transactions
+                <TabsTrigger value="agentManagement" className="flex items-center gap-2 py-2.5">
+                  <Briefcase className="h-5 w-5" /> Agent Management
                 </TabsTrigger>
-                <TabsTrigger value="agentManagement" className="flex items-center gap-2">
-                  <Briefcase className="h-4 w-4" /> Agent Management
+                <TabsTrigger value="matchControl" className="flex items-center gap-2 py-2.5">
+                  <Settings2 className="h-5 w-5" /> Match Control
                 </TabsTrigger>
-                <TabsTrigger value="matchControl" className="flex items-center gap-2">
-                  <SettingsIcon className="h-4 w-4" /> Match Control
-                </TabsTrigger>
-                <TabsTrigger value="activityLogs" className="flex items-center gap-2">
-                  <History className="h-4 w-4" /> Activity Logs
-                </TabsTrigger>
-                <TabsTrigger value="appSettings" className="flex items-center gap-2">
-                  <SettingsIcon className="h-4 w-4" /> App Settings
+                <TabsTrigger value="transactionsLog" className="flex items-center gap-2 py-2.5">
+                  <History className="h-5 w-5" /> Transactions Log
                 </TabsTrigger>
               </TabsList>
 
@@ -88,46 +89,16 @@ export default function AdminPage() {
                 <UserManagementTab />
               </TabsContent>
               <TabsContent value="balanceControl">
-                <Card>
-                  <CardHeader><CardTitle className="font-headline text-xl">Balance Control</CardTitle></CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground">View user balances, manually add or deduct balance, and set deposit/withdraw limits. (Functionality for manual adjustments is available under User Management actions. Full controls coming soon)</p>
-                    </CardContent>
-                </Card>
-              </TabsContent>
-              <TabsContent value="transactions">
-                <Card>
-                  <CardHeader><CardTitle className="font-headline text-xl">Deposit & Withdraw Requests</CardTitle></CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground">View all deposit and withdraw requests. Approve or reject requests. Track transaction history for all methods (Bkash, Nagad, Rocket, UPI, PhonePay, Bank). (Coming Soon)</p>
-                  </CardContent>
-                </Card>
+                <BalanceControlTab />
               </TabsContent>
               <TabsContent value="agentManagement">
-                <Card>
-                  <CardHeader><CardTitle className="font-headline text-xl">Agent Management</CardTitle></CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground">Assign agents, manage their roles, and set commission rates. (Agent role assignment is available under User Management actions. Full controls coming soon)</p>
-                  </CardContent>
-                </Card>
+                <AgentManagementTab />
               </TabsContent>
               <TabsContent value="matchControl">
-                <Card>
-                  <CardHeader><CardTitle className="font-headline text-xl">Match Control</CardTitle></CardHeader>
-                  <CardContent><p className="text-muted-foreground">Control sports categories and match visibility from Opticodds API. (Coming Soon)</p></CardContent>
-                </Card>
+                <MatchControlTab />
               </TabsContent>
-              <TabsContent value="activityLogs">
-                <Card>
-                  <CardHeader><CardTitle className="font-headline text-xl">User Activity Logs</CardTitle></CardHeader>
-                  <CardContent><p className="text-muted-foreground">View detailed activity logs for all users. (Coming Soon)</p></CardContent>
-                </Card>
-              </TabsContent>
-              <TabsContent value="appSettings">
-                <Card>
-                  <CardHeader><CardTitle className="font-headline text-xl">Application Settings</CardTitle></CardHeader>
-                  <CardContent><p className="text-muted-foreground">Configure site settings, currencies, and signup methods. (Coming Soon)</p></CardContent>
-                </Card>
+              <TabsContent value="transactionsLog">
+                <TransactionsLogTab />
               </TabsContent>
             </Tabs>
           </CardContent>
