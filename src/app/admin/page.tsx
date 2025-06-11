@@ -9,7 +9,7 @@ import BalanceControlTab from "@/components/admin/BalanceControlTab";
 import AgentManagementTab from "@/components/admin/AgentManagementTab";
 import TransactionsLogTab from "@/components/admin/TransactionsLogTab";
 import DashboardTab from "@/components/admin/DashboardTab";
-import BetHistoryTab from "@/components/admin/BetHistoryTab"; // Import BetHistoryTab
+import BetHistoryTab from "@/components/admin/BetHistoryTab";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
@@ -28,7 +28,7 @@ const navItems: NavItem[] = [
   { id: 'balanceSheet', label: 'Balance Sheet', icon: DollarSign, component: BalanceControlTab },
   { id: 'transactionsLog', label: 'Transaction Logs', icon: History, component: TransactionsLogTab },
   { id: 'agentControl', label: 'Agent Control', icon: Briefcase, component: AgentManagementTab },
-  { id: 'betHistory', label: 'Bet History', icon: ListChecks, component: BetHistoryTab }, // Add Bet History
+  { id: 'betHistory', label: 'Bet History', icon: ListChecks, component: BetHistoryTab },
 ];
 
 export default function AdminPage() {
@@ -40,12 +40,9 @@ export default function AdminPage() {
     if (!loadingAuth) {
       if (!user) {
         router.push('/login');
+      } else if (user && user.role !== 'Admin') {
+        router.push('/'); // Redirect non-admin users to homepage
       }
-      // The following role-based redirect is INTENTIONALLY COMMENTED OUT
-      // to prevent redirection to the home page based on a missing 'Admin' role.
-      // else if (user && user.role !== 'Admin') { // Assuming user object has a 'role' property
-      //   router.push('/');
-      // }
     }
   }, [user, loadingAuth, router]);
 
@@ -53,12 +50,16 @@ export default function AdminPage() {
     return <AppLayout><div className="flex items-center justify-center min-h-screen"><div className="text-center p-10">Loading authentication...</div></div></AppLayout>;
   }
 
-  if (!user) {
+  if (!user || (user && user.role !== 'Admin')) {
     // This case should ideally be caught by the useEffect redirect,
     // but it's a safeguard.
-    return <AppLayout><div className="flex items-center justify-center min-h-screen"><div className="text-center p-10">Redirecting to login...</div></div></AppLayout>;
+    // For non-admins, it shows "Access Denied" before redirecting from useEffect.
+    // For non-logged-in users, it shows redirecting to login.
+    const message = !user ? "Redirecting to login..." : "Access Denied. Redirecting...";
+    return <AppLayout><div className="flex items-center justify-center min-h-screen"><div className="text-center p-10">{message}</div></div></AppLayout>;
   }
 
+  // At this point, user is authenticated and is an Admin.
   const ActiveComponent = navItems.find(item => item.id === activeSection)?.component || DashboardTab;
 
   return (
@@ -97,7 +98,6 @@ export default function AdminPage() {
           </Sidebar>
           <SidebarInset className="flex-1 bg-background">
             <div className="p-4 md:p-6 lg:p-8">
-              {/* Pass setActiveSection to DashboardTab if it's the active component */}
               {activeSection === 'dashboard' && ActiveComponent === DashboardTab ? (
                 <DashboardTab setActiveSection={setActiveSection} />
               ) : (
@@ -110,5 +110,3 @@ export default function AdminPage() {
     </AppLayout>
   );
 }
-
-    
