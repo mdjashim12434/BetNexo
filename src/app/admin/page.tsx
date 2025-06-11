@@ -2,108 +2,104 @@
 'use client';
 
 import AppLayout from "@/components/AppLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, DollarSign, Briefcase, History, ShieldAlert, LayoutDashboard } from "lucide-react";
+import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarInset } from "@/components/ui/sidebar";
+import { LayoutDashboard, Users, DollarSign, History, Briefcase, ShieldAlert } from "lucide-react";
 import UserManagementTab from "@/components/admin/UserManagementTab";
-import BalanceControlTab from "@/components/admin/BalanceControlTab"; // Will be used for Balance Sheet
+import BalanceControlTab from "@/components/admin/BalanceControlTab";
 import AgentManagementTab from "@/components/admin/AgentManagementTab";
 import TransactionsLogTab from "@/components/admin/TransactionsLogTab";
-import DashboardTab from "@/components/admin/DashboardTab"; // New Dashboard Tab
+import DashboardTab from "@/components/admin/DashboardTab";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+
+interface NavItem {
+  id: string;
+  label: string;
+  icon: React.ElementType;
+  component: React.ElementType;
+}
+
+const navItems: NavItem[] = [
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, component: DashboardTab },
+  { id: 'userManagement', label: 'Manage Users', icon: Users, component: UserManagementTab },
+  { id: 'balanceSheet', label: 'Balance Sheet', icon: DollarSign, component: BalanceControlTab },
+  { id: 'transactionsLog', label: 'Transaction Logs', icon: History, component: TransactionsLogTab },
+  { id: 'agentControl', label: 'Agent Control', icon: Briefcase, component: AgentManagementTab },
+];
 
 export default function AdminPage() {
-  const { user, loadingAuth } = useAuth(); 
+  const { user, loadingAuth } = useAuth();
   const router = useRouter();
+  const [activeSection, setActiveSection] = useState<string>('dashboard');
 
   useEffect(() => {
-    if (!loadingAuth) { 
+    if (!loadingAuth) {
       if (!user) {
         router.push('/login');
       }
       // The following role-based redirect is INTENTIONALLY COMMENTED OUT
       // to prevent redirection to the home page based on a missing 'Admin' role.
       // else if (user && user.role !== 'Admin') { // Assuming user object has a 'role' property
-      //   router.push('/'); 
+      //   router.push('/');
       // }
     }
   }, [user, loadingAuth, router]);
 
   if (loadingAuth) {
-    return <AppLayout><div className="text-center p-10">Loading authentication...</div></AppLayout>;
+    return <AppLayout><div className="flex items-center justify-center min-h-screen"><div className="text-center p-10">Loading authentication...</div></div></AppLayout>;
   }
 
   if (!user) {
-    // This case should ideally be caught by the useEffect redirect, 
+    // This case should ideally be caught by the useEffect redirect,
     // but it's a safeguard.
-    return <AppLayout><div className="text-center p-10">Redirecting to login...</div></AppLayout>;
+    return <AppLayout><div className="flex items-center justify-center min-h-screen"><div className="text-center p-10">Redirecting to login...</div></div></AppLayout>;
   }
-  
-  // Placeholder for actual admin role check.
-  // This conditional rendering block is INTENTIONALLY COMMENTED OUT
-  // to prevent blocking access based on a missing 'Admin' role for now.
-  // if (user.role !== 'Admin') { // Assuming user object has a 'role' property
-  //   return (
-  //     <AppLayout>
-  //       <div className="text-center p-10">
-  //         Access Denied. Administrator access required. Redirecting to home...
-  //       </div>
-  //     </AppLayout>
-  //   );
-  // }
+
+  const ActiveComponent = navItems.find(item => item.id === activeSection)?.component || DashboardTab;
 
   return (
     <AppLayout>
-      <div className="space-y-8">
-        <Card className="shadow-xl bg-card">
-          <CardHeader className="border-b">
-            <CardTitle className="font-headline text-3xl flex items-center text-primary">
-              <ShieldAlert className="mr-3 h-8 w-8" />
-              BETBABU Admin Panel
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 md:p-6">
-            <Tabs defaultValue="dashboard" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 mb-6">
-                <TabsTrigger value="dashboard" className="flex items-center gap-2 py-2.5">
-                  <LayoutDashboard className="h-5 w-5" /> Dashboard
-                </TabsTrigger>
-                <TabsTrigger value="userManagement" className="flex items-center gap-2 py-2.5">
-                  <Users className="h-5 w-5" /> Manage Users
-                </TabsTrigger>
-                <TabsTrigger value="balanceSheet" className="flex items-center gap-2 py-2.5">
-                  <DollarSign className="h-5 w-5" /> Balance Sheet
-                </TabsTrigger>
-                <TabsTrigger value="transactionsLog" className="flex items-center gap-2 py-2.5">
-                  <History className="h-5 w-5" /> Transaction Logs
-                </TabsTrigger>
-                 <TabsTrigger value="agentControl" className="flex items-center gap-2 py-2.5">
-                  <Briefcase className="h-5 w-5" /> Agent Control
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="dashboard">
-                <DashboardTab />
-              </TabsContent>
-              <TabsContent value="userManagement">
-                <UserManagementTab />
-              </TabsContent>
-              <TabsContent value="balanceSheet">
-                <BalanceControlTab />
-              </TabsContent>
-              <TabsContent value="transactionsLog">
-                <TransactionsLogTab />
-              </TabsContent>
-              <TabsContent value="agentControl">
-                <AgentManagementTab />
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
-      </div>
+      <SidebarProvider>
+        <div className="flex min-h-[calc(100vh-theme(spacing.16))]"> {/* Full height minus header */}
+          <Sidebar collapsible="icon" variant="sidebar" className="border-r border-border/60">
+            <SidebarHeader className="p-0">
+              <div className="flex items-center justify-center h-16 border-b border-border/60">
+                 <div className="font-headline text-xl text-primary flex items-center group-data-[collapsible=icon]:hidden">
+                    <ShieldAlert className="mr-2 h-6 w-6" /> BETBABU
+                 </div>
+                 <ShieldAlert className="h-7 w-7 text-primary hidden group-data-[collapsible=icon]:block" />
+              </div>
+            </SidebarHeader>
+            <SidebarContent className="p-2">
+              <SidebarMenu>
+                {navItems.map((item) => (
+                  <SidebarMenuItem key={item.id}>
+                    <SidebarMenuButton
+                      onClick={() => setActiveSection(item.id)}
+                      isActive={activeSection === item.id}
+                      tooltip={{ children: item.label, side: "right", align: "center" }}
+                      className="justify-start"
+                    >
+                      <item.icon className="h-5 w-5" />
+                      <span>{item.label}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarContent>
+            {/* <SidebarFooter>
+              Optional Footer Content
+            </SidebarFooter> */}
+          </Sidebar>
+          <SidebarInset className="flex-1 bg-background">
+            <div className="p-4 md:p-6 lg:p-8">
+              <ActiveComponent />
+            </div>
+          </SidebarInset>
+        </div>
+      </SidebarProvider>
     </AppLayout>
   );
 }
