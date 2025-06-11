@@ -59,7 +59,18 @@ export default function ProfilePage() {
       setUserTransactions(fetchedTransactions);
     } catch (error: any) {
       console.error("Error fetching user transactions:", error);
-      toast({ title: "Error", description: `Could not fetch your transaction history. ${error.message}`, variant: "destructive" });
+      let description = "Could not fetch your transaction history.";
+      if (error.message) {
+        description += ` ${error.message}`;
+      }
+      if (error.code) {
+        description += ` (Code: ${error.code})`;
+      }
+      // Check if the error message contains a link to create an index
+      if (error.message && error.message.includes("https://console.firebase.google.com/project/")) {
+        description += " This usually means a composite index is required. Please check the browser console for a link to create it, or create it manually in Firestore (Indexes tab) for 'transactions' collection with fields 'userId' (Ascending) and 'requestedAt' (Descending).";
+      }
+      toast({ title: "Error", description, variant: "destructive", duration: 10000 });
     } finally {
       setLoadingTransactions(false);
     }
@@ -97,7 +108,7 @@ export default function ProfilePage() {
       const userDocRef = doc(db, "users", user.id);
       await updateDoc(userDocRef, {
         name: editableFields.name,
-        email: editableFields.email,
+        email: editableFields.email, // Email updates should be handled carefully due to Firebase Auth
         phone: editableFields.phone,
         country: editableFields.country,
       });
@@ -108,12 +119,12 @@ export default function ProfilePage() {
         phone: editableFields.phone,
         country: editableFields.country,
       };
-      await login(updatedUserForContext, false);
+      await login(updatedUserForContext, false); // Re-login to update context
       toast({ title: "Profile Updated", description: "Your changes have been saved." });
       setIsEditing(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating profile:", error);
-      toast({ title: "Update Failed", description: "Could not save your changes.", variant: "destructive" });
+      toast({ title: "Update Failed", description: `Could not save your changes. ${error.message}`, variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }
@@ -131,14 +142,19 @@ export default function ProfilePage() {
       toast({ title: "File Selected", description: `${file.name} ready for upload.` });
       setIsSubmitting(true);
       try {
-        await new Promise(resolve => setTimeout(resolve, 2000)); // Mock upload
+        // This is a mock upload. In a real app, you'd upload to Firebase Storage
+        // and then save the URL or reference to the user's document.
+        await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate upload delay
+        
         const userDocRef = doc(db, "users", user.id);
-        await updateDoc(userDocRef, { isVerified: true });
-        const verifiedUserForContext = { ...user, isVerified: true };
-        await login(verifiedUserForContext, false);
-        toast({ title: "Verification Submitted", description: "Your document is being reviewed (mock verified)." });
-      } catch (error) {
-        toast({ title: "Upload Failed", description: "Could not submit document.", variant: "destructive"});
+        await updateDoc(userDocRef, { isVerified: true, idDocumentStatus: 'pending_review' }); // Example status
+        
+        const verifiedUserForContext = { ...user, isVerified: true }; // Or reflect the new status
+        await login(verifiedUserForContext, false); // Update context
+        
+        toast({ title: "Verification Submitted", description: "Your document has been submitted and is pending review (mocked as auto-verified for now)." });
+      } catch (error: any) {
+        toast({ title: "Upload Failed", description: `Could not submit document. ${error.message}`, variant: "destructive"});
       } finally {
         setIsSubmitting(false);
       }
@@ -212,8 +228,8 @@ export default function ProfilePage() {
                     <Input id="name" name="name" value={editableFields.name} onChange={handleInputChange} disabled={isSubmitting} />
                   </div>
                   <div>
-                    <Label htmlFor="email">Email Address</Label>
-                    <Input id="email" name="email" type="email" value={editableFields.email} onChange={handleInputChange} disabled={isSubmitting} />
+                    <Label htmlFor="email">Email Address (Cannot change here)</Label>
+                    <Input id="email" name="email" type="email" value={editableFields.email} disabled={true} title="Email cannot be changed here." />
                   </div>
                   <div>
                     <Label htmlFor="phone">Phone Number</Label>
@@ -250,7 +266,7 @@ export default function ProfilePage() {
                     Please upload a document (e.g., National ID, Passport) to verify your identity.
                   </p>
                   <div className="relative">
-                    <Input type="file" id="documentUpload" className="opacity-0 absolute inset-0 w-full h-full cursor-pointer" onChange={handleFileUpload} disabled={isSubmitting || isEditing} />
+                    <Input type="file" id="documentUpload" className="opacity-0 absolute inset-0 w-full h-full cursor-pointer" onChange={handleFileUpload} disabled={isSubmitting || isEditing} accept="image/jpeg,image/png,application/pdf" />
                     <Button asChild variant="outline" className="w-full cursor-pointer" disabled={isSubmitting || isEditing}>
                       <label htmlFor="documentUpload" className="flex items-center justify-center cursor-pointer">
                         <UploadCloud className="h-5 w-5 mr-2" /> {isSubmitting ? 'Uploading...' : 'Upload Document'}
@@ -332,5 +348,3 @@ export default function ProfilePage() {
     </AppLayout>
   );
 }
-
-    
