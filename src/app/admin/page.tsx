@@ -95,7 +95,12 @@ export default function AdminPage() {
           </Sidebar>
           <SidebarInset className="flex-1 bg-background">
             <div className="p-4 md:p-6 lg:p-8">
-              <ActiveComponent />
+              {/* Pass setActiveSection to DashboardTab if it's the active component */}
+              {activeSection === 'dashboard' && ActiveComponent === DashboardTab ? (
+                <DashboardTab setActiveSection={setActiveSection} />
+              ) : (
+                <ActiveComponent />
+              )}
             </div>
           </SidebarInset>
         </div>
