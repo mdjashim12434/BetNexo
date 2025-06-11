@@ -1,7 +1,7 @@
 
 {
   "hosting": {
-    "public": "dist",
+    "public": "out",
     "ignore": [
       "firebase.json",
       "**/.*",
@@ -10,10 +10,7 @@
     "rewrites": [
       {
         "source": "**",
-        "run": {
-          "serviceId": "YOUR_APP_HOSTING_BACKEND_ID",
-          "region": "us-central1"
-        }
+        "destination": "/index.html"
       }
     ]
   }
