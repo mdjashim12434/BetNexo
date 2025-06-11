@@ -2,7 +2,7 @@
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
-  output: 'export', // Changed for static export
+  output: 'export', // Set to 'export' as requested for static site generation
   /* config options here */
   typescript: {
     ignoreBuildErrors: true,
