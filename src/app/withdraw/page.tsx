@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft } from "lucide-react";
+import { db, addDoc, collection, serverTimestamp } from '@/lib/firebase'; // Import Firestore functions
 
 
 const withdrawalMethods = [
@@ -24,12 +25,13 @@ const withdrawalMethods = [
 ];
 
 export default function WithdrawPage() {
-  const { user, balance, currency, updateBalance } = useAuth();
+  const { user, balance, currency } = useAuth(); // Removed updateBalance from here
   const router = useRouter();
   const { toast } = useToast();
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
   const [amount, setAmount] = useState('');
   const [accountDetails, setAccountDetails] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
 
   useEffect(() => {
@@ -44,15 +46,20 @@ export default function WithdrawPage() {
     setAccountDetails('');
   };
 
-  const handleWithdrawal = (e: React.FormEvent) => {
+  const handleWithdrawalRequest = async (e: React.FormEvent) => {
     e.preventDefault();
+     if (!user || !selectedMethod) {
+      toast({ title: "Error", description: "User or payment method not selected.", variant: "destructive" });
+      return;
+    }
+
     const withdrawalAmount = parseFloat(amount);
     if (isNaN(withdrawalAmount) || withdrawalAmount <= 0) {
       toast({ title: "Invalid Amount", description: "Please enter a valid positive amount.", variant: "destructive" });
       return;
     }
     if (withdrawalAmount > balance) {
-      toast({ title: "Insufficient Balance", description: "You do not have enough funds to withdraw this amount.", variant: "destructive" });
+      toast({ title: "Insufficient Balance", description: `You do not have enough funds to request a withdrawal of ${currency} ${withdrawalAmount.toFixed(2)}. Current balance: ${currency} ${balance.toFixed(2)}`, variant: "destructive" });
       return;
     }
     if (!accountDetails.trim()) {
@@ -60,34 +67,59 @@ export default function WithdrawPage() {
         return;
     }
 
-    // Mock withdrawal processing
-    updateBalance(-withdrawalAmount); // Subtract from balance
-    toast({ title: "Withdrawal Requested", description: `${currency} ${withdrawalAmount.toFixed(2)} withdrawal to ${accountDetails} is being processed.` });
-    setSelectedMethod(null);
-    setAmount('');
-    setAccountDetails('');
-    router.push('/'); // Or to a transactions history page
+    setIsSubmitting(true);
+    try {
+      const newTransaction = {
+        userId: user.id,
+        userName: user.name || user.email || 'N/A',
+        amount: withdrawalAmount,
+        currency: currency,
+        method: withdrawalMethods.find(m => m.id === selectedMethod)?.name || selectedMethod,
+        type: 'withdrawal' as const,
+        status: 'pending' as const,
+        accountDetails: accountDetails,
+        requestedAt: serverTimestamp(),
+      };
+
+      await addDoc(collection(db, "transactions"), newTransaction);
+
+      toast({ 
+        title: "Withdrawal Request Submitted", 
+        description: `${currency} ${withdrawalAmount.toFixed(2)} withdrawal request to ${accountDetails} is pending approval.` 
+      });
+      setSelectedMethod(null);
+      setAmount('');
+      setAccountDetails('');
+      router.push('/'); 
+    } catch (error) {
+        console.error("Error submitting withdrawal request:", error);
+        toast({ title: "Request Failed", description: "Could not submit your withdrawal request. Please try again.", variant: "destructive" });
+    } finally {
+        setIsSubmitting(false);
+    }
   };
 
   if (!user) {
     return <AppLayout><div className="text-center">Loading or redirecting...</div></AppLayout>;
   }
+
+  const currentMethodDetails = withdrawalMethods.find(m => m.id === selectedMethod);
   
   return (
     <AppLayout>
       <div className="max-w-2xl mx-auto">
-        {selectedMethod ? (
+        {selectedMethod && currentMethodDetails ? (
           <Card className="shadow-xl">
              <CardHeader>
               <Button variant="ghost" size="sm" onClick={() => setSelectedMethod(null)} className="absolute top-4 left-4">
                 <ArrowLeft className="mr-2 h-4 w-4" /> Back
               </Button>
               <CardTitle className="font-headline text-2xl text-center pt-8">
-                Withdraw via {withdrawalMethods.find(m => m.id === selectedMethod)?.name}
+                Withdraw via {currentMethodDetails.name}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleWithdrawal} className="space-y-4">
+              <form onSubmit={handleWithdrawalRequest} className="space-y-4">
                 <p className="text-sm text-muted-foreground">Available Balance: <span className="font-semibold text-foreground">{currency} {balance.toFixed(2)}</span></p>
                 <div>
                   <label htmlFor="amount" className="block text-sm font-medium text-foreground mb-1">
@@ -103,28 +135,33 @@ export default function WithdrawPage() {
                     step="0.01"
                     required
                     className="text-lg"
+                    disabled={isSubmitting}
                   />
                 </div>
                  <div>
                   <label htmlFor="accountDetails" className="block text-sm font-medium text-foreground mb-1">
-                    Account Details (e.g., Phone Number, Account Number)
+                    Account Details (e.g., Bkash/Nagad Number, Bank A/C)
                   </label>
                   <Input
                     id="accountDetails"
                     type="text"
                     value={accountDetails}
                     onChange={(e) => setAccountDetails(e.target.value)}
-                    placeholder="Enter your account details"
+                    placeholder="Enter your payment account details"
                     required
                     className="text-lg"
+                    disabled={isSubmitting}
                   />
                 </div>
-                <Button type="submit" className="w-full font-semibold text-lg py-3">
-                  Request Withdrawal
+                <Button type="submit" className="w-full font-semibold text-lg py-3" disabled={isSubmitting || withdrawalAmount > balance}>
+                  {isSubmitting ? 'Submitting Request...' : 'Submit Withdrawal Request'}
                 </Button>
+                 {parseFloat(amount) > balance && (
+                    <p className="text-xs text-destructive text-center">Withdrawal amount exceeds your available balance.</p>
+                )}
               </form>
                <p className="mt-4 text-xs text-muted-foreground text-center">
-                Withdrawals are typically processed within 24 hours. Ensure your account details are correct.
+                Withdrawals are typically processed within 24 hours after admin approval. Ensure your account details are correct.
               </p>
             </CardContent>
           </Card>

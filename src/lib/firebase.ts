@@ -2,7 +2,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAnalytics, isSupported } from "firebase/analytics";
-import { getFirestore, collection, doc, setDoc, getDoc, serverTimestamp, updateDoc } from "firebase/firestore";
+import { getFirestore, collection, doc, setDoc, getDoc, serverTimestamp, updateDoc, addDoc, query, where, getDocs, orderBy, Timestamp, runTransaction } from "firebase/firestore";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, signOut, onAuthStateChanged, type User as FirebaseUserType } from "firebase/auth";
 
 // Your web app's Firebase configuration
@@ -37,5 +37,28 @@ if (typeof window !== 'undefined') {
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-export { app, auth, analytics, db, collection, doc, setDoc, getDoc, serverTimestamp, updateDoc, firebaseConfig, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, signOut, onAuthStateChanged, type FirebaseUserType };
+// Function to update user balance in Firestore
+const updateUserBalanceInFirestore = async (userId: string, amountChange: number): Promise<void> => {
+  const userDocRef = doc(db, "users", userId);
+  try {
+    await runTransaction(db, async (transaction) => {
+      const userDoc = await transaction.get(userDocRef);
+      if (!userDoc.exists()) {
+        throw new Error("User document does not exist!");
+      }
+      const currentBalance = userDoc.data().balance || 0;
+      const newBalance = currentBalance + amountChange;
+      if (newBalance < 0) {
+        throw new Error("Insufficient balance for this operation.");
+      }
+      transaction.update(userDocRef, { balance: newBalance });
+    });
+  } catch (error) {
+    console.error("Error updating user balance in Firestore transaction:", error);
+    throw error; // Re-throw to be handled by caller
+  }
+};
+
+
+export { app, auth, analytics, db, collection, doc, setDoc, getDoc, serverTimestamp, updateDoc, addDoc, query, where, getDocs, orderBy, Timestamp, runTransaction, updateUserBalanceInFirestore, firebaseConfig, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, signOut, onAuthStateChanged, type FirebaseUserType };
 
