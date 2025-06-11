@@ -9,52 +9,53 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { Mail, Phone } from 'lucide-react';
+import { Mail, Phone, MessageSquare, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { auth, signInWithEmailAndPassword, sendEmailVerification } from '@/lib/firebase';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
-
-// Ensure emailOrPhone is a valid email for this flow
 const loginSchema = z.object({
   emailOrPhone: z.string().email({ message: 'Please enter a valid email address' }),
   password: z.string().min(6, { message: 'Password must be at least 6 characters' }),
+  rememberMe: z.boolean().optional(),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
+type AuthMethod = 'email' | 'phone' | 'sms' | 'social';
+
 export default function LoginPage() {
-  const { login: loginToAppContext, user: appUser, loadingAuth, firebaseUser } = useAuth(); // Renamed to avoid confusion
+  const { login: loginToAppContext, user: appUser, loadingAuth } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
+  const [activeMethod, setActiveMethod] = useState<AuthMethod>('email');
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
       emailOrPhone: '',
       password: '',
+      rememberMe: false,
     },
   });
 
   useEffect(() => {
-    if (!loadingAuth && appUser) {
+    if (!loadingAuth && appUser && appUser.emailVerified) { // Ensure user is also email verified before redirect
       router.push('/');
     }
   }, [appUser, loadingAuth, router]);
-
 
   async function onSubmit(data: LoginFormValues) {
     form.clearErrors();
     form.setValue('emailOrPhone', data.emailOrPhone.trim());
 
     try {
-      // 1. Sign in with Firebase Auth
       const userCredential = await signInWithEmailAndPassword(auth, data.emailOrPhone, data.password);
       const fbUser = userCredential.user;
 
-      // 2. Check email verification
       if (!fbUser.emailVerified) {
         toast({
           title: "Email Not Verified",
@@ -79,20 +80,17 @@ export default function LoginPage() {
             </Button>
           )
         });
-        return; // Stop login process
+        return;
       }
-
-      // 3. Email is verified, proceed to log into app context (fetches/creates Firestore doc)
+      
       const userPayloadForAppContext = {
         id: fbUser.uid,
         email: fbUser.email,
-        // Other fields like name, phone, currency, country will be fetched from Firestore by loginToAppContext
-        // For now, we only need enough to identify the user and confirm email verification status
-        currency: 'USD', // Dummy, will be overwritten by Firestore if doc exists
+        currency: 'USD', // Will be fetched/updated from Firestore by loginToAppContext
         emailVerified: fbUser.emailVerified,
       };
       
-      await loginToAppContext(userPayloadForAppContext, false); // false for isNewUser
+      await loginToAppContext(userPayloadForAppContext, false);
       
       toast({ title: "Login Successful", description: "Welcome back!" });
       router.push('/');
@@ -102,7 +100,7 @@ export default function LoginPage() {
       let errorMessage = "Could not log in. Please check credentials or try again.";
       if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
         errorMessage = "Invalid email or password. Please try again.";
-        form.setError("emailOrPhone", { type: "manual", message: " " }); // Clearer indication
+        form.setError("emailOrPhone", { type: "manual", message: " " });
         form.setError("password", { type: "manual", message: "Invalid email or password." });
       } else if (error.code === 'auth/too-many-requests') {
         errorMessage = "Too many login attempts. Please try again later.";
@@ -112,101 +110,137 @@ export default function LoginPage() {
       toast({ title: "Login Failed", description: errorMessage, variant: "destructive" });
     }
   }
-  
-  // If auth is still loading, show a generic loading message
+
   if (loadingAuth) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background p-4">
-        <Card className="w-full max-w-md shadow-xl">
-          <CardHeader className="text-center">
-            <CardTitle className="font-headline text-3xl text-primary">Loading...</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-center text-muted-foreground">Checking your session...</p>
-          </CardContent>
-        </Card>
+        <div className="text-center text-muted-foreground">Loading session...</div>
       </div>
     );
   }
-
-
-  // If user is already logged in (and verified), redirect from login page
-  // This check is now mostly handled by onAuthStateChanged, but as a fallback
+  
   if (appUser && appUser.emailVerified) {
-     router.push('/'); // Should ideally be caught by useEffect, but good to have
-     return <div className="text-center p-10">Redirecting...</div>; // Or a loading spinner
+     return <div className="flex min-h-screen items-center justify-center bg-background p-4"><div className="text-center text-muted-foreground">Redirecting...</div></div>;
   }
+
+  const AuthMethodButton = ({ method, icon: Icon, label }: { method: AuthMethod, icon: React.ElementType, label: string }) => (
+    <Button
+      variant={activeMethod === method ? 'default' : 'outline'}
+      onClick={() => setActiveMethod(method)}
+      className={`flex-1 py-3 ${activeMethod === method ? 'bg-card text-foreground' : 'bg-background'}`}
+      disabled={method !== 'email'} // Only email is active
+    >
+      <Icon className="mr-2 h-5 w-5" />
+      {label}
+    </Button>
+  );
 
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md shadow-xl">
-        <CardHeader className="text-center">
-          <CardTitle className="font-headline text-3xl text-primary">BETBABU Login</CardTitle>
-          <CardDescription>Access your account to start playing</CardDescription>
+    <div className="flex min-h-screen flex-col items-center justify-center bg-muted p-4">
+      <header className="w-full max-w-md rounded-t-lg bg-popover p-4">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-primary">BETBABU</h1>
+          <div className="space-x-2">
+            <Button variant="ghost" className="text-accent font-semibold px-3 py-2 rounded-md">
+              Log in
+            </Button>
+            <Button variant="ghost" asChild className="px-3 py-2 rounded-md text-muted-foreground">
+              <Link href="/signup">Registration</Link>
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      <Card className="w-full max-w-md shadow-xl rounded-t-none rounded-b-lg">
+        <CardHeader className="bg-popover p-4">
+          <CardTitle className="text-lg text-center text-foreground">LOG IN</CardTitle>
         </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField
-                control={form.control}
-                name="emailOrPhone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-                        <Input type="email" placeholder="your@email.com" {...field} className="pl-10" />
+        <CardContent className="p-6 space-y-6">
+          <div className="flex space-x-2">
+            <AuthMethodButton method="email" icon={Mail} label="By email" />
+            <AuthMethodButton method="phone" icon={Phone} label="By phone" />
+            <AuthMethodButton method="sms" icon={MessageSquare} label="By SMS" />
+            <AuthMethodButton method="social" icon={Users} label="Social networks" />
+          </div>
+
+          {activeMethod === 'email' && (
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="emailOrPhone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-muted-foreground">E-mail or ID*</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="your@email.com" {...field} className="bg-background border-border focus:border-primary" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-muted-foreground">Password*</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="••••••••" {...field} className="bg-background border-border focus:border-primary" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="rememberMe"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel className="text-muted-foreground">
+                          Remember me
+                        </FormLabel>
                       </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <FormControl>
-                      <Input type="password" placeholder="••••••••" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button type="submit" className="w-full font-semibold" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? 'Logging In...' : 'Login'}
-              </Button>
-            </form>
-          </Form>
-          <div className="mt-6 text-center">
-            <p className="text-sm text-muted-foreground">Or login with</p>
-            <div className="mt-2 flex justify-center space-x-3">
-              <Button variant="outline" className="w-full" disabled>
-                <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24" fill="currentColor" data-ai-hint="google logo">
-                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                  <path d="M1 1h22v22H1z" fill="none" />
-                </svg>
-                Google (Coming Soon)
-              </Button>
+                    </FormItem>
+                  )}
+                />
+                <Button type="submit" className="w-full font-semibold bg-accent text-accent-foreground hover:bg-accent/90 py-3 text-base" disabled={form.formState.isSubmitting}>
+                  {form.formState.isSubmitting ? 'LOGGING IN...' : 'LOG IN'}
+                </Button>
+              </form>
+            </Form>
+          )}
+          {activeMethod !== 'email' && (
+            <div className="text-center p-8 text-muted-foreground">
+              <p>{activeMethod.charAt(0).toUpperCase() + activeMethod.slice(1)} login method is coming soon.</p>
             </div>
+          )}
+
+          <div className="text-center text-sm">
+            <Button variant="link" className="p-0 text-accent h-auto" asChild>
+              <Link href="#">Forgot your password?</Link>
+            </Button>
+          </div>
+          <div className="text-center text-sm text-muted-foreground">
+            Don&apos;t have an account?{' '}
+            <Button variant="link" className="p-0 text-accent h-auto font-semibold" asChild>
+              <Link href="/signup">Register</Link>
+            </Button>
           </div>
         </CardContent>
-        <CardFooter className="text-center text-sm">
-          <p className="w-full">
-            Don&apos;t have an account?{' '}
-            <Button variant="link" className="p-0 text-primary" asChild>
-              <Link href="/signup">Sign up</Link>
-            </Button>
-          </p>
-        </CardFooter>
       </Card>
+      <footer className="w-full max-w-md bg-popover p-4 text-center text-sm text-muted-foreground rounded-b-lg mt-0 border-t border-border">
+        BETBABU Log in to your account
+      </footer>
     </div>
   );
 }
