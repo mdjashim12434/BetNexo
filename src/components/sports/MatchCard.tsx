@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
@@ -16,6 +17,7 @@ export interface Match {
   oddsDraw?: string;
   oddsB?: string;
   imageUrl?: string;
+  imageAiHint?: string; // Added for AI hint consistency
   status?: 'upcoming' | 'live' | 'finished';
 }
 
@@ -31,7 +33,13 @@ const MatchCard: FC<MatchCardProps> = ({ match }) => {
     <Card className="overflow-hidden shadow-lg hover:shadow-primary/20 transition-shadow duration-300">
       {match.imageUrl && (
         <div className="relative h-40 w-full">
-          <Image src={match.imageUrl} alt={`${match.teamA} vs ${match.teamB}`} layout="fill" objectFit="cover" data-ai-hint={`${match.sport} match`} />
+          <Image 
+            src={match.imageUrl} 
+            alt={`${match.teamA} vs ${match.teamB}`} 
+            layout="fill" 
+            objectFit="cover" 
+            data-ai-hint={match.imageAiHint || `${match.sport} match`} // Use imageAiHint
+          />
           {isLive && (
             <span className="absolute top-2 right-2 bg-red-600 text-white px-2 py-1 text-xs font-bold rounded animate-pulse">LIVE</span>
           )}
@@ -59,6 +67,8 @@ const MatchCard: FC<MatchCardProps> = ({ match }) => {
       </CardContent>
       <CardFooter>
         <Button variant="default" className="w-full" asChild>
+          {/* Ensure the link is correctly formed for static export. 
+              It will point to /match/[id].html implicitly. */}
           <Link href={`/match/${match.id}`}>
             View Details <ArrowRight className="ml-2 h-4 w-4" />
           </Link>
@@ -69,3 +79,5 @@ const MatchCard: FC<MatchCardProps> = ({ match }) => {
 };
 
 export default MatchCard;
+
+    

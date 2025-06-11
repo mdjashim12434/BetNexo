@@ -12,23 +12,36 @@ import type { Match } from '@/components/sports/MatchCard';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/ui/input';
-import { useToast } from '@/hooks/use-toast'; // Import useToast
+import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
+// Moved mockMatches and getMatchDetails outside the component for generateStaticParams
+const mockMatches: Match[] = [
+    { id: '1', teamA: 'India', teamB: 'Australia', time: '14:00 Local', sport: 'Cricket', league: 'World Cup', oddsA: '1.80', oddsB: '2.10', status: 'upcoming', imageUrl: 'https://placehold.co/800x400.png?text=Cricket+Stadium', imageAiHint: 'cricket stadium' },
+    { id: '2', teamA: 'England', teamB: 'South Africa', time: 'LIVE', sport: 'Cricket', league: 'Test Series', oddsA: '2.00', oddsDraw: '3.50', oddsB: '2.50', status: 'live', imageUrl: 'https://placehold.co/800x400.png?text=Live+Cricket+Action', imageAiHint: 'live cricket' },
+    { id: '3', teamA: 'Real Madrid', teamB: 'Barcelona', time: 'Tomorrow 19:00 GMT', sport: 'Football', league: 'La Liga', oddsA: '2.20', oddsDraw: '3.20', oddsB: '3.00', status: 'upcoming', imageUrl: 'https://placehold.co/800x400.png?text=Football+Pitch', imageAiHint: 'football pitch' },
+    { id: '4', teamA: 'Man City', teamB: 'Liverpool', time: 'LIVE', sport: 'Football', league: 'Premier League', oddsA: '1.90', oddsDraw: '3.60', oddsB: '3.80', status: 'live', imageUrl: 'https://placehold.co/800x400.png?text=Live+Football+Action', imageAiHint: 'live football' },
+    { id: '5', teamA: 'Warriors', teamB: 'Lakers', time: 'Today 20:00 PST', sport: 'Basketball', league: 'NBA', oddsA: '1.75', oddsB: '2.15', status: 'upcoming', imageAiHint: 'basketball game' },
+    { id: '6', teamA: 'Chennai Super Kings', teamB: 'Mumbai Indians', time: '20 Apr 2024, 18:30', sport: 'Cricket', league: 'IPL', oddsA: '1.95', oddsB: '1.85', status: 'upcoming', imageUrl: 'https://placehold.co/600x300.png?text=IPL+Match', imageAiHint: 'cricket ipl' },
+    { id: '7', teamA: 'PSG', teamB: 'Bayern Munich', time: 'LIVE', sport: 'Football', league: 'Champions League', oddsA: '2.50', oddsDraw: '3.40', oddsB: '2.70', status: 'live', imageAiHint: 'champions league' },
+];
+
+// This function will be used by generateStaticParams at build time
+// and by the component at runtime (client-side)
 const getMatchDetails = async (id: string): Promise<Match | null> => {
-  // In a real app, fetch this from an API (e.g., Opticodds)
-  // Using mock data for now
-  const mockMatches: Match[] = [
-    { id: '1', teamA: 'India', teamB: 'Australia', time: '14:00 Local', sport: 'Cricket', league: 'World Cup', oddsA: '1.80', oddsB: '2.10', status: 'upcoming', imageUrl: 'https://placehold.co/800x400.png?text=Cricket+Stadium' },
-    { id: '2', teamA: 'England', teamB: 'South Africa', time: 'LIVE', sport: 'Cricket', league: 'Test Series', oddsA: '2.00', oddsDraw: '3.50', oddsB: '2.50', status: 'live', imageUrl: 'https://placehold.co/800x400.png?text=Live+Cricket+Action' },
-    { id: '3', teamA: 'Real Madrid', teamB: 'Barcelona', time: 'Tomorrow 19:00 GMT', sport: 'Football', league: 'La Liga', oddsA: '2.20', oddsDraw: '3.20', oddsB: '3.00', status: 'upcoming', imageUrl: 'https://placehold.co/800x400.png?text=Football+Pitch' },
-    { id: '4', teamA: 'Man City', teamB: 'Liverpool', time: 'LIVE', sport: 'Football', league: 'Premier League', oddsA: '1.90', oddsDraw: '3.60', oddsB: '3.80', status: 'live', imageUrl: 'https://placehold.co/800x400.png?text=Live+Football+Action' },
-    { id: '5', teamA: 'Warriors', teamB: 'Lakers', time: 'Today 20:00 PST', sport: 'Basketball', league: 'NBA', oddsA: '1.75', oddsB: '2.15', status: 'upcoming' },
-    { id: '6', teamA: 'Chennai Super Kings', teamB: 'Mumbai Indians', time: '20 Apr 2024, 18:30', sport: 'Cricket', league: 'IPL', oddsA: '1.95', oddsB: '1.85', status: 'upcoming', imageUrl: 'https://placehold.co/600x300.png?text=IPL+Match' },
-    { id: '7', teamA: 'PSG', teamB: 'Bayern Munich', time: 'LIVE', sport: 'Football', league: 'Champions League', oddsA: '2.50', oddsDraw: '3.40', oddsB: '2.70', status: 'live' },
-  ];
+  // In a real app, fetch this from an API if data isn't static
+  // For static export with dynamic params, this mock data is used.
   return mockMatches.find(m => m.id === id) || null;
 };
+
+// generateStaticParams function to pre-render paths at build time
+export async function generateStaticParams() {
+  // Generate params for a subset or all matches.
+  // For a large number of matches, consider generating only popular ones or recent ones.
+  return mockMatches.map((match) => ({
+    id: match.id,
+  }));
+}
 
 type BetOutcome = 'teamA' | 'draw' | 'teamB';
 
@@ -57,9 +70,14 @@ export default function MatchDetailPage() {
       getMatchDetails(matchId).then(data => {
         setMatch(data);
         setLoadingMatch(false);
+      }).catch(error => {
+        console.error("Failed to load match details:", error);
+        setMatch(null);
+        setLoadingMatch(false);
       });
     } else {
       setLoadingMatch(false);
+      setMatch(null); // No matchId, so no match
     }
   }, [matchId]);
 
@@ -110,9 +128,8 @@ export default function MatchDetailPage() {
       return;
     }
 
-    // Mock bet placement
     try {
-      await updateBalance(-amount); // Deduct bet amount
+      await updateBalance(-amount); 
       let outcomeText = '';
       if (selectedOutcome === 'teamA') outcomeText = match.teamA;
       else if (selectedOutcome === 'draw') outcomeText = 'Draw';
@@ -125,25 +142,29 @@ export default function MatchDetailPage() {
       setSelectedOutcome(null);
       setBetAmount('');
       setPotentialWinnings(0);
-      // In a real app, you'd send this bet to your backend here
     } catch (error) {
       console.error("Error placing bet:", error);
       toast({ title: "Bet Failed", description: "Could not place your bet. Please try again.", variant: "destructive" });
     }
   };
 
-
-  if (loadingAuth || !user || loadingMatch) {
+  if (loadingAuth || loadingMatch && !match ) { // Show loading if auth is loading OR match is loading AND not yet set
     return <AppLayout><div className="text-center p-10">Loading match details or redirecting...</div></AppLayout>;
   }
-
-  if (!match) {
+  
+  // If user is not logged in (and auth is not loading anymore), they are redirected by the first useEffect.
+  // If matchId is present but match is null after loading, it means match not found.
+  if (matchId && !match && !loadingMatch) {
     return <AppLayout><div className="text-center p-10">Match not found.</div></AppLayout>;
+  }
+  
+  // If there's no matchId (e.g. route was `/match/` without an id), or match could not be found
+  if (!match) {
+     return <AppLayout><div className="text-center p-10">Match details are unavailable. Please go back and select a match.</div></AppLayout>;
   }
   
   const isLive = match.status === 'live';
   const isFinished = match.status === 'finished';
-
 
   const getOutcomeButton = (outcome: BetOutcome, label: string, odds?: string) => {
     if (!odds) return null;
@@ -164,7 +185,6 @@ export default function MatchDetailPage() {
     );
   };
 
-
   return (
     <AppLayout>
       <div className="space-y-6">
@@ -175,7 +195,7 @@ export default function MatchDetailPage() {
         <Card className="overflow-hidden shadow-xl">
           {match.imageUrl && (
             <div className="relative h-64 w-full">
-              <Image src={match.imageUrl} alt={`${match.teamA} vs ${match.teamB}`} layout="fill" objectFit="cover" data-ai-hint={`${match.sport} action`} />
+              <Image src={match.imageUrl} alt={`${match.teamA} vs ${match.teamB}`} layout="fill" objectFit="cover" data-ai-hint={match.imageAiHint || `${match.sport} action`} />
                {(isLive || isFinished) && (
                 <span className={cn("absolute top-4 right-4 text-white px-3 py-1.5 text-sm font-bold rounded", {
                   "bg-red-600 animate-pulse": isLive,
@@ -257,7 +277,7 @@ export default function MatchDetailPage() {
                         )}
                       </div>
                     )}
-                    {!selectedOutcome && (
+                    {!selectedOutcome && !isFinished && (
                          <p className="text-sm text-muted-foreground text-center py-4">
                            Please select an outcome above to place a bet.
                          </p>
@@ -315,6 +335,5 @@ export default function MatchDetailPage() {
     </AppLayout>
   );
 }
-
 
     
