@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://betbabu-5e02b.web.app/sitemap.xml
