@@ -74,16 +74,12 @@ export default function LoginPage() {
           variant: "destructive",
           duration: 10000,
         });
-        // Do not proceed to loginToAppContext or redirect if email is not verified
-        // The user context will remain null, and they will stay on the login page
         return;
       }
       
-      // Email is verified, proceed to set app context and redirect
       const userPayloadForAppContext = {
         id: fbUser.uid,
         email: fbUser.email,
-        // currency and role will be fetched by loginToAppContext
         emailVerified: fbUser.emailVerified,
       };
       
@@ -93,7 +89,6 @@ export default function LoginPage() {
         toast({ title: "Login Successful", description: "Welcome back!" });
         // Redirection is handled by the useEffect hook once appUser is set
       } else {
-         // This case implies loginToAppContext failed to retrieve/create user doc
          toast({ title: "Login Error", description: "Could not retrieve your user details after login. Please check if your account is fully set up or contact support.", variant: "destructive", duration: 7000 });
       }
 
@@ -106,7 +101,7 @@ export default function LoginPage() {
         form.setError("password", { type: "manual", message: "Invalid email or password." });
       } else if (error.code === 'auth/too-many-requests') {
         errorMessage = "Too many login attempts. Please try again later.";
-      } else if (error.message) { // Catch errors from loginToAppContext like "User data not found"
+      } else if (error.message) { 
         errorMessage = error.message;
       }
       toast({ title: "Login Failed", description: errorMessage, variant: "destructive" });
@@ -136,13 +131,12 @@ export default function LoginPage() {
     );
   }
   
-  // If appUser is set and emailVerified, useEffect will redirect. Show a message.
-  if (appUser && appUser.emailVerified) {
-     const destination = appUser.role === 'Admin' ? 'Admin Dashboard' : 'User Dashboard';
-     return <div className="flex min-h-screen items-center justify-center bg-background p-4"><div className="text-center text-muted-foreground">Redirecting to {destination}...</div></div>;
-  }
-
-  // If user is not logged in, or logged in but email not verified, show the form.
+  // If user is already logged in & verified, useEffect above will redirect.
+  // If not loadingAuth, and not (appUser && appUser.emailVerified), then show the form.
+  // This covers:
+  // - User is not logged in (appUser is null)
+  // - User is logged in but email is not verified (appUser exists, appUser.emailVerified is false)
+  
   const AuthMethodButton = ({ method, icon: Icon, label }: { method: AuthMethod, icon: React.ElementType, label:string }) => (
     <Button
       variant={activeMethod === method ? 'default' : 'outline'}
@@ -280,4 +274,3 @@ export default function LoginPage() {
     </div>
   );
 }
-

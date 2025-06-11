@@ -48,58 +48,64 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const userDocSnap = await getDoc(userDocRef);
       if (userDocSnap.exists()) {
         const firestoreData = userDocSnap.data();
+        console.log(`AuthContext: Fetched Firestore data for UID ${uid}:`, JSON.parse(JSON.stringify(firestoreData || {}))); // Log raw data safely
         const ensuredCurrency = firestoreData.currency || 'USD';
-        const ensuredRole = firestoreData.role || 'User';
-        return { 
-          id: uid, 
-          ...firestoreData, 
-          currency: ensuredCurrency, 
-          role: ensuredRole 
+        const ensuredRole = firestoreData.role || 'User'; // Default to 'User' if role is missing
+        console.log(`AuthContext: UID ${uid} - Firestore role found: '${firestoreData.role}', Ensured/Defaulted role: '${ensuredRole}'`);
+        return {
+          id: uid,
+          ...firestoreData,
+          currency: ensuredCurrency,
+          role: ensuredRole
         } as User;
       }
-      console.warn("User document not found in Firestore for UID:", uid);
+      console.warn("AuthContext: User document not found in Firestore for UID:", uid);
       return null;
     } catch (error) {
-      console.error("Error fetching user document:", error);
+      console.error("AuthContext: Error fetching user document for UID " + uid + ":", error);
       return null;
     }
   }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
-      setLoadingAuth(true); 
+      setLoadingAuth(true);
       try {
         if (fbUser) {
           setFirebaseUser(fbUser);
-          if (fbUser.emailVerified) { 
+          if (fbUser.emailVerified) {
+            console.log("AuthContext: Firebase user email IS verified for UID:", fbUser.uid);
             const firestoreUser = await fetchUserDocument(fbUser.uid);
             if (firestoreUser) {
               setUser({ ...firestoreUser, emailVerified: fbUser.emailVerified });
-              setLocalCurrency(firestoreUser.currency); 
+              setLocalCurrency(firestoreUser.currency || 'USD'); // Ensure currency has a fallback
               setLocalBalance(firestoreUser.balance || 0);
-              localStorage.setItem('betbabu-user-uid', fbUser.uid); 
+              localStorage.setItem('betbabu-user-uid', fbUser.uid);
+              console.log("AuthContext: App user state SET for verified user:", {...firestoreUser, emailVerified: fbUser.emailVerified});
             } else {
-              console.warn("AuthContext: Firestore document missing for authenticated and verified Firebase user:", fbUser.uid, "User might need to complete signup or document was removed.");
-              setUser(null); 
+              console.warn("AuthContext: Firestore document MISSING for authenticated and verified Firebase user:", fbUser.uid, "User might need to complete signup or document was removed. App user state CLEARED.");
+              setUser(null);
               localStorage.removeItem('betbabu-user-uid');
             }
           } else {
-            setUser(null); 
+            console.log("AuthContext: Firebase user email NOT verified for UID:", fbUser.uid, "App user state CLEARED.");
+            setUser(null);
             localStorage.removeItem('betbabu-user-uid');
-            console.log("AuthContext: User email not verified, app user state cleared.");
           }
         } else {
+          console.log("AuthContext: No Firebase user. App user state CLEARED.");
           setUser(null);
           setFirebaseUser(null);
           localStorage.removeItem('betbabu-user-uid');
         }
       } catch (error) {
-        console.error("Error in onAuthStateChanged listener:", error);
-        setUser(null); 
+        console.error("AuthContext: Error in onAuthStateChanged listener:", error);
+        setUser(null);
         setFirebaseUser(null);
         localStorage.removeItem('betbabu-user-uid');
       } finally {
         setLoadingAuth(false);
+        console.log("AuthContext: onAuthStateChanged finished, loadingAuth set to false.");
       }
     });
 
@@ -108,47 +114,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (userDataFromAuth: { id: string; email?: string; phone?: string; name?: string; currency?: string; country?: string; emailVerified?: boolean, role?: 'Admin' | 'User' | 'Agent' }, isNewUser: boolean = false): Promise<User | null> => {
     setLoadingAuth(true);
+    console.log("AuthContext: Login function called. isNewUser:", isNewUser, "UID:", userDataFromAuth.id);
     try {
       let finalUserData: User | null = null;
       const uid = userDataFromAuth.id;
-      const currentFbUser = auth.currentUser; // Get current Firebase user for potential prefill
+      const currentFbUser = auth.currentUser;
 
-      // Determine defaults carefully based on what's passed and what's in Firebase Auth
       const defaultCurrency = userDataFromAuth.currency || 'USD';
-      const defaultRole = userDataFromAuth.role || 'User';
+      const defaultRoleFromInput = userDataFromAuth.role; // Might be undefined
       const defaultName = userDataFromAuth.name || currentFbUser?.displayName || (currentFbUser?.email ? currentFbUser.email.split('@')[0] : 'User');
       const defaultEmail = userDataFromAuth.email || currentFbUser?.email || '';
       const defaultPhone = userDataFromAuth.phone || currentFbUser?.phoneNumber || '';
-      
-      let firestoreUser: User | null = null;
+      const emailVerifiedStatus = userDataFromAuth.emailVerified ?? currentFbUser?.emailVerified ?? false;
 
       if (isNewUser) {
+        console.log("AuthContext: Handling as NEW user for UID:", uid);
         const userDocRef = doc(db, "users", uid);
         const initialBalance = 0;
         const newUserDocData: Omit<User, 'id' | 'emailVerified' | 'avatarUrl' | 'isVerified'> & { createdAt: any, isVerified: boolean, role: 'Admin' | 'User' | 'Agent', currency: string } = {
           name: defaultName,
-          email: defaultEmail, 
+          email: defaultEmail,
           phone: defaultPhone,
           currency: defaultCurrency,
           country: userDataFromAuth.country || '',
           balance: initialBalance,
-          isVerified: false, 
+          isVerified: false,
           createdAt: serverTimestamp(),
-          role: defaultRole, 
+          role: defaultRoleFromInput || 'User', // If role provided in signup, use it, else 'User'
         };
         await setDoc(userDocRef, newUserDocData);
-        finalUserData = { 
+        console.log("AuthContext: NEW user document created in Firestore for UID:", uid, "with role:", newUserDocData.role);
+        finalUserData = {
           ...newUserDocData,
           id: uid,
-          emailVerified: userDataFromAuth.emailVerified ?? currentFbUser?.emailVerified ?? false, 
+          emailVerified: emailVerifiedStatus,
         };
       } else {
-        firestoreUser = await fetchUserDocument(uid);
+        console.log("AuthContext: Handling as EXISTING user for UID:", uid);
+        let firestoreUser = await fetchUserDocument(uid);
         if (firestoreUser) {
-          finalUserData = { ...firestoreUser, id: uid, emailVerified: userDataFromAuth.emailVerified ?? currentFbUser?.emailVerified ?? firestoreUser.emailVerified ?? false };
+           console.log("AuthContext: Existing user document FOUND in Firestore for UID:", uid, "Fetched role:", firestoreUser.role);
+          finalUserData = { ...firestoreUser, id: uid, emailVerified: emailVerifiedStatus };
         } else {
-          // Firestore document doesn't exist, but Firebase user does (isNewUser is false). Create it.
-          console.warn(`AuthContext login: Firestore document not found for existing Firebase user ${uid}. Creating one.`);
+          console.warn(`AuthContext login: Firestore document NOT FOUND for existing Firebase user ${uid}. Creating one with defaults.`);
           const userDocRef = doc(db, "users", uid);
           const docDataToSet: Omit<User, 'id' | 'emailVerified' | 'avatarUrl' | 'isVerified'> & { createdAt: any, isVerified: boolean, role: 'Admin' | 'User' | 'Agent', currency: string } = {
             name: defaultName,
@@ -159,82 +167,95 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             balance: 0,
             isVerified: false,
             createdAt: serverTimestamp(),
-            role: defaultRole,
+            role: defaultRoleFromInput || 'User', // For an existing Firebase user without Firestore doc, default to 'User' unless a role is passed (unlikely for login)
           };
           await setDoc(userDocRef, docDataToSet);
+          console.log("AuthContext: Firestore document CREATED for existing Firebase user UID:", uid, "with role:", docDataToSet.role);
           finalUserData = {
             ...docDataToSet,
             id: uid,
-            emailVerified: userDataFromAuth.emailVerified ?? currentFbUser?.emailVerified ?? false,
+            emailVerified: emailVerifiedStatus,
           };
         }
       }
-      
+
       if (finalUserData) {
+        // Ensure role in finalUserData is what was intended (especially from Firestore or new user creation)
+        console.log("AuthContext: Final user data for app state:", finalUserData);
+        if (!emailVerifiedStatus && finalUserData.role === 'Admin') {
+            console.warn(`AuthContext: Admin user ${uid} email is not verified. They might not be able to access admin functionalities until email is verified.`);
+        }
+
         setUser(finalUserData);
-        setLocalCurrency(finalUserData.currency); 
+        setLocalCurrency(finalUserData.currency);
         setLocalBalance(finalUserData.balance || 0);
-        localStorage.setItem('betbabu-user-uid', uid);
+        if(emailVerifiedStatus) { // Only set in localStorage if email is verified to align with onAuthStateChanged logic
+            localStorage.setItem('betbabu-user-uid', uid);
+        } else {
+            localStorage.removeItem('betbabu-user-uid');
+        }
+        console.log("AuthContext: App user state updated after login function for UID:", uid, "Role:", finalUserData.role, "EmailVerified:", emailVerifiedStatus);
         return finalUserData;
       } else {
+        console.error("AuthContext: Login function - finalUserData is null, failed to establish user session. UID:", uid);
         throw new Error("Failed to establish user session in app context.");
       }
 
     } catch (error) {
-      console.error("Error during app context login/signup:", error);
+      console.error("AuthContext: Error during app context login/signup for UID:", userDataFromAuth.id, error);
       setUser(null);
       setLocalBalance(0);
       setLocalCurrency('USD');
       localStorage.removeItem('betbabu-user-uid');
-      throw error; 
+      throw error;
     } finally {
       setLoadingAuth(false);
+      console.log("AuthContext: Login function finished, loadingAuth set to false for UID:", userDataFromAuth.id);
     }
   };
 
   const logout = async () => {
     setLoadingAuth(true);
+    console.log("AuthContext: Logout function called.");
     try {
       await signOut(auth);
+      // State will be cleared by onAuthStateChanged
     } catch (error) {
-      console.error("Firebase signOut error:", error);
+      console.error("AuthContext: Firebase signOut error:", error);
+      // Force clear state if signOut fails before onAuthStateChanged can react
       setUser(null);
       setFirebaseUser(null);
       setLocalBalance(0);
       setLocalCurrency('USD');
       localStorage.removeItem('betbabu-user-uid');
-    } finally {
-      // onAuthStateChanged will handle resetting state, so setLoadingAuth(false) there is key.
-      // However, if signOut itself has an error before onAuthStateChanged fires,
-      // we might need to ensure loadingAuth is false.
-      // For now, let onAuthStateChanged handle it to avoid race conditions.
+      setLoadingAuth(false); // Ensure loading is false if error occurs here
     }
   };
 
   const setCurrency = async (newCurrency: string) => {
     if (user) {
-      const originalUserCurrency = user.currency; 
+      const originalUserCurrency = user.currency;
       const updatedUser = { ...user, currency: newCurrency };
-      setUser(updatedUser); 
+      setUser(updatedUser);
       setLocalCurrency(newCurrency);
       const userDocRef = doc(db, "users", user.id);
       try {
         await updateDoc(userDocRef, { currency: newCurrency });
       } catch (error) {
         console.error("Failed to update currency in Firestore:", error);
-        setUser({ ...user, currency: originalUserCurrency }); 
+        setUser({ ...user, currency: originalUserCurrency });
         setLocalCurrency(originalUserCurrency);
       }
     }
   };
-  
+
   const updateBalance = async (amountChange: number) => {
     if (user) {
       const currentBalance = user.balance || 0;
       const newBalance = currentBalance + amountChange;
-      const originalUserBalance = user.balance; 
+      const originalUserBalance = user.balance;
 
-      setUser({ ...user, balance: newBalance }); 
+      setUser({ ...user, balance: newBalance });
       setLocalBalance(newBalance);
       const userDocRef = doc(db, "users", user.id);
       try {
@@ -261,3 +282,4 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
+
