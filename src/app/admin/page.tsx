@@ -3,12 +3,13 @@
 
 import AppLayout from "@/components/AppLayout";
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarInset } from "@/components/ui/sidebar";
-import { LayoutDashboard, Users, DollarSign, History, Briefcase, ShieldAlert } from "lucide-react";
+import { LayoutDashboard, Users, DollarSign, History, Briefcase, ShieldAlert, ListChecks } from "lucide-react";
 import UserManagementTab from "@/components/admin/UserManagementTab";
 import BalanceControlTab from "@/components/admin/BalanceControlTab";
 import AgentManagementTab from "@/components/admin/AgentManagementTab";
 import TransactionsLogTab from "@/components/admin/TransactionsLogTab";
 import DashboardTab from "@/components/admin/DashboardTab";
+import BetHistoryTab from "@/components/admin/BetHistoryTab"; // Import BetHistoryTab
 
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
@@ -27,6 +28,7 @@ const navItems: NavItem[] = [
   { id: 'balanceSheet', label: 'Balance Sheet', icon: DollarSign, component: BalanceControlTab },
   { id: 'transactionsLog', label: 'Transaction Logs', icon: History, component: TransactionsLogTab },
   { id: 'agentControl', label: 'Agent Control', icon: Briefcase, component: AgentManagementTab },
+  { id: 'betHistory', label: 'Bet History', icon: ListChecks, component: BetHistoryTab }, // Add Bet History
 ];
 
 export default function AdminPage() {
@@ -108,3 +110,5 @@ export default function AdminPage() {
     </AppLayout>
   );
 }
+
+    
