@@ -3,13 +3,14 @@
 
 import AppLayout from "@/components/AppLayout";
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarInset } from "@/components/ui/sidebar";
-import { LayoutDashboard, Users, DollarSign, History, Briefcase, ShieldAlert, ListChecks } from "lucide-react";
+import { LayoutDashboard, Users, DollarSign, History, Briefcase, ShieldAlert, ListChecks, CreditCard } from "lucide-react"; // Added CreditCard
 import UserManagementTab from "@/components/admin/UserManagementTab";
 import BalanceControlTab from "@/components/admin/BalanceControlTab";
 import AgentManagementTab from "@/components/admin/AgentManagementTab";
 import TransactionsLogTab from "@/components/admin/TransactionsLogTab";
 import DashboardTab from "@/components/admin/DashboardTab";
 import BetHistoryTab from "@/components/admin/BetHistoryTab";
+import PaymentMethodsManagementTab from "@/components/admin/PaymentMethodsManagementTab"; // Added
 
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
@@ -27,6 +28,7 @@ const navItems: NavItem[] = [
   { id: 'userManagement', label: 'Manage Users', icon: Users, component: UserManagementTab },
   { id: 'balanceSheet', label: 'Balance Sheet', icon: DollarSign, component: BalanceControlTab },
   { id: 'transactionsLog', label: 'Transaction Logs', icon: History, component: TransactionsLogTab },
+  { id: 'paymentMethods', label: 'Payment Methods', icon: CreditCard, component: PaymentMethodsManagementTab }, // New Item
   { id: 'agentControl', label: 'Agent Control', icon: Briefcase, component: AgentManagementTab },
   { id: 'betHistory', label: 'Bet History', icon: ListChecks, component: BetHistoryTab },
 ];
@@ -42,7 +44,7 @@ export default function AdminPage() {
       if (!user || !user.emailVerified) {
         console.log('AdminPage: No user or email not verified, redirecting to /login');
         router.push('/login');
-      } else if (user.role !== 'Admin') { // This check is safe because user and user.emailVerified is true here
+      } else if (user.role !== 'Admin') { 
         console.log(`AdminPage: User role is "${user.role}", redirecting to /`);
         router.push('/'); 
       } else {
@@ -55,27 +57,20 @@ export default function AdminPage() {
     return <AppLayout><div className="flex items-center justify-center min-h-screen"><div className="text-center p-10">Loading authentication for Admin...</div></div></AppLayout>;
   }
 
-  // Explicitly check user and emailVerified before checking role
   if (!user || !user.emailVerified) {
-    // This case means useEffect should have already initiated a redirect to /login.
-    // If somehow reached, it means user is null or email not verified after loadingAuth is false.
     return <AppLayout><div className="flex items-center justify-center min-h-screen"><div className="text-center p-10">Redirecting to login... (User not found or email not verified)</div></div></AppLayout>;
   }
   
-  // At this point, user exists and email is verified. Now check role.
   if (user.role !== 'Admin') {
-     // This case means user is logged in, email verified, but not an Admin.
-     // The useEffect should have already initiated a redirect to /.
     return <AppLayout><div className="flex items-center justify-center min-h-screen"><div className="text-center p-10">Access Denied. Redirecting... (User is not Admin)</div></div></AppLayout>;
   }
 
-  // At this point, user is authenticated, email verified, and is an Admin.
   const ActiveComponent = navItems.find(item => item.id === activeSection)?.component || DashboardTab;
 
   return (
     <AppLayout>
       <SidebarProvider>
-        <div className="flex min-h-[calc(100vh-theme(spacing.16))]"> {/* Full height minus header */}
+        <div className="flex min-h-[calc(100vh-theme(spacing.16))]">
           <Sidebar collapsible="icon" variant="sidebar" className="border-r border-border/60">
             <SidebarHeader className="p-0">
               <div className="flex items-center justify-center h-16 border-b border-border/60">
