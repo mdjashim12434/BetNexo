@@ -4,12 +4,12 @@
 import AppLayout from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, DollarSign, Briefcase, Settings2, History, ShieldAlert } from "lucide-react";
+import { Users, DollarSign, Briefcase, History, ShieldAlert, LayoutDashboard } from "lucide-react";
 import UserManagementTab from "@/components/admin/UserManagementTab";
-import BalanceControlTab from "@/components/admin/BalanceControlTab";
+import BalanceControlTab from "@/components/admin/BalanceControlTab"; // Will be used for Balance Sheet
 import AgentManagementTab from "@/components/admin/AgentManagementTab";
-import MatchControlTab from "@/components/admin/MatchControlTab";
 import TransactionsLogTab from "@/components/admin/TransactionsLogTab";
+import DashboardTab from "@/components/admin/DashboardTab"; // New Dashboard Tab
 
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
@@ -66,39 +66,39 @@ export default function AdminPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4 md:p-6">
-            <Tabs defaultValue="userManagement" className="w-full">
+            <Tabs defaultValue="dashboard" className="w-full">
               <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 mb-6">
+                <TabsTrigger value="dashboard" className="flex items-center gap-2 py-2.5">
+                  <LayoutDashboard className="h-5 w-5" /> Dashboard
+                </TabsTrigger>
                 <TabsTrigger value="userManagement" className="flex items-center gap-2 py-2.5">
-                  <Users className="h-5 w-5" /> User Management
+                  <Users className="h-5 w-5" /> Manage Users
                 </TabsTrigger>
-                <TabsTrigger value="balanceControl" className="flex items-center gap-2 py-2.5">
-                  <DollarSign className="h-5 w-5" /> Balance Control
-                </TabsTrigger>
-                <TabsTrigger value="agentManagement" className="flex items-center gap-2 py-2.5">
-                  <Briefcase className="h-5 w-5" /> Agent Management
-                </TabsTrigger>
-                <TabsTrigger value="matchControl" className="flex items-center gap-2 py-2.5">
-                  <Settings2 className="h-5 w-5" /> Match Control
+                <TabsTrigger value="balanceSheet" className="flex items-center gap-2 py-2.5">
+                  <DollarSign className="h-5 w-5" /> Balance Sheet
                 </TabsTrigger>
                 <TabsTrigger value="transactionsLog" className="flex items-center gap-2 py-2.5">
-                  <History className="h-5 w-5" /> Transactions Log
+                  <History className="h-5 w-5" /> Transaction Logs
+                </TabsTrigger>
+                 <TabsTrigger value="agentControl" className="flex items-center gap-2 py-2.5">
+                  <Briefcase className="h-5 w-5" /> Agent Control
                 </TabsTrigger>
               </TabsList>
 
+              <TabsContent value="dashboard">
+                <DashboardTab />
+              </TabsContent>
               <TabsContent value="userManagement">
                 <UserManagementTab />
               </TabsContent>
-              <TabsContent value="balanceControl">
+              <TabsContent value="balanceSheet">
                 <BalanceControlTab />
-              </TabsContent>
-              <TabsContent value="agentManagement">
-                <AgentManagementTab />
-              </TabsContent>
-              <TabsContent value="matchControl">
-                <MatchControlTab />
               </TabsContent>
               <TabsContent value="transactionsLog">
                 <TransactionsLogTab />
+              </TabsContent>
+              <TabsContent value="agentControl">
+                <AgentManagementTab />
               </TabsContent>
             </Tabs>
           </CardContent>
