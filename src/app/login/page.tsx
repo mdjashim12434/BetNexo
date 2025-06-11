@@ -14,7 +14,7 @@ import { useAuth, type User } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { Mail, Phone, MessageSquare, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { auth, signInWithEmailAndPassword, sendEmailVerification } from '@/lib/firebase';
+import { auth, signInWithEmailAndPassword, sendEmailVerification, type FirebaseUserType } from '@/lib/firebase';
 import { useEffect, useState } from 'react';
 
 const loginSchema = z.object({
@@ -28,10 +28,12 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 type AuthMethod = 'email' | 'phone' | 'sms' | 'social';
 
 export default function LoginPage() {
-  const { login: loginToAppContext, user: appUser, loadingAuth } = useAuth();
+  const { login: loginToAppContext, user: appUser, loadingAuth, firebaseUser } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [activeMethod, setActiveMethod] = useState<AuthMethod>('email');
+  const [showVerificationMessage, setShowVerificationMessage] = useState(false);
+  const [currentUserForVerification, setCurrentUserForVerification] = useState<FirebaseUserType | null>(null);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -44,7 +46,7 @@ export default function LoginPage() {
 
   // Effect to redirect if user is already logged in and verified
   useEffect(() => {
-    if (!loadingAuth && appUser && appUser.emailVerified) { 
+    if (!loadingAuth && appUser && appUser.emailVerified) {
       if (appUser.role === 'Admin') {
         router.push('/admin');
       } else {
@@ -55,6 +57,8 @@ export default function LoginPage() {
 
   async function onSubmit(data: LoginFormValues) {
     form.clearErrors();
+    setShowVerificationMessage(false);
+    setCurrentUserForVerification(null);
     form.setValue('emailOrPhone', data.emailOrPhone.trim());
 
     try {
@@ -62,51 +66,35 @@ export default function LoginPage() {
       const fbUser = userCredential.user;
 
       if (!fbUser.emailVerified) {
+        setCurrentUserForVerification(fbUser);
+        setShowVerificationMessage(true);
         toast({
           title: "Email Not Verified",
-          description: "Please check your inbox to verify your email. You can request a new verification email if needed.",
+          description: "Please check your inbox to verify your email. You can request a new verification email below.",
           variant: "destructive",
           duration: 10000,
-          action: (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={async () => {
-                try {
-                  await sendEmailVerification(fbUser);
-                  toast({ title: "Verification Email Sent", description: "A new verification email has been sent to your address." });
-                } catch (resendError) {
-                  console.error("Error resending verification email:", resendError);
-                  toast({ title: "Error", description: "Could not resend verification email. Please try again later.", variant: "destructive" });
-                }
-              }}
-            >
-              Resend Email
-            </Button>
-          )
         });
+        // Do not proceed to loginToAppContext or redirect if email is not verified
+        // The user context will remain null, and they will stay on the login page
         return;
       }
       
+      // Email is verified, proceed to set app context and redirect
       const userPayloadForAppContext = {
         id: fbUser.uid,
         email: fbUser.email,
-        currency: 'USD', // Will be fetched/updated from Firestore by loginToAppContext
+        // currency and role will be fetched by loginToAppContext
         emailVerified: fbUser.emailVerified,
       };
       
-      // loginToAppContext now returns the full user object from Firestore including role
       const loggedInUser: User | null = await loginToAppContext(userPayloadForAppContext, false);
       
       if (loggedInUser) {
         toast({ title: "Login Successful", description: "Welcome back!" });
-        if (loggedInUser.role === 'Admin') {
-          router.push('/admin');
-        } else {
-          router.push('/user-dashboard');
-        }
+        // Redirection is handled by the useEffect hook once appUser is set
       } else {
-         toast({ title: "Login Error", description: "Could not retrieve user details after login. Please try again.", variant: "destructive" });
+         // This case implies loginToAppContext failed to retrieve/create user doc
+         toast({ title: "Login Error", description: "Could not retrieve your user details after login. Please check if your account is fully set up or contact support.", variant: "destructive", duration: 7000 });
       }
 
     } catch (error: any) {
@@ -118,12 +106,27 @@ export default function LoginPage() {
         form.setError("password", { type: "manual", message: "Invalid email or password." });
       } else if (error.code === 'auth/too-many-requests') {
         errorMessage = "Too many login attempts. Please try again later.";
-      } else if (error.message) {
+      } else if (error.message) { // Catch errors from loginToAppContext like "User data not found"
         errorMessage = error.message;
       }
       toast({ title: "Login Failed", description: errorMessage, variant: "destructive" });
     }
   }
+
+  const handleResendVerificationEmail = async () => {
+    if (!currentUserForVerification) {
+      toast({ title: "Error", description: "No user context for resending email.", variant: "destructive" });
+      return;
+    }
+    try {
+      await sendEmailVerification(currentUserForVerification);
+      toast({ title: "Verification Email Sent", description: "A new verification email has been sent. Please check your inbox (and spam folder)." });
+    } catch (resendError) {
+      console.error("Error resending verification email:", resendError);
+      toast({ title: "Error", description: "Could not resend verification email. Please try again later.", variant: "destructive" });
+    }
+  };
+
 
   if (loadingAuth) {
     return (
@@ -133,14 +136,14 @@ export default function LoginPage() {
     );
   }
   
-  // If user is loaded but not yet redirected by the effect (e.g. email not verified), show the login form.
-  // If appUser is set and verified, the useEffect above will handle redirection.
+  // If appUser is set and emailVerified, useEffect will redirect. Show a message.
   if (appUser && appUser.emailVerified) {
-     return <div className="flex min-h-screen items-center justify-center bg-background p-4"><div className="text-center text-muted-foreground">Redirecting...</div></div>;
+     const destination = appUser.role === 'Admin' ? 'Admin Dashboard' : 'User Dashboard';
+     return <div className="flex min-h-screen items-center justify-center bg-background p-4"><div className="text-center text-muted-foreground">Redirecting to {destination}...</div></div>;
   }
 
-
-  const AuthMethodButton = ({ method, icon: Icon, label }: { method: AuthMethod, icon: React.ElementType, label: string }) => (
+  // If user is not logged in, or logged in but email not verified, show the form.
+  const AuthMethodButton = ({ method, icon: Icon, label }: { method: AuthMethod, icon: React.ElementType, label:string }) => (
     <Button
       variant={activeMethod === method ? 'default' : 'outline'}
       onClick={() => setActiveMethod(method)}
@@ -151,7 +154,6 @@ export default function LoginPage() {
       {label}
     </Button>
   );
-
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-muted p-4">
@@ -241,6 +243,23 @@ export default function LoginPage() {
               <p>{activeMethod.charAt(0).toUpperCase() + activeMethod.slice(1)} login method is coming soon.</p>
             </div>
           )}
+           {showVerificationMessage && (
+            <div className="mt-4 p-4 border border-yellow-500 rounded-md bg-yellow-500/10 text-center">
+              <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                Your email is not verified. Please check your inbox (and spam folder) for the verification link.
+              </p>
+              {currentUserForVerification && (
+                <Button
+                  variant="link"
+                  className="mt-2 text-accent h-auto p-0"
+                  onClick={handleResendVerificationEmail}
+                  disabled={form.formState.isSubmitting}
+                >
+                  Resend Verification Email
+                </Button>
+              )}
+            </div>
+          )}
 
           <div className="text-center text-sm">
             <Button variant="link" className="p-0 text-accent h-auto" asChild>
@@ -261,3 +280,4 @@ export default function LoginPage() {
     </div>
   );
 }
+

@@ -37,29 +37,39 @@ export default function AdminPage() {
   const [activeSection, setActiveSection] = useState<string>('dashboard');
 
   useEffect(() => {
+    console.log('AdminPage Effect: loadingAuth, user?.emailVerified, user?.role', loadingAuth, user?.emailVerified, user?.role);
     if (!loadingAuth) {
-      if (!user) {
+      if (!user || !user.emailVerified) {
+        console.log('AdminPage: No user or email not verified, redirecting to /login');
         router.push('/login');
-      } else if (user && user.role !== 'Admin') {
-        router.push('/'); // Redirect non-admin users to homepage
+      } else if (user.role !== 'Admin') { // This check is safe because user and user.emailVerified is true here
+        console.log(`AdminPage: User role is "${user.role}", redirecting to /`);
+        router.push('/'); 
+      } else {
+        console.log('AdminPage: User is admin and verified, proceeding.');
       }
     }
   }, [user, loadingAuth, router]);
 
   if (loadingAuth) {
-    return <AppLayout><div className="flex items-center justify-center min-h-screen"><div className="text-center p-10">Loading authentication...</div></div></AppLayout>;
+    return <AppLayout><div className="flex items-center justify-center min-h-screen"><div className="text-center p-10">Loading authentication for Admin...</div></div></AppLayout>;
   }
 
-  if (!user || (user && user.role !== 'Admin')) {
-    // This case should ideally be caught by the useEffect redirect,
-    // but it's a safeguard.
-    // For non-admins, it shows "Access Denied" before redirecting from useEffect.
-    // For non-logged-in users, it shows redirecting to login.
-    const message = !user ? "Redirecting to login..." : "Access Denied. Redirecting...";
-    return <AppLayout><div className="flex items-center justify-center min-h-screen"><div className="text-center p-10">{message}</div></div></AppLayout>;
+  // Explicitly check user and emailVerified before checking role
+  if (!user || !user.emailVerified) {
+    // This case means useEffect should have already initiated a redirect to /login.
+    // If somehow reached, it means user is null or email not verified after loadingAuth is false.
+    return <AppLayout><div className="flex items-center justify-center min-h-screen"><div className="text-center p-10">Redirecting to login... (User not found or email not verified)</div></div></AppLayout>;
+  }
+  
+  // At this point, user exists and email is verified. Now check role.
+  if (user.role !== 'Admin') {
+     // This case means user is logged in, email verified, but not an Admin.
+     // The useEffect should have already initiated a redirect to /.
+    return <AppLayout><div className="flex items-center justify-center min-h-screen"><div className="text-center p-10">Access Denied. Redirecting... (User is not Admin)</div></div></AppLayout>;
   }
 
-  // At this point, user is authenticated and is an Admin.
+  // At this point, user is authenticated, email verified, and is an Admin.
   const ActiveComponent = navItems.find(item => item.id === activeSection)?.component || DashboardTab;
 
   return (
@@ -92,9 +102,6 @@ export default function AdminPage() {
                 ))}
               </SidebarMenu>
             </SidebarContent>
-            {/* <SidebarFooter>
-              Optional Footer Content
-            </SidebarFooter> */}
           </Sidebar>
           <SidebarInset className="flex-1 bg-background">
             <div className="p-4 md:p-6 lg:p-8">
