@@ -3,7 +3,7 @@ import AppLayout from '@/components/AppLayout';
 import type { Match } from '@/components/sports/MatchCard';
 import SportsCategoryClientContent from '@/components/sports/SportsCategoryClientContent';
 
-// Mock data for matches - Opticodds API would provide this
+// Mock data for matches - Opticodds API would provide this in a real app
 const allMatches: Match[] = [
   { id: '1', teamA: 'India', teamB: 'Australia', time: '14:00 Local', sport: 'Cricket', league: 'World Cup', oddsA: '1.80', oddsB: '2.10', status: 'upcoming', imageUrl: 'https://placehold.co/600x300.png?text=Cricket+Match', imageAiHint: 'cricket match' },
   { id: '2', teamA: 'England', teamB: 'South Africa', time: 'LIVE', sport: 'Cricket', league: 'Test Series', oddsA: '2.00', oddsDraw: '3.50', oddsB: '2.50', status: 'live', imageUrl: 'https://placehold.co/600x300.png?text=Live+Cricket', imageAiHint: 'live cricket' },
@@ -39,9 +39,12 @@ export default async function SportCategoryPage({ params }: SportCategoryPagePro
   const categorySlug = params.category;
   
   if (!validCategories.includes(categorySlug)) {
-    // Or handle as a 404, but for static export, this check might be redundant
-    // if generateStaticParams is exhaustive and fallback: false (default in App Router for export)
-    // For now, let's assume generateStaticParams covers all valid paths.
+    // This case should ideally be caught by Next.js if fallback: 'blocking' or false is used,
+    // or you can explicitly return a notFound() if the category is truly invalid.
+    // For static export with generateStaticParams, invalid slugs shouldn't be accessed directly
+    // unless linked incorrectly.
+    // Fallback: 'false' (default for App Router export) means only paths from generateStaticParams are built.
+    // For now, we proceed, assuming validCategories covers all intended static paths.
   }
 
   const categoryName = categoryMapping[categorySlug] || 'Sports';
@@ -51,13 +54,14 @@ export default async function SportCategoryPage({ params }: SportCategoryPagePro
     matchesForCategory = allMatches.filter(match => match.status === 'live');
   } else if (categorySlug === 'upcoming') {
     matchesForCategory = allMatches.filter(match => match.status === 'upcoming');
-  } else if (categorySlug !== 'all-sports') {
+  } else if (categorySlug !== 'all-sports') { // Specific sports like cricket, football
     matchesForCategory = allMatches.filter(match => match.sport.toLowerCase() === categorySlug.replace('-', ' '));
   } else {
-    matchesForCategory = allMatches; // 'all-sports'
+    matchesForCategory = allMatches; // 'all-sports' shows all matches
   }
 
-  const availableSports = ['all', ...new Set(allMatches.map(m => m.sport.toLowerCase()))];
+  // Create a list of unique sports available in allMatches for the 'all-sports' filter dropdown
+  const availableSportsForFilter = ['all', ...new Set(allMatches.map(m => m.sport.toLowerCase()))];
 
   return (
     <AppLayout>
@@ -65,8 +69,8 @@ export default async function SportCategoryPage({ params }: SportCategoryPagePro
         initialMatches={matchesForCategory}
         categorySlug={categorySlug}
         categoryName={categoryName}
-        availableSports={availableSports}
-        allMatchesForFiltering={allMatches} // Pass all matches for client-side 'all-sports' filtering if needed
+        availableSports={availableSportsForFilter}
+        allMatchesForFiltering={allMatches} // Pass all matches for client-side filtering logic
       />
     </AppLayout>
   );
