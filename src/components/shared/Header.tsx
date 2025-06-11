@@ -1,7 +1,7 @@
+
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { UserCircle2 } from 'lucide-react';
 import type { User } from '@/contexts/AuthContext';
 
 interface HeaderProps {
@@ -20,7 +20,8 @@ export default function Header({ user, balance = 0, currency = "USD" }: HeaderPr
         <div className="flex items-center space-x-3">
           {user && (
             <Link href="/profile" className="flex items-center space-x-3">
-              <div className="hidden sm:flex items-center justify-center rounded-md bg-accent px-3 py-1.5 text-sm font-semibold text-accent-foreground">
+              {/* Balance display, now always visible if user is logged in */}
+              <div className="flex items-center justify-center rounded-md bg-accent px-3 py-1.5 text-sm font-semibold text-accent-foreground">
                 <span>{balance.toFixed(2)} {currency}</span>
               </div>
               <Avatar className="h-9 w-9 cursor-pointer">

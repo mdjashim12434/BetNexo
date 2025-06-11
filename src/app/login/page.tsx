@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, type User } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { Mail, Phone, MessageSquare, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -42,9 +42,14 @@ export default function LoginPage() {
     },
   });
 
+  // Effect to redirect if user is already logged in and verified
   useEffect(() => {
-    if (!loadingAuth && appUser && appUser.emailVerified) { // Ensure user is also email verified before redirect
-      router.push('/');
+    if (!loadingAuth && appUser && appUser.emailVerified) { 
+      if (appUser.role === 'Admin') {
+        router.push('/admin');
+      } else {
+        router.push('/user-dashboard');
+      }
     }
   }, [appUser, loadingAuth, router]);
 
@@ -90,10 +95,19 @@ export default function LoginPage() {
         emailVerified: fbUser.emailVerified,
       };
       
-      await loginToAppContext(userPayloadForAppContext, false);
+      // loginToAppContext now returns the full user object from Firestore including role
+      const loggedInUser: User | null = await loginToAppContext(userPayloadForAppContext, false);
       
-      toast({ title: "Login Successful", description: "Welcome back!" });
-      router.push('/');
+      if (loggedInUser) {
+        toast({ title: "Login Successful", description: "Welcome back!" });
+        if (loggedInUser.role === 'Admin') {
+          router.push('/admin');
+        } else {
+          router.push('/user-dashboard');
+        }
+      } else {
+         toast({ title: "Login Error", description: "Could not retrieve user details after login. Please try again.", variant: "destructive" });
+      }
 
     } catch (error: any) {
       console.error("Login failed on page:", error);
@@ -119,16 +133,19 @@ export default function LoginPage() {
     );
   }
   
+  // If user is loaded but not yet redirected by the effect (e.g. email not verified), show the login form.
+  // If appUser is set and verified, the useEffect above will handle redirection.
   if (appUser && appUser.emailVerified) {
      return <div className="flex min-h-screen items-center justify-center bg-background p-4"><div className="text-center text-muted-foreground">Redirecting...</div></div>;
   }
+
 
   const AuthMethodButton = ({ method, icon: Icon, label }: { method: AuthMethod, icon: React.ElementType, label: string }) => (
     <Button
       variant={activeMethod === method ? 'default' : 'outline'}
       onClick={() => setActiveMethod(method)}
       className={`flex-1 py-3 ${activeMethod === method ? 'bg-card text-foreground' : 'bg-background'}`}
-      disabled={method !== 'email'} // Only email is active
+      disabled={method !== 'email'} 
     >
       <Icon className="mr-2 h-5 w-5" />
       {label}

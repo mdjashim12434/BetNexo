@@ -4,12 +4,11 @@
 import AppLayout from '@/components/AppLayout';
 import BottomNav from '@/components/navigation/BottomNav';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { ArrowRight, Flame, ListChecks, CalendarClock, LucideIcon } from 'lucide-react';
 import { CricketIcon } from '@/components/icons/CricketIcon';
-import { Goal } from 'lucide-react'; // Assuming Goal is for Football
-import Image from 'next/image';
+import { Goal } from 'lucide-react'; 
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -19,7 +18,7 @@ import MatchCard, { type Match } from '@/components/sports/MatchCard';
 interface SportCategoryButton {
   name: string;
   href: string;
-  icon: LucideIcon | React.ElementType; // Allow LucideIcon or custom components like CricketIcon
+  icon: LucideIcon | React.ElementType; 
   borderColorClass?: string;
 }
 
@@ -31,7 +30,6 @@ const sportCategoryButtons: SportCategoryButton[] = [
   { name: 'All Sports', href: '/sports/all-sports', icon: ListChecks, borderColorClass: 'hover:border-gray-500' },
 ];
 
-// Mock Data - replace with API call in a real app
 const mockLiveMatches: Match[] = [
   { id: 'live1', teamA: 'Team Alpha', teamB: 'Team Beta', time: 'LIVE', sport: 'Football', league: 'Premier League', oddsA: '1.90', oddsDraw: '3.60', oddsB: '3.80', status: 'live', imageUrl: 'https://placehold.co/600x300.png?text=Live+Football1', imageAiHint: 'live football' },
   { id: 'live2', teamA: 'India', teamB: 'Australia', time: 'LIVE', sport: 'Cricket', league: 'Test Series', oddsA: '2.00', oddsB: '2.50', status: 'live', imageUrl: 'https://placehold.co/600x300.png?text=Live+Cricket1', imageAiHint: 'live cricket' },
@@ -44,7 +42,7 @@ const mockFeaturedFootballMatches: Match[] = [
 
 
 export default function HomePage() {
-  const { user, loadingAuth, balance, currency } = useAuth(); // Added balance and currency
+  const { user, loadingAuth } = useAuth(); 
   const router = useRouter();
 
   useEffect(() => {
@@ -63,14 +61,10 @@ export default function HomePage() {
 
   return (
     <AppLayout>
-      <div className="space-y-6 pb-16"> {/* Add padding-bottom for BottomNav */}
+      <div className="space-y-6 pb-16">
         
-        {/* Balance display for small screens, as Header hides it */}
-        <div className="sm:hidden p-3 -mx-3 mb-2 bg-accent text-accent-foreground rounded-md text-center">
-            <span className="font-semibold">Balance: {balance.toFixed(2)} {currency}</span>
-        </div>
+        {/* Removed redundant balance display for small screens, as Header now handles it */}
 
-        {/* Horizontal Scrollable Sport Categories */}
         <section>
           <ScrollArea className="w-full whitespace-nowrap rounded-md pb-2.5">
             <div className="flex space-x-3 p-1">
@@ -87,7 +81,6 @@ export default function HomePage() {
           </ScrollArea>
         </section>
         
-        {/* Casino Banner Card - Can be replaced with an Image */}
         <Link href="/casino">
           <Card className="bg-gradient-to-r from-purple-600 to-indigo-600 text-primary-foreground shadow-xl hover:opacity-90 transition-opacity cursor-pointer">
             <CardContent className="p-6 text-center">
@@ -98,7 +91,6 @@ export default function HomePage() {
           </Card>
         </Link>
 
-        {/* Top Live Matches Section */}
         <section>
           <div className="flex justify-between items-center mb-4">
             <h2 className="font-headline text-xl font-semibold text-primary flex items-center">
@@ -110,7 +102,7 @@ export default function HomePage() {
           </div>
           {mockLiveMatches.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {mockLiveMatches.slice(0, 2).map((match) => ( // Show only 2 for brevity
+              {mockLiveMatches.slice(0, 2).map((match) => (
                 <MatchCard key={match.id} match={match} />
               ))}
             </div>
@@ -119,7 +111,6 @@ export default function HomePage() {
           )}
         </section>
 
-        {/* Featured Football Matches Section */}
         <section>
            <div className="flex justify-between items-center mb-4">
             <h2 className="font-headline text-xl font-semibold text-primary flex items-center">

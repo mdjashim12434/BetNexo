@@ -17,12 +17,12 @@ export interface User {
   country?: string;
   balance?: number;
   createdAt?: any; // Firestore Timestamp
-  role?: 'Admin' | 'User' | 'Agent'; // Added role
+  role?: 'Admin' | 'User' | 'Agent';
 }
 
 interface AuthContextType {
   user: User | null;
-  login: (userData: User, isNewUser?: boolean) => Promise<void>; // This is now primarily for Firestore and app state
+  login: (userData: { id: string; email?: string; phone?: string; name?: string; currency: string; country?: string; emailVerified?: boolean, role?: 'Admin' | 'User' | 'Agent' }, isNewUser?: boolean) => Promise<User | null>;
   logout: () => Promise<void>;
   balance: number;
   currency: string;
@@ -38,7 +38,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUserType | null>(null);
   const [balance, setLocalBalance] = useState<number>(0);
-  const [currency, setLocalCurrency] = useState<string>('USD');
+  const [currency, setLocalCurrency] = useState<string>('USD'); // Default currency
   const [loadingAuth, setLoadingAuth] = useState(true);
 
   const fetchUserDocument = useCallback(async (uid: string): Promise<User | null> => {
@@ -47,7 +47,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const userDocSnap = await getDoc(userDocRef);
       if (userDocSnap.exists()) {
-        return { id: uid, ...userDocSnap.data() } as User;
+        const firestoreData = userDocSnap.data();
+        // Ensure currency and role have default values if missing
+        const ensuredCurrency = firestoreData.currency || 'USD';
+        const ensuredRole = firestoreData.role || 'User';
+        return { 
+          id: uid, 
+          ...firestoreData, 
+          currency: ensuredCurrency, 
+          role: ensuredRole 
+        } as User;
       }
       console.warn("User document not found in Firestore for UID:", uid);
       return null;
@@ -59,34 +68,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
-      setLoadingAuth(true); // Set loading true at the start of handling state change
+      setLoadingAuth(true); 
       try {
         if (fbUser) {
           setFirebaseUser(fbUser);
           if (fbUser.emailVerified) {
             const firestoreUser = await fetchUserDocument(fbUser.uid);
             if (firestoreUser) {
+              // fetchUserDocument now ensures currency and role defaults
               setUser({ ...firestoreUser, emailVerified: fbUser.emailVerified });
-              setLocalCurrency(firestoreUser.currency || 'USD');
+              setLocalCurrency(firestoreUser.currency); // Already ensured by fetchUserDocument
               setLocalBalance(firestoreUser.balance || 0);
               localStorage.setItem('betbabu-user-uid', fbUser.uid); 
             } else {
-              console.warn("Firestore document missing for authenticated Firebase user:", fbUser.uid);
+              console.warn("Firestore document missing for authenticated Firebase user:", fbUser.uid, "User might need to complete signup or document was removed.");
+              // Consider creating a minimal user doc here if appropriate for your app flow,
+              // or guide user to signup completion. For now, clearing session.
               setUser(null);
-              // firebaseUser remains set, so login page can show "verify email" if relevant.
-              // If Firestore doc is truly missing for a verified user, it's an issue.
-              // For now, treat as logged out from app context to prevent errors.
               localStorage.removeItem('betbabu-user-uid');
             }
           } else {
-            // Email not verified, don't fully log into app context
             setUser(null); 
-            // firebaseUser is set, so login page can react if needed (e.g. show resend verification)
             localStorage.removeItem('betbabu-user-uid');
             console.log("User email not verified, clearing app user state but retaining Firebase user for potential actions.");
           }
         } else {
-          // No Firebase user
           setUser(null);
           setFirebaseUser(null);
           localStorage.removeItem('betbabu-user-uid');
@@ -96,36 +102,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(null); 
         setFirebaseUser(null);
         localStorage.removeItem('betbabu-user-uid');
-        // Handle any specific error state updates if needed
       } finally {
-        setLoadingAuth(false); // Ensure loading is set to false in all cases
+        setLoadingAuth(false);
       }
     });
 
     return () => unsubscribe();
   }, [fetchUserDocument]);
 
-
-  // This function is now primarily for setting up Firestore data and app state AFTER Firebase auth & email verification
-  const login = async (userDataFromAuth: { id: string; email?: string; phone?: string; name?: string; currency: string; country?: string; emailVerified?: boolean, role?: 'Admin' | 'User' | 'Agent' }, isNewUser: boolean = false) => {
+  const login = async (userDataFromAuth: { id: string; email?: string; phone?: string; name?: string; currency: string; country?: string; emailVerified?: boolean, role?: 'Admin' | 'User' | 'Agent' }, isNewUser: boolean = false): Promise<User | null> => {
     setLoadingAuth(true);
     try {
       let finalUserData: User | null = null;
       const uid = userDataFromAuth.id;
+      const defaultCurrency = userDataFromAuth.currency || 'USD';
+      const defaultRole = userDataFromAuth.role || 'User';
 
       if (isNewUser) {
         const userDocRef = doc(db, "users", uid);
         const initialBalance = 0;
-        const newUserDocData: Omit<User, 'id' | 'emailVerified' | 'avatarUrl' | 'isVerified'> & { createdAt: any, isVerified: boolean, role?: 'Admin' | 'User' | 'Agent' } = {
+        const newUserDocData: Omit<User, 'id' | 'emailVerified' | 'avatarUrl' | 'isVerified'> & { createdAt: any, isVerified: boolean, role: 'Admin' | 'User' | 'Agent', currency: string } = {
           name: userDataFromAuth.name || '',
           email: userDataFromAuth.email || '', 
           phone: userDataFromAuth.phone || '',
-          currency: userDataFromAuth.currency,
+          currency: defaultCurrency,
           country: userDataFromAuth.country || '',
           balance: initialBalance,
           isVerified: false, 
           createdAt: serverTimestamp(),
-          role: userDataFromAuth.role || 'User', 
+          role: defaultRole, 
         };
         await setDoc(userDocRef, newUserDocData);
         finalUserData = { 
@@ -134,7 +139,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           emailVerified: userDataFromAuth.emailVerified, 
         };
       } else {
-        const firestoreUser = await fetchUserDocument(uid);
+        const firestoreUser = await fetchUserDocument(uid); // fetchUserDocument ensures defaults
         if (firestoreUser) {
           finalUserData = { ...firestoreUser, id: uid, emailVerified: userDataFromAuth.emailVerified };
         } else {
@@ -144,10 +149,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       if (finalUserData) {
-        setUser(finalUserData);
-        setLocalCurrency(finalUserData.currency);
+        setUser(finalUserData); // finalUserData already has ensured currency and role
+        setLocalCurrency(finalUserData.currency); 
         setLocalBalance(finalUserData.balance || 0);
         localStorage.setItem('betbabu-user-uid', uid);
+        return finalUserData;
       } else {
         throw new Error("Failed to establish user session in app context.");
       }
@@ -155,13 +161,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       console.error("Error during app context login/signup:", error);
       setUser(null);
-      // setFirebaseUser(null); // Do not clear firebaseUser here, let onAuthStateChanged handle it
       setLocalBalance(0);
       setLocalCurrency('USD');
       localStorage.removeItem('betbabu-user-uid');
-      // It might be too aggressive to sign out here, as it could interfere with Firebase's own auth flow.
-      // Consider if this signOut is truly needed or if just clearing app state is enough.
-      // await signOut(auth).catch(e => console.error("Signout error during context login failure:", e));
       throw error; 
     } finally {
       setLoadingAuth(false);
@@ -172,24 +174,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoadingAuth(true);
     try {
       await signOut(auth);
-      // onAuthStateChanged will handle clearing user, firebaseUser, localStorage, and resetting balance/currency.
+      // setUser, setFirebaseUser, etc. are handled by onAuthStateChanged
     } catch (error) {
       console.error("Firebase signOut error:", error);
-      // Even if signOut fails, ensure local state is cleared.
+      // Fallback state cleanup if onAuthStateChanged doesn't fire or has issues
       setUser(null);
       setFirebaseUser(null);
       setLocalBalance(0);
       setLocalCurrency('USD');
       localStorage.removeItem('betbabu-user-uid');
     } finally {
-      // onAuthStateChanged will eventually set loadingAuth to false.
-      // However, to make the UI responsive immediately on logout action:
       setLoadingAuth(false); 
     }
   };
 
   const setCurrency = async (newCurrency: string) => {
     if (user) {
+      const originalUserCurrency = user.currency; // Store original currency for revert
       const updatedUser = { ...user, currency: newCurrency };
       setUser(updatedUser); 
       setLocalCurrency(newCurrency);
@@ -198,15 +199,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         await updateDoc(userDocRef, { currency: newCurrency });
       } catch (error) {
         console.error("Failed to update currency in Firestore:", error);
-        setUser(user); 
-        setLocalCurrency(user.currency);
+        // Revert optimistic update if Firestore fails
+        setUser({ ...user, currency: originalUserCurrency }); 
+        setLocalCurrency(originalUserCurrency);
       }
     }
   };
   
   const updateBalance = async (amountChange: number) => {
     if (user) {
-      const newBalance = (user.balance || 0) + amountChange;
+      const currentBalance = user.balance || 0;
+      const newBalance = currentBalance + amountChange;
+      const originalUserBalance = user.balance; // For potential revert
+
       setUser({ ...user, balance: newBalance }); 
       setLocalBalance(newBalance);
       const userDocRef = doc(db, "users", user.id);
@@ -214,8 +219,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         await updateDoc(userDocRef, { balance: newBalance });
       } catch (error) {
         console.error("Failed to update balance in Firestore:", error);
-        setUser(user);
-        setLocalBalance(user.balance || 0);
+        // Revert optimistic update
+        setUser({ ...user, balance: originalUserBalance });
+        setLocalBalance(originalUserBalance || 0);
       }
     }
   };

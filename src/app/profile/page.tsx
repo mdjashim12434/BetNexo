@@ -9,12 +9,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/contexts/AuthContext';
-import { Edit3, Mail, Phone, ShieldCheck, UploadCloud, User as UserIcon, LogOut, Globe, History, CheckCircle, XCircle, Clock, RefreshCw } from 'lucide-react';
+import { Edit3, Mail, Phone, ShieldCheck, UploadCloud, User as UserIcon, LogOut, Globe, History, CheckCircle, XCircle, Clock, RefreshCw, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useEffect, useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { db, doc, updateDoc, collection, query, where, getDocs, orderBy, Timestamp } from '@/lib/firebase';
-import type { Transaction, TransactionStatus } from '@/components/admin/TransactionsLogTab'; // Import Transaction type
+import type { Transaction, TransactionStatus } from '@/components/admin/TransactionsLogTab';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -66,7 +67,6 @@ export default function ProfilePage() {
       if (error.code) {
         description += ` (Code: ${error.code})`;
       }
-      // Check if the error message contains a link to create an index
       if (error.message && error.message.includes("https://console.firebase.google.com/project/")) {
         description += " This usually means a composite index is required. Please check the browser console for a link to create it, or create it manually in Firestore (Indexes tab) for 'transactions' collection with fields 'userId' (Ascending) and 'requestedAt' (Descending).";
       }
@@ -112,7 +112,7 @@ export default function ProfilePage() {
       const userDocRef = doc(db, "users", user.id);
       await updateDoc(userDocRef, {
         name: editableFields.name,
-        email: editableFields.email, // Email updates should be handled carefully due to Firebase Auth
+        email: editableFields.email, 
         phone: editableFields.phone,
         country: editableFields.country,
       });
@@ -123,7 +123,7 @@ export default function ProfilePage() {
         phone: editableFields.phone,
         country: editableFields.country,
       };
-      await login(updatedUserForContext, false); // Re-login to update context
+      await login(updatedUserForContext, false); 
       toast({ title: "Profile Updated", description: "Your changes have been saved." });
       setIsEditing(false);
     } catch (error: any) {
@@ -146,15 +146,13 @@ export default function ProfilePage() {
       toast({ title: "File Selected", description: `${file.name} ready for upload.` });
       setIsSubmitting(true);
       try {
-        // This is a mock upload. In a real app, you'd upload to Firebase Storage
-        // and then save the URL or reference to the user's document.
-        await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate upload delay
+        await new Promise(resolve => setTimeout(resolve, 2000)); 
         
         const userDocRef = doc(db, "users", user.id);
-        await updateDoc(userDocRef, { isVerified: true, idDocumentStatus: 'pending_review' }); // Example status
+        await updateDoc(userDocRef, { isVerified: true, idDocumentStatus: 'pending_review' }); 
         
-        const verifiedUserForContext = { ...user, isVerified: true }; // Or reflect the new status
-        await login(verifiedUserForContext, false); // Update context
+        const verifiedUserForContext = { ...user, isVerified: true }; 
+        await login(verifiedUserForContext, false); 
         
         toast({ title: "Verification Submitted", description: "Your document has been submitted and is pending review (mocked as auto-verified for now)." });
       } catch (error: any) {
@@ -282,6 +280,24 @@ export default function ProfilePage() {
               )}
             </div>
             
+            <Separator />
+
+            <div>
+              <h3 className="font-headline text-xl mb-4">Manage Funds</h3>
+              <div className="flex flex-col space-y-3 sm:flex-row sm:space-y-0 sm:space-x-3">
+                <Button asChild className="flex-1" variant="default">
+                  <Link href="/deposit" className="flex items-center justify-center">
+                    <ArrowUpCircle className="mr-2 h-5 w-5" /> Deposit Funds
+                  </Link>
+                </Button>
+                <Button asChild className="flex-1" variant="secondary">
+                  <Link href="/withdraw" className="flex items-center justify-center">
+                    <ArrowDownCircle className="mr-2 h-5 w-5" /> Withdraw Funds
+                  </Link>
+                </Button>
+              </div>
+            </div>
+
             <Separator />
 
             <Card>
