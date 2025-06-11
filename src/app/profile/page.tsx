@@ -9,11 +9,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/contexts/AuthContext';
-import { Edit3, Mail, Phone, ShieldCheck, UploadCloud, User as UserIcon, LogOut, Globe } from 'lucide-react';
+import { Edit3, Mail, Phone, ShieldCheck, UploadCloud, User as UserIcon, LogOut, Globe, History, CheckCircle, XCircle, Clock, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { db, doc, updateDoc } from '@/lib/firebase'; // Import Firestore
+import { db, doc, updateDoc, collection, query, where, getDocs, orderBy, Timestamp } from '@/lib/firebase';
+import type { Transaction, TransactionStatus } from '@/components/admin/TransactionsLogTab'; // Import Transaction type
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
 
 interface EditableUserFields {
   name: string;
@@ -23,7 +28,7 @@ interface EditableUserFields {
 }
 
 export default function ProfilePage() {
-  const { user, logout, login, loadingAuth, updateBalance } = useAuth(); // login for mock updates, updateBalance for firestore
+  const { user, logout, login, loadingAuth } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
@@ -33,8 +38,32 @@ export default function ProfilePage() {
     phone: '',
     country: '',
   });
-   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [userTransactions, setUserTransactions] = useState<Transaction[]>([]);
+  const [loadingTransactions, setLoadingTransactions] = useState(false);
 
+  const fetchUserTransactions = useCallback(async () => {
+    if (!user) return;
+    setLoadingTransactions(true);
+    try {
+      const q = query(
+        collection(db, "transactions"),
+        where("userId", "==", user.id),
+        orderBy("requestedAt", "desc")
+      );
+      const querySnapshot = await getDocs(q);
+      const fetchedTransactions: Transaction[] = [];
+      querySnapshot.forEach((doc) => {
+        fetchedTransactions.push({ id: doc.id, ...doc.data() } as Transaction);
+      });
+      setUserTransactions(fetchedTransactions);
+    } catch (error: any) {
+      console.error("Error fetching user transactions:", error);
+      toast({ title: "Error", description: `Could not fetch your transaction history. ${error.message}`, variant: "destructive" });
+    } finally {
+      setLoadingTransactions(false);
+    }
+  }, [user, toast]);
 
   useEffect(() => {
     if (!loadingAuth && !user) {
@@ -46,11 +75,12 @@ export default function ProfilePage() {
         phone: user.phone || '',
         country: user.country || '',
       });
+      fetchUserTransactions();
     }
-  }, [user, router, loadingAuth]);
+  }, [user, router, loadingAuth, fetchUserTransactions]);
 
   if (loadingAuth || !user) {
-    return <AppLayout><div className="text-center">Loading profile or redirecting...</div></AppLayout>;
+    return <AppLayout><div className="text-center p-10">Loading profile or redirecting...</div></AppLayout>;
   }
   
   const handleEditToggle = () => setIsEditing(!isEditing);
@@ -67,12 +97,10 @@ export default function ProfilePage() {
       const userDocRef = doc(db, "users", user.id);
       await updateDoc(userDocRef, {
         name: editableFields.name,
-        email: editableFields.email, // Be cautious updating email if it's used for Firebase Auth login
+        email: editableFields.email,
         phone: editableFields.phone,
         country: editableFields.country,
       });
-      // Re-fetch or update user context. For simplicity, we'll mock update via login.
-      // A better way would be to refetch user data or have AuthContext update from Firestore snapshot listener.
       const updatedUserForContext = {
         ...user,
         name: editableFields.name,
@@ -80,7 +108,7 @@ export default function ProfilePage() {
         phone: editableFields.phone,
         country: editableFields.country,
       };
-      await login(updatedUserForContext); // This will re-fetch from Firestore in the new AuthContext
+      await login(updatedUserForContext, false);
       toast({ title: "Profile Updated", description: "Your changes have been saved." });
       setIsEditing(false);
     } catch (error) {
@@ -101,16 +129,13 @@ export default function ProfilePage() {
     const file = event.target.files?.[0];
     if (file && user) {
       toast({ title: "File Selected", description: `${file.name} ready for upload.` });
-      // Mock upload logic
-      // In real app: upload file to Firebase Storage, then update user doc with file URL and set verification pending
       setIsSubmitting(true);
       try {
-        // Simulate backend processing
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise(resolve => setTimeout(resolve, 2000)); // Mock upload
         const userDocRef = doc(db, "users", user.id);
-        await updateDoc(userDocRef, { isVerified: true }); // Mock: directly verify
-         const verifiedUserForContext = { ...user, isVerified: true };
-        await login(verifiedUserForContext); // Update context
+        await updateDoc(userDocRef, { isVerified: true });
+        const verifiedUserForContext = { ...user, isVerified: true };
+        await login(verifiedUserForContext, false);
         toast({ title: "Verification Submitted", description: "Your document is being reviewed (mock verified)." });
       } catch (error) {
         toast({ title: "Upload Failed", description: "Could not submit document.", variant: "destructive"});
@@ -120,6 +145,33 @@ export default function ProfilePage() {
     }
   };
 
+  const getStatusBadgeVariant = (status: TransactionStatus) => {
+    switch (status) {
+      case 'approved': return 'default';
+      case 'pending': return 'outline';
+      case 'rejected': return 'destructive';
+      default: return 'secondary';
+    }
+  };
+
+  const getStatusIcon = (status: TransactionStatus) => {
+    switch (status) {
+      case 'approved': return <CheckCircle className="h-3.5 w-3.5 text-green-500" />;
+      case 'pending': return <Clock className="h-3.5 w-3.5 text-yellow-500" />;
+      case 'rejected': return <XCircle className="h-3.5 w-3.5 text-red-500" />;
+      default: return null;
+    }
+  };
+
+  const formatDate = (timestamp?: Timestamp) => {
+    if (!timestamp) return 'N/A';
+    try {
+      return format(timestamp.toDate(), 'PPp'); 
+    } catch (e) {
+      console.error("Error formatting date:", e, "Timestamp:", timestamp);
+      return 'Invalid Date';
+    }
+  };
 
   return (
     <AppLayout>
@@ -140,6 +192,7 @@ export default function ProfilePage() {
                     <><ShieldCheck className="h-4 w-4 mr-1 text-yellow-500" /> Not Verified</>
                   )}
                    <span className="mx-2">|</span> Currency: {user.currency}
+                   <span className="mx-2">|</span> Balance: {user.balance?.toFixed(2) || '0.00'} {user.currency}
                 </CardDescription>
               </div>
             </div>
@@ -197,8 +250,8 @@ export default function ProfilePage() {
                     Please upload a document (e.g., National ID, Passport) to verify your identity.
                   </p>
                   <div className="relative">
-                    <Input type="file" id="documentUpload" className="opacity-0 absolute inset-0 w-full h-full cursor-pointer" onChange={handleFileUpload} disabled={isSubmitting} />
-                    <Button asChild variant="outline" className="w-full cursor-pointer" disabled={isSubmitting}>
+                    <Input type="file" id="documentUpload" className="opacity-0 absolute inset-0 w-full h-full cursor-pointer" onChange={handleFileUpload} disabled={isSubmitting || isEditing} />
+                    <Button asChild variant="outline" className="w-full cursor-pointer" disabled={isSubmitting || isEditing}>
                       <label htmlFor="documentUpload" className="flex items-center justify-center cursor-pointer">
                         <UploadCloud className="h-5 w-5 mr-2" /> {isSubmitting ? 'Uploading...' : 'Upload Document'}
                       </label>
@@ -211,6 +264,64 @@ export default function ProfilePage() {
             
             <Separator />
 
+            <Card>
+              <CardHeader className="flex flex-row justify-between items-center">
+                <CardTitle className="font-headline text-xl flex items-center">
+                  <History className="mr-2 h-5 w-5 text-primary" /> Transaction History
+                </CardTitle>
+                <Button variant="ghost" size="icon" onClick={fetchUserTransactions} disabled={loadingTransactions} aria-label="Refresh transactions">
+                    <RefreshCw className={cn("h-4 w-4", {"animate-spin": loadingTransactions})} />
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {loadingTransactions ? (
+                  <div className="text-center py-4">Loading transaction history...</div>
+                ) : userTransactions.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Amount</TableHead>
+                          <TableHead>Method</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Requested</TableHead>
+                          <TableHead>Processed</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {userTransactions.map((txn) => (
+                          <TableRow key={txn.id}>
+                            <TableCell className="capitalize">{txn.type}</TableCell>
+                            <TableCell>{txn.amount.toFixed(2)} {txn.currency}</TableCell>
+                            <TableCell>{txn.method}</TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={getStatusBadgeVariant(txn.status)}
+                                className={cn("capitalize text-xs flex items-center gap-1", {
+                                  'bg-green-500/20 text-green-700 border-green-500/30 dark:text-green-400 dark:border-green-700/50': txn.status === 'approved',
+                                  'bg-yellow-500/20 text-yellow-700 border-yellow-500/30 dark:text-yellow-400 dark:border-yellow-700/50': txn.status === 'pending',
+                                })}
+                              >
+                                {getStatusIcon(txn.status)}
+                                {txn.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-xs">{formatDate(txn.requestedAt)}</TableCell>
+                            <TableCell className="text-xs">{formatDate(txn.processedAt)}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-4">No transactions found.</p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Separator />
+            
             <Button variant="destructive" onClick={handleLogout} className="w-full sm:w-auto" disabled={isSubmitting}>
               <LogOut className="mr-2 h-4 w-4" /> Logout
             </Button>
@@ -221,3 +332,5 @@ export default function ProfilePage() {
     </AppLayout>
   );
 }
+
+    

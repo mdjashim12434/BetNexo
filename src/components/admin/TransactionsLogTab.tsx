@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { CheckCircle, XCircle, Clock, History, RefreshCw, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from '@/lib/utils';
-import { db, collection, query, orderBy, getDocs, doc, updateDoc, serverTimestamp, Timestamp, getDoc, updateUserBalanceInFirestore } from '@/lib/firebase'; // Added getDoc
+import { db, collection, query, orderBy, getDocs, doc, updateDoc, serverTimestamp, Timestamp, getDoc, updateUserBalanceInFirestore } from '@/lib/firebase';
 import { format } from 'date-fns';
 
 
@@ -88,10 +88,11 @@ export default function TransactionsLogTab() {
           if (userDocSnap.exists()) {
             const userData = userDocSnap.data();
             if ((userData.balance || 0) < transaction.amount) {
-               toast({ title: "Action Failed", description: `User ${transaction.userName} has insufficient balance for this withdrawal. Balance: ${userData.currency} ${(userData.balance || 0).toFixed(2)}`, variant: "destructive" });
-               await updateDoc(transactionDocRef, { status: 'rejected', processedAt: serverTimestamp() });
-               fetchTransactions(); 
-               return;
+               toast({ title: "Action Failed", description: `User ${transaction.userName} has insufficient balance for this withdrawal. Current Balance: ${userData.currency || 'N/A'} ${(userData.balance || 0).toFixed(2)}. Required: ${transaction.amount.toFixed(2)}`, variant: "destructive", duration: 7000 });
+               // Optionally, automatically reject the transaction
+               // await updateDoc(transactionDocRef, { status: 'rejected', processedAt: serverTimestamp(), rejectionReason: 'Insufficient balance' });
+               // fetchTransactions(); 
+               return; // Stop processing
             }
             await updateUserBalanceInFirestore(transaction.userId, -transaction.amount);
           } else {
@@ -100,12 +101,12 @@ export default function TransactionsLogTab() {
           }
         }
       }
-      
+      // For both 'approved' and 'rejected', update the transaction document
       await updateDoc(transactionDocRef, { status: newStatus, processedAt: serverTimestamp() });
       
       toast({
         title: `Transaction ${newStatus}`,
-        description: `Transaction ID ${transaction.id} has been ${newStatus}. User balance updated accordingly for approvals.`,
+        description: `Transaction ID ${transaction.id} for ${transaction.userName} has been ${newStatus}. ${newStatus === 'approved' ? 'User balance updated.' : ''}`,
       });
       fetchTransactions(); 
     } catch (error: any) {
@@ -207,7 +208,7 @@ export default function TransactionsLogTab() {
                     <TableCell>
                       <Badge
                         variant={getStatusBadgeVariant(txn.status)}
-                        className={cn("capitalize font-medium flex items-center gap-1.5 text-xs", { // Ensure text size is consistent
+                        className={cn("capitalize font-medium flex items-center gap-1.5 text-xs", { 
                           'bg-green-500/20 text-green-700 border-green-500/30 dark:text-green-400 dark:border-green-700/50': txn.status === 'approved',
                           'bg-yellow-500/20 text-yellow-700 border-yellow-500/30 dark:text-yellow-400 dark:border-yellow-700/50': txn.status === 'pending',
                         })}
@@ -219,7 +220,7 @@ export default function TransactionsLogTab() {
                     <TableCell className="text-xs max-w-[150px] truncate">
                         {txn.type === 'withdrawal' && txn.accountDetails && <div>To: {txn.accountDetails}</div>}
                         {txn.type === 'deposit' && txn.transactionId && <div>Ref ID: {txn.transactionId}</div>}
-                        {!txn.accountDetails && !txn.transactionId && <span className="text-muted-foreground italic">No extra details</span>}
+                        {!txn.accountDetails && !txn.transactionId && (!txn.type || (txn.type === 'deposit' && !txn.transactionId)) && <span className="text-muted-foreground italic">No extra details</span>}
                     </TableCell>
                     <TableCell className="text-right">
                       {txn.status === 'pending' ? (
@@ -265,3 +266,5 @@ export default function TransactionsLogTab() {
     </Card>
   );
 }
+
+    
