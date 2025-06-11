@@ -90,8 +90,12 @@ export default function ProfilePage() {
     }
   }, [user, router, loadingAuth, fetchUserTransactions]);
 
-  if (loadingAuth || !user) {
-    return <AppLayout><div className="text-center p-10">Loading profile or redirecting...</div></AppLayout>;
+  if (loadingAuth) {
+    return <AppLayout><div className="flex items-center justify-center min-h-screen"><div className="text-center p-10">Loading session...</div></div></AppLayout>;
+  }
+
+  if (!user) {
+     return <AppLayout><div className="flex items-center justify-center min-h-screen"><div className="text-center p-10">Redirecting to login...</div></div></AppLayout>;
   }
   
   const handleEditToggle = () => setIsEditing(!isEditing);

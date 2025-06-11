@@ -28,8 +28,12 @@ export default function CasinoPage() {
     }
   }, [user, loadingAuth, router]);
 
-  if (loadingAuth || !user) {
-    return <AppLayout><div className="text-center p-10">Loading or redirecting...</div></AppLayout>;
+  if (loadingAuth) {
+    return <AppLayout><div className="flex items-center justify-center min-h-screen"><div className="text-center p-10">Loading session...</div></div></AppLayout>;
+  }
+
+  if (!user) {
+    return <AppLayout><div className="flex items-center justify-center min-h-screen"><div className="text-center p-10">Redirecting to login...</div></div></AppLayout>;
   }
 
   return (
