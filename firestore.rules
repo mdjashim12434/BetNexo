@@ -3,24 +3,29 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Helper function to check if the requesting user is the specific admin
+    function isAdmin() {
+      return request.auth.uid == "I1pRxOkXR1N7jyRRUXzzEdRjvEp2";
+    }
+
     // Users Collection Rules
     match /users/{userId} {
       // Authenticated users can read their own document.
       allow read: if request.auth != null && request.auth.uid == userId;
 
       // Authenticated users can update their own non-critical information.
-      // They CANNOT update their own balance or role directly from client side.
+      // They CANNOT update their own balance or role directly.
       allow update: if request.auth != null && request.auth.uid == userId
                     && !(request.resource.data.balance != resource.data.balance)
                     && !(request.resource.data.role != resource.data.role)
-                    && !(request.resource.data.emailVerified != resource.data.emailVerified);
+                    && !(request.resource.data.emailVerified != resource.data.emailVerified); // emailVerified should be managed by Firebase Auth
 
       // Admins can get (read a single document) any user's data.
-      allow get: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin';
+      allow get: if request.auth != null && isAdmin();
 
-      // Admins can write (create, update, delete) any user's data.
-      // Used for balance adjustments by admin and other administrative tasks.
-      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin';
+      // Admins can update any user's data (e.g., for balance adjustments after transaction approval).
+      // This rule allows admins to change balance, role, verification status etc.
+      allow write: if request.auth != null && isAdmin();
     }
 
     // Transactions Collection Rules
@@ -31,34 +36,32 @@ service cloud.firestore {
       // 3. The 'status' of a new transaction must be 'pending'.
       // 4. Ensure 'type' is either 'deposit' or 'withdrawal'.
       // 5. Ensure 'amount' is a positive number.
-      // 6. 'requestedAt' should be set using serverTimestamp.
+      // 6. 'requestedAt' should be set by the server (or validated if client-set).
       allow create: if request.auth != null
                     && request.auth.uid == request.resource.data.userId
                     && request.resource.data.status == 'pending'
                     && (request.resource.data.type == 'deposit' || request.resource.data.type == 'withdrawal')
                     && request.resource.data.amount > 0
-                    && request.resource.data.requestedAt == request.time; // Ensures server timestamp
+                    && request.resource.data.requestedAt == request.time; // Ensures server timestamp or validated client timestamp
 
       // Rule for READING transactions
       // Users can read their own transactions.
       // Admins can read (list/get) all transactions.
       allow read: if (request.auth != null && request.auth.uid == resource.data.userId)
-                  || (request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin');
+                  || (request.auth != null && isAdmin());
 
       // Rule for UPDATING transactions (Primarily for Admins to Approve/Reject)
       // 1. User must be authenticated AND be an Admin.
-      // 2. Admin can ONLY write to 'status' and 'processedAt' fields during an update.
-      // 3. The new 'status' must be 'approved' or 'rejected'.
-      // 4. 'processedAt' must be set to the server timestamp.
-      allow update: if request.auth != null
-                    && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin'
-                    && request.writeFields.hasOnly(['status', 'processedAt', 'rejectionReason']) // Allow rejectionReason optionally
+      // 2. Admin can only update 'status' (to 'approved' or 'rejected'), 'processedAt', and optionally 'rejectionReason'.
+      // 3. Other fields like 'amount', 'userId', 'type', 'method' should not be changed by the admin during an update.
+      allow update: if request.auth != null && isAdmin()
+                    && request.writeFields.hasOnly(['status', 'processedAt', 'rejectionReason']) // Allows only these fields to be in the write operation
                     && (request.resource.data.status == 'approved' || request.resource.data.status == 'rejected')
-                    && request.resource.data.processedAt == request.time;
+                    && request.resource.data.processedAt == request.time; // Ensures server timestamp for processedAt
 
-      // Deleting transactions: Generally not recommended.
-      // If needed, restrict to Admins under specific conditions.
-      allow delete: if false; // Or: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin'; (Use with caution)
+      // Deleting transactions might be restricted or only allowed for Admins under certain conditions.
+      // For now, let's disallow delete for simplicity.
+      allow delete: if false;
     }
   }
 }
