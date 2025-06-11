@@ -17,6 +17,7 @@ export interface User {
   country?: string;
   balance?: number;
   createdAt?: any; // Firestore Timestamp
+  role?: 'Admin' | 'User' | 'Agent'; // Added role
 }
 
 interface AuthContextType {
@@ -103,7 +104,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 
   // This function is now primarily for setting up Firestore data and app state AFTER Firebase auth & email verification
-  const login = async (userDataFromAuth: { id: string; email?: string; phone?: string; name?: string; currency: string; country?: string; emailVerified?: boolean }, isNewUser: boolean = false) => {
+  const login = async (userDataFromAuth: { id: string; email?: string; phone?: string; name?: string; currency: string; country?: string; emailVerified?: boolean, role?: 'Admin' | 'User' | 'Agent' }, isNewUser: boolean = false) => {
     setLoadingAuth(true);
     try {
       let finalUserData: User | null = null;
@@ -112,7 +113,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (isNewUser) {
         const userDocRef = doc(db, "users", uid);
         const initialBalance = 0;
-        const newUserDocData = {
+        const newUserDocData: Omit<User, 'id' | 'emailVerified' | 'avatarUrl' | 'isVerified'> & { createdAt: any, isVerified: boolean, role?: 'Admin' | 'User' | 'Agent' } = {
           name: userDataFromAuth.name || '',
           email: userDataFromAuth.email || '', // This should be the verified email
           phone: userDataFromAuth.phone || '',
@@ -121,6 +122,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           balance: initialBalance,
           isVerified: false, // Identity verification
           createdAt: serverTimestamp(),
+          role: userDataFromAuth.role || 'User', // Default to User role
         };
         await setDoc(userDocRef, newUserDocData);
         finalUserData = { 

@@ -6,10 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, XCircle, Clock, History, RefreshCw } from "lucide-react";
+import { CheckCircle, XCircle, Clock, History, RefreshCw, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from '@/lib/utils';
-import { db, collection, query, orderBy, getDocs, doc, updateDoc, serverTimestamp, Timestamp, updateUserBalanceInFirestore } from '@/lib/firebase';
+import { db, collection, query, orderBy, getDocs, doc, updateDoc, serverTimestamp, Timestamp, getDoc, updateUserBalanceInFirestore } from '@/lib/firebase'; // Added getDoc
 import { format } from 'date-fns';
 
 
@@ -39,19 +39,36 @@ export default function TransactionsLogTab() {
 
   const fetchTransactions = useCallback(async () => {
     setLoading(true);
+    console.log("Attempting to fetch transactions...");
     try {
       const q = query(collection(db, "transactions"), orderBy("requestedAt", "desc"));
       const querySnapshot = await getDocs(q);
       const fetchedTransactions: Transaction[] = [];
+      
+      console.log("Transaction querySnapshot empty:", querySnapshot.empty);
+      console.log("Transaction querySnapshot size:", querySnapshot.size);
+
       querySnapshot.forEach((doc) => {
         fetchedTransactions.push({ id: doc.id, ...doc.data() } as Transaction);
       });
+      console.log("Fetched transactions from Firestore:", fetchedTransactions);
       setTransactions(fetchedTransactions);
-    } catch (error) {
+      if (querySnapshot.empty) {
+        console.log("No transactions found in Firestore matching the query.");
+      }
+    } catch (error: any) {
       console.error("Error fetching transactions: ", error);
-      toast({ title: "Error", description: "Could not fetch transaction logs.", variant: "destructive" });
+      let description = "Could not fetch transaction logs.";
+      if (error.message) {
+        description += ` Details: ${error.message}`;
+      }
+      if (error.code) {
+        description += ` Code: ${error.code}`;
+      }
+      toast({ title: "Fetch Error", description, variant: "destructive" });
     } finally {
       setLoading(false);
+      console.log("Finished fetching transactions.");
     }
   }, [toast]);
 
@@ -66,33 +83,41 @@ export default function TransactionsLogTab() {
         if (transaction.type === 'deposit') {
           await updateUserBalanceInFirestore(transaction.userId, transaction.amount);
         } else if (transaction.type === 'withdrawal') {
-          // Check balance before deducting for withdrawal, though initial check was on user side
           const userDocRef = doc(db, "users", transaction.userId);
-          const userDocSnap = await getDoc(userDocRef); // Re-fetch for current balance
+          const userDocSnap = await getDoc(userDocRef); 
           if (userDocSnap.exists()) {
             const userData = userDocSnap.data();
             if ((userData.balance || 0) < transaction.amount) {
                toast({ title: "Action Failed", description: `User ${transaction.userName} has insufficient balance for this withdrawal. Balance: ${userData.currency} ${(userData.balance || 0).toFixed(2)}`, variant: "destructive" });
-               // Optionally set status to rejected or keep pending for re-evaluation
                await updateDoc(transactionDocRef, { status: 'rejected', processedAt: serverTimestamp() });
-               fetchTransactions(); // Re-fetch to update UI
+               fetchTransactions(); 
                return;
             }
+            await updateUserBalanceInFirestore(transaction.userId, -transaction.amount);
+          } else {
+            toast({title: "Error", description: `User document for ${transaction.userName} not found. Cannot process withdrawal.`, variant: "destructive"});
+            return; // Stop processing if user doc not found
           }
-          await updateUserBalanceInFirestore(transaction.userId, -transaction.amount);
         }
       }
-      // For both approved and rejected, update transaction status
+      
       await updateDoc(transactionDocRef, { status: newStatus, processedAt: serverTimestamp() });
       
       toast({
         title: `Transaction ${newStatus}`,
         description: `Transaction ID ${transaction.id} has been ${newStatus}. User balance updated accordingly for approvals.`,
       });
-      fetchTransactions(); // Re-fetch to update UI
+      fetchTransactions(); 
     } catch (error: any) {
       console.error(`Error ${newStatus} transaction: `, error);
-      toast({ title: "Action Failed", description: `Could not ${newStatus} transaction ${transaction.id}. ${error.message}`, variant: "destructive" });
+      let errorDescription = `Could not ${newStatus} transaction ${transaction.id}.`;
+      if (error.message) {
+        errorDescription += ` Details: ${error.message}`;
+      }
+       if (error.code) {
+        errorDescription += ` Code: ${error.code}`;
+      }
+      toast({ title: "Action Failed", description: errorDescription, variant: "destructive" });
     }
   };
 
@@ -117,8 +142,9 @@ export default function TransactionsLogTab() {
   const formatDate = (timestamp?: Timestamp) => {
     if (!timestamp) return 'N/A';
     try {
-      return format(timestamp.toDate(), 'PPpp'); // Example format: Jun 12, 2024, 10:00:00 AM
+      return format(timestamp.toDate(), 'PPpp'); 
     } catch (e) {
+        console.error("Error formatting date:", e, "Timestamp:", timestamp);
         return 'Invalid Date';
     }
   };
@@ -133,13 +159,13 @@ export default function TransactionsLogTab() {
           </CardTitle>
           <CardDescription>View and manage all user deposit and withdrawal requests.</CardDescription>
         </div>
-        <Button variant="outline" size="icon" onClick={fetchTransactions} disabled={loading}>
+        <Button variant="outline" size="icon" onClick={fetchTransactions} disabled={loading} aria-label="Refresh transactions">
           <RefreshCw className={cn("h-4 w-4", {"animate-spin": loading})} />
         </Button>
       </CardHeader>
       <CardContent className="pt-6">
         {loading ? (
-          <div className="text-center py-10">Loading transactions...</div>
+          <div className="text-center py-10 flex items-center justify-center"><RefreshCw className="mr-2 h-5 w-5 animate-spin" /> Loading transactions...</div>
         ) : (
           <div className="overflow-x-auto">
             <Table>
@@ -181,7 +207,7 @@ export default function TransactionsLogTab() {
                     <TableCell>
                       <Badge
                         variant={getStatusBadgeVariant(txn.status)}
-                        className={cn("capitalize font-medium flex items-center gap-1.5", {
+                        className={cn("capitalize font-medium flex items-center gap-1.5 text-xs", { // Ensure text size is consistent
                           'bg-green-500/20 text-green-700 border-green-500/30 dark:text-green-400 dark:border-green-700/50': txn.status === 'approved',
                           'bg-yellow-500/20 text-yellow-700 border-yellow-500/30 dark:text-yellow-400 dark:border-yellow-700/50': txn.status === 'pending',
                         })}
@@ -190,9 +216,10 @@ export default function TransactionsLogTab() {
                         {txn.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-xs">
+                    <TableCell className="text-xs max-w-[150px] truncate">
                         {txn.type === 'withdrawal' && txn.accountDetails && <div>To: {txn.accountDetails}</div>}
                         {txn.type === 'deposit' && txn.transactionId && <div>Ref ID: {txn.transactionId}</div>}
+                        {!txn.accountDetails && !txn.transactionId && <span className="text-muted-foreground italic">No extra details</span>}
                     </TableCell>
                     <TableCell className="text-right">
                       {txn.status === 'pending' ? (
@@ -200,18 +227,18 @@ export default function TransactionsLogTab() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="border-green-500 text-green-500 hover:bg-green-500/10 hover:text-green-600"
+                            className="border-green-500 text-green-500 hover:bg-green-500/10 hover:text-green-600 h-8 px-2 text-xs"
                             onClick={() => handleAction(txn, 'approved')}
                           >
-                            <CheckCircle className="mr-1.5 h-4 w-4" /> Approve
+                            <CheckCircle className="mr-1.5 h-3.5 w-3.5" /> Approve
                           </Button>
                           <Button
                             variant="outline"
                             size="sm"
-                            className="border-red-500 text-red-500 hover:bg-red-500/10 hover:text-red-600"
+                            className="border-red-500 text-red-500 hover:bg-red-500/10 hover:text-red-600 h-8 px-2 text-xs"
                             onClick={() => handleAction(txn, 'rejected')}
                           >
-                            <XCircle className="mr-1.5 h-4 w-4" /> Reject
+                            <XCircle className="mr-1.5 h-3.5 w-3.5" /> Reject
                           </Button>
                         </div>
                       ) : (
@@ -222,7 +249,11 @@ export default function TransactionsLogTab() {
                 )) : (
                   <TableRow>
                     <TableCell colSpan={9} className="h-24 text-center">
-                      No transactions found.
+                       <div className="flex flex-col items-center justify-center">
+                         <AlertTriangle className="w-10 h-10 text-muted-foreground mb-2" />
+                         <p className="font-semibold">No transactions found.</p>
+                         <p className="text-xs text-muted-foreground">Users may not have made any requests yet, or there might be a filter active.</p>
+                       </div>
                     </TableCell>
                   </TableRow>
                 )}
