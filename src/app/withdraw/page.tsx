@@ -91,9 +91,15 @@ export default function WithdrawPage() {
       setAmount('');
       setAccountDetails('');
       router.push('/'); 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error submitting withdrawal request:", error);
-        toast({ title: "Request Failed", description: "Could not submit your withdrawal request. Please try again.", variant: "destructive" });
+        let errorDescription = "Could not submit your withdrawal request. Please try again.";
+        if (error.message) {
+          errorDescription += ` (Error: ${error.message})`;
+        } else if (typeof error === 'string') {
+          errorDescription += ` (Error: ${error})`;
+        }
+        toast({ title: "Request Failed", description: errorDescription, variant: "destructive" });
     } finally {
         setIsSubmitting(false);
     }
@@ -104,6 +110,7 @@ export default function WithdrawPage() {
   }
 
   const currentMethodDetails = withdrawalMethods.find(m => m.id === selectedMethod);
+  const withdrawalAmount = parseFloat(amount) || 0; // Define here for button disabled logic
   
   return (
     <AppLayout>
@@ -153,16 +160,16 @@ export default function WithdrawPage() {
                     disabled={isSubmitting}
                   />
                 </div>
-                <Button type="submit" className="w-full font-semibold text-lg py-3" disabled={isSubmitting || withdrawalAmount > balance}>
+                <Button type="submit" className="w-full font-semibold text-lg py-3" disabled={isSubmitting || withdrawalAmount <=0 || withdrawalAmount > balance}>
                   {isSubmitting ? 'Submitting Request...' : 'Submit Withdrawal Request'}
                 </Button>
-                 {parseFloat(amount) > balance && (
+                 {withdrawalAmount > balance && withdrawalAmount > 0 && (
                     <p className="text-xs text-destructive text-center">Withdrawal amount exceeds your available balance.</p>
                 )}
               </form>
                <p className="mt-4 text-xs text-muted-foreground text-center">
                 Withdrawals are typically processed within 24 hours after admin approval. Ensure your account details are correct.
-              </p>
+               </p>
             </CardContent>
           </Card>
         ) : (

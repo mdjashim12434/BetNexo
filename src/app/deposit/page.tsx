@@ -81,9 +81,15 @@ export default function DepositPage() {
       setAmount('');
       setTransactionId('');
       router.push('/'); 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error submitting deposit request:", error);
-      toast({ title: "Request Failed", description: "Could not submit your deposit request. Please try again.", variant: "destructive" });
+      let errorDescription = "Could not submit your deposit request. Please try again.";
+      if (error.message) {
+        errorDescription += ` (Error: ${error.message})`;
+      } else if (typeof error === 'string') {
+        errorDescription += ` (Error: ${error})`;
+      }
+      toast({ title: "Request Failed", description: errorDescription, variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }
