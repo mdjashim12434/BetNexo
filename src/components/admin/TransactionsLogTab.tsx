@@ -5,8 +5,8 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge';
-import { CheckCircle, XCircle, Clock, History, DollarSign, Users, TrendingUp, TrendingDown } from "lucide-react";
+import { Badge } from '@/components/ui/badge';
+import { CheckCircle, XCircle, Clock, History } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from '@/lib/utils';
 
@@ -51,9 +51,9 @@ export default function TransactionsLogTab() {
 
   const getStatusBadgeVariant = (status: TransactionStatus) => {
     switch (status) {
-      case 'approved': return 'default'; // Greenish
-      case 'pending': return 'outline'; // Yellowish/Orange
-      case 'rejected': return 'destructive'; // Reddish
+      case 'approved': return 'default';
+      case 'pending': return 'outline';
+      case 'rejected': return 'destructive';
       default: return 'secondary';
     }
   };
@@ -76,7 +76,6 @@ export default function TransactionsLogTab() {
         <CardDescription>View and manage all user deposit and withdrawal requests.</CardDescription>
       </CardHeader>
       <CardContent className="pt-6">
-        {/* Add filters here in the future if needed (e.g., by status, type) */}
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
@@ -100,7 +99,7 @@ export default function TransactionsLogTab() {
                     <div className="text-xs text-muted-foreground">{txn.userId}</div>
                   </TableCell>
                   <TableCell>
-                    <Badge 
+                    <Badge
                       variant={txn.type === 'deposit' ? 'secondary' : 'outline'}
                       className={cn("capitalize font-medium", {
                         'bg-green-500/10 text-green-700 border-green-500/30 dark:text-green-400 dark:border-green-700/50': txn.type === 'deposit',
@@ -114,12 +113,11 @@ export default function TransactionsLogTab() {
                   <TableCell>{txn.method}</TableCell>
                   <TableCell className="text-xs">{txn.date}</TableCell>
                   <TableCell>
-                    <Badge 
+                    <Badge
                       variant={getStatusBadgeVariant(txn.status)}
                       className={cn("capitalize font-medium flex items-center gap-1.5", {
                         'bg-green-500/20 text-green-700 border-green-500/30 dark:text-green-400 dark:border-green-700/50': txn.status === 'approved',
                         'bg-yellow-500/20 text-yellow-700 border-yellow-500/30 dark:text-yellow-400 dark:border-yellow-700/50': txn.status === 'pending',
-                         // Destructive variant handles its own red styling for rejected
                       })}
                     >
                       {getStatusIcon(txn.status)}
@@ -165,5 +163,3 @@ export default function TransactionsLogTab() {
     </Card>
   );
 }
-
-    
