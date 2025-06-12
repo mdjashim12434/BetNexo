@@ -14,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import MatchCard, { type Match } from '@/components/sports/MatchCard';
+import LiveOddsDisplay from '@/components/sports/LiveOddsDisplay'; // Added import
 
 interface SportCategoryButton {
   name: string;
@@ -59,6 +60,12 @@ export default function HomePage() {
     return <AppLayout><div className="flex items-center justify-center min-h-screen"><div className="text-center p-10">Redirecting to login...</div></div></AppLayout>;
   }
 
+  // Valid sport keys for The Odds API can be found at: https://the-odds-api.com/sports-odds-data/sports-apis.html
+  // Example: 'cricket_international_t20', 'soccer_epl' (English Premier League)
+  // 'upcoming' is a general parameter, not a sport key itself for specific sports odds usually.
+  // It's better to use specific sport keys like 'cricket_upcoming' if available, or just 'cricket_international_t20'.
+  // For this example, I'll use 'cricket_international_t20'. For football, 'soccer_uefa_european_championship' or 'soccer_epl'.
+  
   return (
     <AppLayout>
       <div className="space-y-6 pb-16">
@@ -130,9 +137,31 @@ export default function HomePage() {
              <p className="text-muted-foreground text-sm">No featured football matches.</p>
           )}
         </section>
+
+        <section>
+          {/* Live Odds Display Section for Cricket */}
+          {/* You can find sport_key values at https://the-odds-api.com/sports-odds-data/sports-apis.html */}
+          <LiveOddsDisplay 
+            sportKey="cricket_international_t20" 
+            sportDisplayName="International T20 Cricket" 
+            region="uk" 
+            maxItems={3} 
+          />
+        </section>
+
+        <section>
+           {/* Live Odds Display Section for Football (e.g., EPL) */}
+           <LiveOddsDisplay 
+            sportKey="soccer_epl" 
+            sportDisplayName="English Premier League Football" 
+            region="uk" 
+            maxItems={3} 
+          />
+        </section>
         
       </div>
       <BottomNav />
     </AppLayout>
   );
 }
+
