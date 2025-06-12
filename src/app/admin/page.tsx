@@ -44,9 +44,12 @@ export default function AdminPage() {
       if (!user) {
         console.log('AdminPage: No user object found. Redirecting to /login.');
         router.push('/login');
-      } else if (user.emailVerified !== true) { // Explicitly check for true
+      } else if (user.emailVerified !== true) { 
         console.log('AdminPage: User email is not verified (current value: ' + user.emailVerified + '). Redirecting to /login.');
         router.push('/login');
+      } else if (typeof user.role === 'undefined') {
+        // Role might still be loading from Firestore. The render conditions below will show a loading state.
+        console.log('AdminPage: User role is undefined. Waiting for role to be loaded.');
       } else if (user.role !== 'Admin') { 
         console.log(`AdminPage: User role is "${user.role}" (not 'Admin'). Redirecting to /.`);
         router.push('/'); 
@@ -57,7 +60,7 @@ export default function AdminPage() {
     }
   }, [user, loadingAuth, router]);
 
-  if (loadingAuth) {
+  if (loadingAuth || (user && typeof user.role === 'undefined')) {
     return <AppLayout><div className="flex items-center justify-center min-h-screen"><div className="text-center p-10">Loading authentication for Admin...</div></div></AppLayout>;
   }
 
