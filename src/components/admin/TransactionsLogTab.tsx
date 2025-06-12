@@ -6,11 +6,19 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, XCircle, Clock, History, RefreshCw, AlertTriangle } from "lucide-react";
+import { CheckCircle, XCircle, Clock, History, RefreshCw, AlertTriangle, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from '@/lib/utils';
 import { db, collection, query, orderBy, getDocs, doc, updateDoc, serverTimestamp, Timestamp, getDoc, updateUserBalanceInFirestore } from '@/lib/firebase';
 import { format } from 'date-fns';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose
+} from "@/components/ui/dialog";
 
 
 export type TransactionStatus = 'pending' | 'approved' | 'rejected';
@@ -22,53 +30,54 @@ export interface Transaction {
   userName: string;
   amount: number;
   currency: string;
-  method: string;
+  method: string; // Name of the payment method (e.g., Bkash)
+  methodId?: string; // ID of the payment method from paymentMethods collection
   type: TransactionType;
   status: TransactionStatus;
   requestedAt: Timestamp; // Firestore Timestamp
   processedAt?: Timestamp;
-  accountDetails?: string; // For withdrawals
-  transactionId?: string; // Optional gateway transaction ID for deposits
+  
+  // Deposit specific
+  userSendingAccountNumber?: string;
+  platformReceivingAccountNumber?: string;
+  platformAccountType?: 'personal' | 'agent' | 'merchant'; // For deposits
+  paymentTransactionId?: string; // User provided TrxID for deposits
+
+  // Withdrawal specific (platformAccountType might be stored for withdrawals too for consistency)
+  userReceivingAccountDetails?: string; 
+  platformSendingAccountNumber?: string; // Platform's account used for this withdrawal method
+
+  // Generic field for older transactions or if specific fields are missing
+  accountDetails?: string; // Fallback or general purpose
 }
 
 
 export default function TransactionsLogTab() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedTransactionForDetails, setSelectedTransactionForDetails] = useState<Transaction | null>(null);
   const { toast } = useToast();
 
   const fetchTransactions = useCallback(async () => {
     setLoading(true);
-    console.log("Attempting to fetch transactions...");
     try {
       const q = query(collection(db, "transactions"), orderBy("requestedAt", "desc"));
       const querySnapshot = await getDocs(q);
       const fetchedTransactions: Transaction[] = [];
       
-      console.log("Transaction querySnapshot empty:", querySnapshot.empty);
-      console.log("Transaction querySnapshot size:", querySnapshot.size);
-
       querySnapshot.forEach((doc) => {
         fetchedTransactions.push({ id: doc.id, ...doc.data() } as Transaction);
       });
-      console.log("Fetched transactions from Firestore:", fetchedTransactions);
       setTransactions(fetchedTransactions);
-      if (querySnapshot.empty) {
-        console.log("No transactions found in Firestore matching the query.");
-      }
     } catch (error: any) {
       console.error("Error fetching transactions: ", error);
       let description = "Could not fetch transaction logs.";
       if (error.message) {
         description += ` Details: ${error.message}`;
       }
-      if (error.code) {
-        description += ` Code: ${error.code}`;
-      }
       toast({ title: "Fetch Error", description, variant: "destructive" });
     } finally {
       setLoading(false);
-      console.log("Finished fetching transactions.");
     }
   }, [toast]);
 
@@ -89,19 +98,15 @@ export default function TransactionsLogTab() {
             const userData = userDocSnap.data();
             if ((userData.balance || 0) < transaction.amount) {
                toast({ title: "Action Failed", description: `User ${transaction.userName} has insufficient balance for this withdrawal. Current Balance: ${userData.currency || 'N/A'} ${(userData.balance || 0).toFixed(2)}. Required: ${transaction.amount.toFixed(2)}`, variant: "destructive", duration: 7000 });
-               // Optionally, automatically reject the transaction
-               // await updateDoc(transactionDocRef, { status: 'rejected', processedAt: serverTimestamp(), rejectionReason: 'Insufficient balance' });
-               // fetchTransactions(); 
-               return; // Stop processing
+               return; 
             }
             await updateUserBalanceInFirestore(transaction.userId, -transaction.amount);
           } else {
             toast({title: "Error", description: `User document for ${transaction.userName} not found. Cannot process withdrawal.`, variant: "destructive"});
-            return; // Stop processing if user doc not found
+            return; 
           }
         }
       }
-      // For both 'approved' and 'rejected', update the transaction document
       await updateDoc(transactionDocRef, { status: newStatus, processedAt: serverTimestamp() });
       
       toast({
@@ -111,14 +116,7 @@ export default function TransactionsLogTab() {
       fetchTransactions(); 
     } catch (error: any) {
       console.error(`Error ${newStatus} transaction: `, error);
-      let errorDescription = `Could not ${newStatus} transaction ${transaction.id}.`;
-      if (error.message) {
-        errorDescription += ` Details: ${error.message}`;
-      }
-       if (error.code) {
-        errorDescription += ` Code: ${error.code}`;
-      }
-      toast({ title: "Action Failed", description: errorDescription, variant: "destructive" });
+      toast({ title: "Action Failed", description: `Could not ${newStatus} transaction ${transaction.id}. ` + error.message, variant: "destructive" });
     }
   };
 
@@ -145,7 +143,6 @@ export default function TransactionsLogTab() {
     try {
       return format(timestamp.toDate(), 'PPpp'); 
     } catch (e) {
-        console.error("Error formatting date:", e, "Timestamp:", timestamp);
         return 'Invalid Date';
     }
   };
@@ -177,9 +174,8 @@ export default function TransactionsLogTab() {
                   <TableHead>Amount</TableHead>
                   <TableHead>Method</TableHead>
                   <TableHead>Requested At</TableHead>
-                  <TableHead>Processed At</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Details</TableHead>
+                  <TableHead className="text-center">Details</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -204,7 +200,6 @@ export default function TransactionsLogTab() {
                     <TableCell>{txn.amount.toFixed(2)} {txn.currency}</TableCell>
                     <TableCell>{txn.method}</TableCell>
                     <TableCell className="text-xs">{formatDate(txn.requestedAt)}</TableCell>
-                    <TableCell className="text-xs">{formatDate(txn.processedAt)}</TableCell>
                     <TableCell>
                       <Badge
                         variant={getStatusBadgeVariant(txn.status)}
@@ -217,10 +212,49 @@ export default function TransactionsLogTab() {
                         {txn.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-xs max-w-[150px] truncate">
-                        {txn.type === 'withdrawal' && txn.accountDetails && <div>To: {txn.accountDetails}</div>}
-                        {txn.type === 'deposit' && txn.transactionId && <div>Ref ID: {txn.transactionId}</div>}
-                        {!txn.accountDetails && !txn.transactionId && (!txn.type || (txn.type === 'deposit' && !txn.transactionId)) && <span className="text-muted-foreground italic">No extra details</span>}
+                    <TableCell className="text-center">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                             <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => setSelectedTransactionForDetails(txn)}>
+                                <Info className="h-3.5 w-3.5"/>
+                             </Button>
+                          </DialogTrigger>
+                           {selectedTransactionForDetails && selectedTransactionForDetails.id === txn.id && (
+                            <DialogContent className="sm:max-w-md">
+                                <DialogHeader>
+                                <DialogTitle>Transaction Details (ID: {selectedTransactionForDetails.id})</DialogTitle>
+                                </DialogHeader>
+                                <div className="space-y-3 py-4 text-sm">
+                                    <p><strong>User:</strong> {selectedTransactionForDetails.userName} ({selectedTransactionForDetails.userId})</p>
+                                    <p><strong>Type:</strong> <span className="capitalize">{selectedTransactionForDetails.type}</span></p>
+                                    <p><strong>Amount:</strong> {selectedTransactionForDetails.amount.toFixed(2)} {selectedTransactionForDetails.currency}</p>
+                                    <p><strong>Method:</strong> {selectedTransactionForDetails.method}</p>
+                                    <p><strong>Status:</strong> <span className="capitalize">{selectedTransactionForDetails.status}</span></p>
+                                    <p><strong>Requested At:</strong> {formatDate(selectedTransactionForDetails.requestedAt)}</p>
+                                    <p><strong>Processed At:</strong> {formatDate(selectedTransactionForDetails.processedAt)}</p>
+                                    {selectedTransactionForDetails.type === 'deposit' && (
+                                        <>
+                                        <p><strong>User Sending A/C:</strong> {selectedTransactionForDetails.userSendingAccountNumber || 'N/A'}</p>
+                                        <p><strong>Platform Receiving A/C:</strong> {selectedTransactionForDetails.platformReceivingAccountNumber || 'N/A'} ({selectedTransactionForDetails.platformAccountType || 'N/A'})</p>
+                                        <p><strong>Payment TrxID:</strong> {selectedTransactionForDetails.paymentTransactionId || 'N/A'}</p>
+                                        </>
+                                    )}
+                                    {selectedTransactionForDetails.type === 'withdrawal' && (
+                                        <>
+                                        <p><strong>User Receiving A/C:</strong> {selectedTransactionForDetails.userReceivingAccountDetails || selectedTransactionForDetails.accountDetails || 'N/A'}</p>
+                                        <p><strong>Platform Sending A/C:</strong> {selectedTransactionForDetails.platformSendingAccountNumber || 'N/A'} ({selectedTransactionForDetails.platformAccountType || 'N/A'})</p>
+                                        </>
+                                    )}
+                                     {selectedTransactionForDetails.accountDetails && (!selectedTransactionForDetails.userReceivingAccountDetails && selectedTransactionForDetails.type === 'withdrawal') && (
+                                      <p><strong>Legacy Account Details:</strong> {selectedTransactionForDetails.accountDetails}</p>
+                                    )}
+                                </div>
+                                <DialogClose asChild>
+                                    <Button type="button" variant="outline">Close</Button>
+                                </DialogClose>
+                            </DialogContent>
+                           )}
+                        </Dialog>
                     </TableCell>
                     <TableCell className="text-right">
                       {txn.status === 'pending' ? (
@@ -249,11 +283,11 @@ export default function TransactionsLogTab() {
                   </TableRow>
                 )) : (
                   <TableRow>
-                    <TableCell colSpan={9} className="h-24 text-center">
+                    <TableCell colSpan={8} className="h-24 text-center"> {/* Adjusted colSpan */}
                        <div className="flex flex-col items-center justify-center">
                          <AlertTriangle className="w-10 h-10 text-muted-foreground mb-2" />
                          <p className="font-semibold">No transactions found.</p>
-                         <p className="text-xs text-muted-foreground">Users may not have made any requests yet, or there might be a filter active.</p>
+                         <p className="text-xs text-muted-foreground">Users may not have made any requests yet.</p>
                        </div>
                     </TableCell>
                   </TableRow>

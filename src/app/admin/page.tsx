@@ -10,7 +10,7 @@ import AgentManagementTab from "@/components/admin/AgentManagementTab";
 import TransactionsLogTab from "@/components/admin/TransactionsLogTab";
 import DashboardTab from "@/components/admin/DashboardTab";
 import BetHistoryTab from "@/components/admin/BetHistoryTab";
-import PaymentMethodsManagementTab from "@/components/admin/PaymentMethodsManagementTab"; // Added
+import PaymentMethodsManagementTab from "@/components/admin/PaymentMethodsManagementTab";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
@@ -28,7 +28,7 @@ const navItems: NavItem[] = [
   { id: 'userManagement', label: 'Manage Users', icon: Users, component: UserManagementTab },
   { id: 'balanceSheet', label: 'Balance Sheet', icon: DollarSign, component: BalanceControlTab },
   { id: 'transactionsLog', label: 'Transaction Logs', icon: History, component: TransactionsLogTab },
-  { id: 'paymentMethods', label: 'Payment Methods', icon: CreditCard, component: PaymentMethodsManagementTab }, // New Item
+  { id: 'paymentMethods', label: 'Payment Methods', icon: CreditCard, component: PaymentMethodsManagementTab },
   { id: 'agentControl', label: 'Agent Control', icon: Briefcase, component: AgentManagementTab },
   { id: 'betHistory', label: 'Bet History', icon: ListChecks, component: BetHistoryTab },
 ];
@@ -39,16 +39,20 @@ export default function AdminPage() {
   const [activeSection, setActiveSection] = useState<string>('dashboard');
 
   useEffect(() => {
-    console.log('AdminPage Effect: loadingAuth, user?.emailVerified, user?.role', loadingAuth, user?.emailVerified, user?.role);
+    console.log('AdminPage Effect Fired. State: loadingAuth:', loadingAuth, 'user exists:', !!user, 'user.emailVerified:', user?.emailVerified, 'user.role:', user?.role);
     if (!loadingAuth) {
-      if (!user || !user.emailVerified) {
-        console.log('AdminPage: No user or email not verified, redirecting to /login');
+      if (!user) {
+        console.log('AdminPage: No user object found. Redirecting to /login.');
+        router.push('/login');
+      } else if (user.emailVerified !== true) { // Explicitly check for true
+        console.log('AdminPage: User email is not verified (current value: ' + user.emailVerified + '). Redirecting to /login.');
         router.push('/login');
       } else if (user.role !== 'Admin') { 
-        console.log(`AdminPage: User role is "${user.role}", redirecting to /`);
+        console.log(`AdminPage: User role is "${user.role}" (not 'Admin'). Redirecting to /.`);
         router.push('/'); 
       } else {
-        console.log('AdminPage: User is admin and verified, proceeding.');
+        // User is present, emailVerified is true, and role is 'Admin'
+        console.log('AdminPage: User is admin and verified. Proceeding to render admin content.');
       }
     }
   }, [user, loadingAuth, router]);
@@ -57,8 +61,10 @@ export default function AdminPage() {
     return <AppLayout><div className="flex items-center justify-center min-h-screen"><div className="text-center p-10">Loading authentication for Admin...</div></div></AppLayout>;
   }
 
-  if (!user || !user.emailVerified) {
-    return <AppLayout><div className="flex items-center justify-center min-h-screen"><div className="text-center p-10">Redirecting to login... (User not found or email not verified)</div></div></AppLayout>;
+  // These checks are primarily for the initial render before useEffect can redirect.
+  // The useEffect handles the definitive redirection.
+  if (!user || user.emailVerified !== true) {
+    return <AppLayout><div className="flex items-center justify-center min-h-screen"><div className="text-center p-10">Redirecting to login... (User not authenticated or email not verified for admin access)</div></div></AppLayout>;
   }
   
   if (user.role !== 'Admin') {
@@ -100,7 +106,7 @@ export default function AdminPage() {
           </Sidebar>
           <SidebarInset className="flex-1 bg-background">
             <div className="p-4 md:p-6 lg:p-8">
-              {activeSection === 'dashboard' && ActiveComponent === DashboardTab ? (
+              {ActiveComponent === DashboardTab ? (
                 <DashboardTab setActiveSection={setActiveSection} />
               ) : (
                 <ActiveComponent />
