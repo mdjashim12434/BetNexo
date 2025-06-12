@@ -2,7 +2,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAnalytics, isSupported } from "firebase/analytics";
-import { getFirestore, collection, doc, setDoc, getDoc, serverTimestamp, updateDoc, addDoc, query, where, getDocs, orderBy, Timestamp, runTransaction, limit, startAfter, type QueryDocumentSnapshot } from "firebase/firestore"; // Added limit, startAfter, QueryDocumentSnapshot
+import { getFirestore, collection, doc, setDoc, getDoc, serverTimestamp, updateDoc, addDoc, query, where, getDocs, orderBy, Timestamp, runTransaction, limit, startAfter, type QueryDocumentSnapshot, deleteDoc } from "firebase/firestore"; // Added deleteDoc
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, signOut, onAuthStateChanged, type User as FirebaseUserType } from "firebase/auth";
 
 // Your web app's Firebase configuration
@@ -60,5 +60,5 @@ const updateUserBalanceInFirestore = async (userId: string, amountChange: number
 };
 
 
-export { app, auth, analytics, db, collection, doc, setDoc, getDoc, serverTimestamp, updateDoc, addDoc, query, where, getDocs, orderBy, Timestamp, runTransaction, updateUserBalanceInFirestore, firebaseConfig, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, signOut, onAuthStateChanged, type FirebaseUserType, limit, startAfter, type QueryDocumentSnapshot }; // Added limit, startAfter, QueryDocumentSnapshot
+export { app, auth, analytics, db, collection, doc, setDoc, getDoc, serverTimestamp, updateDoc, addDoc, query, where, getDocs, orderBy, Timestamp, runTransaction, updateUserBalanceInFirestore, firebaseConfig, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, signOut, onAuthStateChanged, type FirebaseUserType, limit, startAfter, type QueryDocumentSnapshot, deleteDoc }; // Added deleteDoc
 
