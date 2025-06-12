@@ -5,7 +5,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { fetchSportsOdds, type SimplifiedMatchOdds } from '@/services/oddsAPI';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { AlertTriangle, BarChartHorizontalBig, CalendarClock, Loader2, RefreshCw, Info } from 'lucide-react';
-import { format, formatDistanceToNowStrict } from 'date-fns';
+import { format, formatDistanceToNowStrict, isValid } from 'date-fns'; // Added isValid
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -22,6 +22,16 @@ interface LiveOddsDisplayProps {
 
 const REFRESH_INTERVAL_MS = 30000; // 30 seconds
 
+// Helper function to safely format match time
+const formatMatchTime = (timeString?: string): string => {
+  if (!timeString) return 'N/A';
+  const date = new Date(timeString);
+  if (isValid(date)) {
+    return format(date, 'MMM d, h:mm a');
+  }
+  return timeString; // Fallback to original string if invalid
+};
+
 export default function LiveOddsDisplay({ sportKey, sportDisplayName, region = 'uk', maxItems = 3 }: LiveOddsDisplayProps) {
   const [matches, setMatches] = useState<SimplifiedMatchOdds[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,7 +40,7 @@ export default function LiveOddsDisplay({ sportKey, sportDisplayName, region = '
   const { toast } = useToast();
 
   const loadOdds = useCallback(async (isManualRefresh: boolean = false) => {
-    if (!isManualRefresh) { // Don't show main loader for background refreshes
+    if (!isManualRefresh) {
         setLoading(true);
     }
     setError(null);
@@ -60,13 +70,13 @@ export default function LiveOddsDisplay({ sportKey, sportDisplayName, region = '
     } finally {
       setLoading(false);
     }
-  }, [sportKey, region, maxItems, toast, sportDisplayName]); // Added dependencies
+  }, [sportKey, region, maxItems, toast, sportDisplayName]);
 
   useEffect(() => {
     if (sportKey) {
-      loadOdds(); // Initial load
+      loadOdds(); 
       const intervalId = setInterval(() => loadOdds(), REFRESH_INTERVAL_MS);
-      return () => clearInterval(intervalId); // Cleanup interval on component unmount
+      return () => clearInterval(intervalId);
     } else {
       setError("Sport key not provided to LiveOddsDisplay component.");
       setLoading(false);
@@ -74,7 +84,7 @@ export default function LiveOddsDisplay({ sportKey, sportDisplayName, region = '
   }, [sportKey, loadOdds]);
 
 
-  if (loading && matches.length === 0) { // Show full loader only on initial load or if no matches yet
+  if (loading && matches.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-10 my-4 text-muted-foreground bg-card rounded-lg shadow-lg min-h-[200px]">
         <Loader2 className="mr-2 h-8 w-8 animate-spin text-primary" />
@@ -83,7 +93,7 @@ export default function LiveOddsDisplay({ sportKey, sportDisplayName, region = '
     );
   }
 
-  if (error && matches.length === 0) { // Show full error only if no matches loaded previously
+  if (error && matches.length === 0) { 
     return (
       <Card className="my-4 border-destructive bg-destructive/10 shadow-lg">
         <CardHeader>
@@ -102,7 +112,7 @@ export default function LiveOddsDisplay({ sportKey, sportDisplayName, region = '
   }
   
   const renderTimeSinceUpdate = () => {
-    if (!lastUpdated) return null;
+    if (!lastUpdated || !isValid(lastUpdated)) return null; // Check if lastUpdated is valid
     return (
         <span className="text-xs text-muted-foreground">
             (Updated {formatDistanceToNowStrict(lastUpdated, { addSuffix: true })})
@@ -129,7 +139,7 @@ export default function LiveOddsDisplay({ sportKey, sportDisplayName, region = '
         </Button>
       </CardHeader>
       <CardContent className="pt-4 px-2 sm:px-4">
-        {error && matches.length > 0 && ( // Show subtle error if matches are already displayed
+        {error && matches.length > 0 && ( 
             <div className="mb-4 p-3 rounded-md bg-destructive/10 text-destructive text-xs flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4" />
                 Could not refresh odds: {error.length > 100 ? error.substring(0,100) + "..." : error}
@@ -154,7 +164,7 @@ export default function LiveOddsDisplay({ sportKey, sportDisplayName, region = '
                 </div>
                 <CardDescription className="text-xs flex items-center pt-1 text-muted-foreground">
                   <CalendarClock className="mr-1.5 h-3.5 w-3.5" />
-                  {format(new Date(match.commenceTime), 'MMM d, h:mm a')}
+                  {formatMatchTime(match.commenceTime)}
                 </CardDescription>
               </CardHeader>
               <CardContent className="pb-3 px-3 sm:px-4">
