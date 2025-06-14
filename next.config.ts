@@ -3,7 +3,6 @@ import type {NextConfig} from 'next';
 import type { Configuration as WebpackConfiguration } from 'webpack'; // Added for typing
 
 const nextConfig: NextConfig = {
-  output: 'export', // Set to 'export' as requested for static site generation
   /* config options here */
   typescript: {
     ignoreBuildErrors: true, // Explicitly ignore TS errors for dev server stability
@@ -20,7 +19,7 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
     ],
-    unoptimized: true, // Required for static export with next/image unless a custom loader is configured
+    unoptimized: true, // Can be kept, or set to false if a custom image loader is configured for serverful deployment
   },
   webpack: (
     config: WebpackConfiguration,
