@@ -20,10 +20,12 @@ export default function Header({ user, balance = 0, currency = "USD" }: HeaderPr
         <div className="flex items-center space-x-3">
           {user && (
             <Link href="/profile" className="flex items-center space-x-3">
-              {/* Balance display, now always visible if user is logged in */}
-              <div className="flex items-center justify-center rounded-md bg-accent px-3 py-1.5 text-sm font-semibold text-accent-foreground">
-                <span>{balance.toFixed(2)} {currency}</span>
-              </div>
+              {/* Balance display, shown only if user is logged in AND is NOT an Admin */}
+              {user.role !== 'Admin' && (
+                <div className="flex items-center justify-center rounded-md bg-accent px-3 py-1.5 text-sm font-semibold text-accent-foreground">
+                  <span>{balance.toFixed(2)} {currency}</span>
+                </div>
+              )}
               <Avatar className="h-9 w-9 cursor-pointer">
                 <AvatarImage src={user.avatarUrl || `https://placehold.co/40x40.png?text=${user.name ? user.name.charAt(0).toUpperCase() : 'U'}`} alt={user.name || 'User'} data-ai-hint="user avatar" />
                 <AvatarFallback>{user.name ? user.name.charAt(0).toUpperCase() : 'U'}</AvatarFallback>

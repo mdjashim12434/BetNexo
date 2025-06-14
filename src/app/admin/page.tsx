@@ -2,8 +2,8 @@
 'use client';
 
 import AppLayout from "@/components/AppLayout";
-import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarInset } from "@/components/ui/sidebar";
-import { LayoutDashboard, Users, DollarSign, History, Briefcase, ShieldAlert, ListChecks, CreditCard } from "lucide-react"; // Added CreditCard
+import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarInset, SidebarFooter } from "@/components/ui/sidebar"; // Added SidebarFooter
+import { LayoutDashboard, Users, DollarSign, History, Briefcase, ShieldAlert, ListChecks, CreditCard, LogOut } from "lucide-react"; // Added CreditCard and LogOut
 import UserManagementTab from "@/components/admin/UserManagementTab";
 import BalanceControlTab from "@/components/admin/BalanceControlTab";
 import AgentManagementTab from "@/components/admin/AgentManagementTab";
@@ -15,6 +15,8 @@ import PaymentMethodsManagementTab from "@/components/admin/PaymentMethodsManage
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useToast } from '@/hooks/use-toast';
+
 
 interface NavItem {
   id: string;
@@ -34,8 +36,9 @@ const navItems: NavItem[] = [
 ];
 
 export default function AdminPage() {
-  const { user, loadingAuth } = useAuth();
+  const { user, loadingAuth, logout } = useAuth(); // Added logout
   const router = useRouter();
+  const { toast } = useToast();
   const [activeSection, setActiveSection] = useState<string>('dashboard');
 
   useEffect(() => {
@@ -59,6 +62,17 @@ export default function AdminPage() {
       }
     }
   }, [user, loadingAuth, router]);
+
+  const handleAdminLogout = async () => {
+    try {
+      await logout();
+      toast({ title: "Logged Out", description: "You have been successfully logged out." });
+      router.push('/login');
+    } catch (error) {
+      console.error("Admin logout failed:", error);
+      toast({ title: "Logout Failed", description: "Could not log out. Please try again.", variant: "destructive" });
+    }
+  };
 
   if (loadingAuth || (user && typeof user.role === 'undefined')) {
     return <AppLayout><div className="flex items-center justify-center min-h-screen"><div className="text-center p-10">Loading authentication for Admin...</div></div></AppLayout>;
@@ -106,6 +120,20 @@ export default function AdminPage() {
                 ))}
               </SidebarMenu>
             </SidebarContent>
+            <SidebarFooter className="p-2 border-t border-border/60">
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={handleAdminLogout}
+                    tooltip={{ children: "Logout", side: "right", align: "center" }}
+                    className="justify-start text-red-500 hover:bg-red-500/10 hover:text-red-600"
+                  >
+                    <LogOut className="h-5 w-5" />
+                    <span>Logout</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarFooter>
           </Sidebar>
           <SidebarInset className="flex-1 bg-background">
             <div className="p-4 md:p-6 lg:p-8">
