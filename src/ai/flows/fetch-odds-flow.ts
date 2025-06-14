@@ -16,7 +16,7 @@ from 'genkit';
 // and accessed here via process.env.ODDS_API_KEY.
 // Hardcoding API keys in source code is highly insecure for production.
 // This is done for prototyping purposes ONLY.
-const THE_ODDS_API_KEY = '8bcbf09a3cbb1165806511a92d145464';
+const THE_ODDS_API_KEY = '040053541ae27560c2d2d23c96b12a88'; // Updated API Key
 const ODDS_API_BASE_URL = 'https://api.the-odds-api.com/v4/sports';
 
 interface OutcomeOddsAPI {
