@@ -53,19 +53,21 @@ export default function LiveOddsDisplay({ sportKey, sportDisplayName, region = '
       }
     } catch (err: any) {
       console.error(`Error in LiveOddsDisplay for ${sportKey}:`, err);
-      let errorMessage = 'Failed to load odds. ';
-      if (err.message?.includes("API_KEY")) {
-          errorMessage += "The API key might be missing, invalid, or not configured correctly in the backend flow.";
-      } else if (err.message?.includes("The Odds API")) {
-          errorMessage += err.message;
-      } else if (err.message?.toLowerCase().includes("quota") || err.message?.toLowerCase().includes("limit")) {
-          errorMessage += "API request quota might have been exceeded.";
-      } else {
-          errorMessage += 'This could be due to API issues or network problems. The backend flow handles the API key.';
+      let detailedErrorMessage = err.message || 'An unknown error occurred while fetching odds.';
+      
+      let displayMessage = `Failed to load odds for ${sportDisplayName}. The backend reported: "${detailedErrorMessage}"`;
+      
+      if (detailedErrorMessage.toLowerCase().includes('api key') || detailedErrorMessage.toLowerCase().includes('unauthorized') || detailedErrorMessage.toLowerCase().includes('forbidden') || detailedErrorMessage.toLowerCase().includes('api_key')) {
+        displayMessage += " This often indicates an issue with the API key (it might be invalid, expired, or have quota problems) or The Odds API service itself.";
+      } else if (detailedErrorMessage.toLowerCase().includes('quota')) {
+         displayMessage += " The API request quota might have been exceeded.";
+      } else if (detailedErrorMessage.toLowerCase().includes('network') || detailedErrorMessage.toLowerCase().includes('fetch')) {
+        displayMessage += " There might be a network issue connecting to the odds service.";
       }
-      setError(errorMessage);
+      
+      setError(displayMessage);
       if (isManualRefresh) {
-        toast({ title: "Refresh Failed", description: errorMessage, variant: "destructive" });
+        toast({ title: "Refresh Failed", description: displayMessage, variant: "destructive", duration: 10000 });
       }
     } finally {
       setLoading(false);
@@ -102,7 +104,7 @@ export default function LiveOddsDisplay({ sportKey, sportDisplayName, region = '
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-destructive text-sm">{error}</p>
+          <p className="text-destructive text-sm whitespace-pre-wrap">{error}</p>
           <Button onClick={() => loadOdds(true)} variant="outline" className="mt-4 border-destructive text-destructive hover:bg-destructive/20">
             <RefreshCw className="mr-2 h-4 w-4" /> Try Again
           </Button>
@@ -140,9 +142,9 @@ export default function LiveOddsDisplay({ sportKey, sportDisplayName, region = '
       </CardHeader>
       <CardContent className="pt-4 px-2 sm:px-4">
         {error && matches.length > 0 && ( 
-            <div className="mb-4 p-3 rounded-md bg-destructive/10 text-destructive text-xs flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4" />
-                Could not refresh odds: {error.length > 100 ? error.substring(0,100) + "..." : error}
+            <div className="mb-4 p-3 rounded-md bg-destructive/10 text-destructive text-xs flex items-center gap-2 whitespace-pre-wrap">
+                <AlertTriangle className="h-4 w-4 shrink-0" />
+                <div>Could not refresh odds. Backend reported: "{error.length > 200 ? error.substring(0,200) + "..." : error}"</div>
             </div>
         )}
         {matches.length === 0 && !loading && !error && (

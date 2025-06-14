@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview A Genkit flow to fetch sports odds from The Odds API.
@@ -86,14 +85,21 @@ const fetchOddsInternalFlow = ai.defineFlow(
 
     const url = `${ODDS_API_BASE_URL}/${input.sportKey}/odds/?apiKey=${THE_ODDS_API_KEY}&regions=${input.regions}&markets=${input.markets}&oddsFormat=${input.oddsFormat}`;
     
-    console.log(`Genkit flow: Fetching odds from URL: ${url.replace(THE_ODDS_API_KEY, "****")}`); // Log URL without key
+    // Log the URL being fetched, masking the API key for security in logs.
+    const maskedUrl = url.replace(THE_ODDS_API_KEY, '********');
+    console.log(`Genkit flow: Fetching odds from URL: ${maskedUrl}`);
 
     try {
       const response = await fetch(url);
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: "Failed to parse error response." }));
+        const errorData = await response.json().catch(() => ({ message: "Failed to parse error response from The Odds API." }));
         console.error('The Odds API HTTP error in Genkit flow:', response.status, response.statusText, errorData);
-        throw new Error(`Failed to fetch odds from The Odds API: ${response.status} ${response.statusText}. ${errorData.message ? `Message: ${errorData.message}` : ''}`);
+        // Construct a more detailed error message
+        let apiErrorMessage = `HTTP ${response.status} ${response.statusText}`;
+        if (errorData && errorData.message) {
+          apiErrorMessage += ` - Message: ${errorData.message}`;
+        }
+        throw new Error(`Failed to fetch odds from The Odds API. ${apiErrorMessage}`);
       }
       const data: MatchDataAPI[] = await response.json();
 
@@ -134,7 +140,11 @@ const fetchOddsInternalFlow = ai.defineFlow(
       });
     } catch (error) {
       console.error('Error fetching or processing sports odds in Genkit flow:', error);
-      throw error; // Re-throw to be handled by the caller
+      // Re-throw the original error or a new error that wraps it but is still identifiable
+      if (error instanceof Error) {
+        throw new Error(error.message); // Re-throw with the existing message
+      }
+      throw new Error('An unknown error occurred while fetching odds in the Genkit flow.');
     }
   }
 );
