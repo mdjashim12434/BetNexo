@@ -61,16 +61,15 @@ export default function ProfilePage() {
     } catch (error: any) {
       console.error("Error fetching user transactions:", error);
       let description = "Could not fetch your transaction history.";
-      if (error.message) {
-        description += ` ${error.message}`;
+      if (error.message && error.message.includes("https://console.firebase.google.com/project/")) {
+        description += ` Firebase reported: "${error.message}". This means a composite index is required. Please open your browser's developer console, find this exact Firebase error message, and click the link it provides to create the index in your Firestore settings. The required index is likely for the 'transactions' collection with fields 'userId' (Ascending) and 'requestedAt' (Descending).`;
+      } else if (error.message) {
+        description += ` Details: ${error.message}`;
       }
       if (error.code) {
         description += ` (Code: ${error.code})`;
       }
-      if (error.message && error.message.includes("https://console.firebase.google.com/project/")) {
-        description += " This usually means a composite index is required. Please check the browser console for a link to create it, or create it manually in Firestore (Indexes tab) for 'transactions' collection with fields 'userId' (Ascending) and 'requestedAt' (Descending).";
-      }
-      toast({ title: "Error", description, variant: "destructive", duration: 10000 });
+      toast({ title: "Transaction History Error", description, variant: "destructive", duration: 15000 });
     } finally {
       setLoadingTransactions(false);
     }
@@ -368,3 +367,4 @@ export default function ProfilePage() {
     </AppLayout>
   );
 }
+
