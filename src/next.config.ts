@@ -3,7 +3,7 @@ import type {NextConfig} from 'next';
 import type { Configuration as WebpackConfiguration } from 'webpack'; // Added for typing
 
 const nextConfig: NextConfig = {
-  // output: 'export', // Removed to allow Server Actions
+  output: 'export', // Reinstated for static export
   /* config options here */
   typescript: {
     ignoreBuildErrors: true, // Explicitly ignore TS errors for dev server stability
@@ -41,3 +41,4 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
+
