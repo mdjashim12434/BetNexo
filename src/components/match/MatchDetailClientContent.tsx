@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, BarChart2, Info, MessageSquare, TrendingUp } from 'lucide-react';
+import { ArrowLeft, BarChart2, Info, MessageSquare, TrendingUp, ArrowDownUp } from 'lucide-react';
 import Image from 'next/image';
 import type { Match } from '@/components/sports/MatchCard'; 
 import { useAuth } from '@/contexts/AuthContext';
@@ -14,7 +14,12 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
-type BetOutcome = 'teamA' | 'draw' | 'teamB';
+// Extended BetOutcome to include over/under
+type BetOutcome = 'teamA' | 'draw' | 'teamB' | 'over' | 'under';
+interface SelectedBetInfo {
+  outcome: BetOutcome;
+  point?: number; // For Over/Under bets
+}
 
 interface MatchDetailClientContentProps {
   initialMatch: Match;
@@ -26,12 +31,10 @@ export default function MatchDetailClientContent({ initialMatch }: MatchDetailCl
   const { toast } = useToast();
   
   const [match, setMatch] = useState<Match>(initialMatch);
-  const [selectedOutcome, setSelectedOutcome] = useState<BetOutcome | null>(null);
+  // Store selected outcome details (including point for O/U)
+  const [selectedBet, setSelectedBet] = useState<SelectedBetInfo | null>(null);
   const [betAmount, setBetAmount] = useState<string>('');
   const [potentialWinnings, setPotentialWinnings] = useState<number>(0);
-
-  // Match ID is derived from the initialMatch prop
-  const matchId = initialMatch.id;
 
   useEffect(() => {
     if (!loadingAuth && !user) {
@@ -39,19 +42,24 @@ export default function MatchDetailClientContent({ initialMatch }: MatchDetailCl
     }
   }, [user, loadingAuth, router]);
 
-  // If you need to update match details client-side (e.g., for live updates),
-  // you could fetch here. For now, we rely on initialMatch.
   useEffect(() => {
     setMatch(initialMatch);
+    // Reset selection when match changes
+    setSelectedBet(null);
+    setBetAmount('');
   }, [initialMatch]);
 
   useEffect(() => {
-    if (selectedOutcome && match && betAmount) {
+    if (selectedBet && match && betAmount) {
       const amount = parseFloat(betAmount);
       let odds = 0;
-      if (selectedOutcome === 'teamA' && match.oddsA) odds = parseFloat(match.oddsA);
-      else if (selectedOutcome === 'draw' && match.oddsDraw) odds = parseFloat(match.oddsDraw);
-      else if (selectedOutcome === 'teamB' && match.oddsB) odds = parseFloat(match.oddsB);
+      switch (selectedBet.outcome) {
+        case 'teamA': odds = match.homeWinOdds || 0; break;
+        case 'draw': odds = match.drawOdds || 0; break;
+        case 'teamB': odds = match.awayWinOdds || 0; break;
+        case 'over': odds = match.totalsMarket?.overOdds || 0; break;
+        case 'under': odds = match.totalsMarket?.underOdds || 0; break;
+      }
       
       if (!isNaN(amount) && amount > 0 && odds > 0) {
         setPotentialWinnings(amount * odds);
@@ -61,18 +69,23 @@ export default function MatchDetailClientContent({ initialMatch }: MatchDetailCl
     } else {
       setPotentialWinnings(0);
     }
-  }, [selectedOutcome, betAmount, match]);
+  }, [selectedBet, betAmount, match]);
 
-  const handleOutcomeSelect = (outcome: BetOutcome) => {
+  const handleOutcomeSelect = (outcome: BetOutcome, point?: number) => {
     if (match?.status === 'finished') {
         toast({ title: "Match Finished", description: "Cannot place bets on finished matches.", variant: "destructive" });
         return;
     }
-    setSelectedOutcome(outcome === selectedOutcome ? null : outcome);
+    const newSelection: SelectedBetInfo = { outcome, point };
+    if (selectedBet && selectedBet.outcome === outcome && selectedBet.point === point) {
+      setSelectedBet(null); // Deselect if same outcome clicked again
+    } else {
+      setSelectedBet(newSelection);
+    }
   };
 
   const handlePlaceBet = async () => {
-    if (!match || !selectedOutcome || !betAmount) {
+    if (!match || !selectedBet || !betAmount) {
       toast({ title: "Missing Information", description: "Please select an outcome and enter a bet amount.", variant: "destructive" });
       return;
     }
@@ -95,15 +108,19 @@ export default function MatchDetailClientContent({ initialMatch }: MatchDetailCl
     try {
       await updateBalance(-amount); 
       let outcomeText = '';
-      if (selectedOutcome === 'teamA') outcomeText = match.teamA;
-      else if (selectedOutcome === 'draw') outcomeText = 'Draw';
-      else if (selectedOutcome === 'teamB') outcomeText = match.teamB;
+      switch (selectedBet.outcome) {
+        case 'teamA': outcomeText = match.homeTeam; break;
+        case 'draw': outcomeText = 'Draw'; break;
+        case 'teamB': outcomeText = match.awayTeam; break;
+        case 'over': outcomeText = `Over ${selectedBet.point}`; break;
+        case 'under': outcomeText = `Under ${selectedBet.point}`; break;
+      }
 
       toast({
         title: "Bet Placed Successfully!",
-        description: `You bet ${currency} ${amount.toFixed(2)} on ${outcomeText} to win. Potential winnings: ${currency} ${potentialWinnings.toFixed(2)}.`,
+        description: `You bet ${currency} ${amount.toFixed(2)} on ${outcomeText}. Potential winnings: ${currency} ${potentialWinnings.toFixed(2)}.`,
       });
-      setSelectedOutcome(null);
+      setSelectedBet(null);
       setBetAmount('');
       setPotentialWinnings(0);
     } catch (error) {
@@ -119,23 +136,35 @@ export default function MatchDetailClientContent({ initialMatch }: MatchDetailCl
   const isLive = match.status === 'live';
   const isFinished = match.status === 'finished';
 
-  const getOutcomeButton = (outcome: BetOutcome, label: string, odds?: string) => {
-    if (!odds) return null;
-    const isSelected = selectedOutcome === outcome;
+  const getOutcomeButton = (outcomeType: BetOutcome, label: string, oddsValue?: number, pointValue?: number) => {
+    if (oddsValue === undefined || oddsValue === null) return null;
+    const isSelected = selectedBet?.outcome === outcomeType && selectedBet?.point === pointValue;
     return (
       <Button
         variant={isSelected ? "default" : "outline"}
         size="lg"
         className={cn("h-auto py-3 flex-1", { "ring-2 ring-primary ring-offset-2 ring-offset-background": isSelected })}
-        onClick={() => handleOutcomeSelect(outcome)}
-        disabled={isFinished || !odds}
+        onClick={() => handleOutcomeSelect(outcomeType, pointValue)}
+        disabled={isFinished}
       >
         <div className="flex flex-col items-center">
           <span className="text-sm text-muted-foreground">{label}</span>
-          <span className="text-xl font-bold">{odds || 'N/A'}</span>
+          <span className="text-xl font-bold">{oddsValue.toFixed(2)}</span>
         </div>
       </Button>
     );
+  };
+  
+  const selectedOutcomeText = () => {
+    if (!selectedBet) return '';
+    switch (selectedBet.outcome) {
+        case 'teamA': return match.homeTeam;
+        case 'draw': return 'Draw';
+        case 'teamB': return match.awayTeam;
+        case 'over': return `Over ${selectedBet.point}`;
+        case 'under': return `Under ${selectedBet.point}`;
+        default: return '';
+    }
   };
 
   return (
@@ -147,7 +176,7 @@ export default function MatchDetailClientContent({ initialMatch }: MatchDetailCl
       <Card className="overflow-hidden shadow-xl">
         {match.imageUrl && (
           <div className="relative h-64 w-full">
-            <Image src={match.imageUrl} alt={`${match.teamA} vs ${match.teamB}`} layout="fill" objectFit="cover" data-ai-hint={match.imageAiHint || `${match.sport} action`} />
+            <Image src={match.imageUrl} alt={`${match.homeTeam} vs ${match.awayTeam}`} layout="fill" objectFit="cover" data-ai-hint={match.imageAiHint || `${match.sportTitle} action`} />
              {(isLive || isFinished) && (
               <span className={cn("absolute top-4 right-4 text-white px-3 py-1.5 text-sm font-bold rounded", {
                 "bg-red-600 animate-pulse": isLive,
@@ -159,8 +188,8 @@ export default function MatchDetailClientContent({ initialMatch }: MatchDetailCl
           </div>
         )}
         <CardHeader>
-          <CardTitle className="font-headline text-3xl">{match.teamA} vs {match.teamB}</CardTitle>
-          <CardDescription className="text-lg">{match.league} - {match.sport} | {match.time}</CardDescription>
+          <CardTitle className="font-headline text-3xl">{match.homeTeam} vs {match.awayTeam}</CardTitle>
+          <CardDescription className="text-lg">{match.league || match.sportTitle} | {new Date(match.commenceTime).toLocaleString()}</CardDescription>
            {!match.imageUrl && (isLive || isFinished) && (
                <span className={cn("w-fit text-white px-3 py-1.5 text-sm font-bold rounded", {
                 "bg-red-600 animate-pulse": isLive,
@@ -185,16 +214,35 @@ export default function MatchDetailClientContent({ initialMatch }: MatchDetailCl
                   <CardDescription>Select an outcome and enter your stake.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-stretch">
-                    {getOutcomeButton('teamA', match.teamA, match.oddsA)}
-                    {match.oddsDraw && getOutcomeButton('draw', 'Draw', match.oddsDraw)}
-                    {getOutcomeButton('teamB', match.teamB, match.oddsB)}
-                  </div>
+                  {/* H2H Odds */}
+                  {(match.homeWinOdds || match.awayWinOdds || match.drawOdds) && (
+                    <div className="space-y-2">
+                        <p className="text-sm font-medium text-muted-foreground">Match Winner (H2H):</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-stretch">
+                        {getOutcomeButton('teamA', match.homeTeam, match.homeWinOdds)}
+                        {match.drawOdds && getOutcomeButton('draw', 'Draw', match.drawOdds)}
+                        {getOutcomeButton('teamB', match.awayTeam, match.awayWinOdds)}
+                        </div>
+                    </div>
+                  )}
+
+                  {/* Totals (Over/Under) Odds */}
+                  {match.totalsMarket && (match.totalsMarket.overOdds || match.totalsMarket.underOdds) && (
+                    <div className="space-y-2 pt-4 border-t mt-4">
+                        <p className="text-sm font-medium text-muted-foreground flex items-center">
+                           <ArrowDownUp className="h-4 w-4 mr-1.5"/> Total Points/Goals: {match.totalsMarket.point}
+                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-stretch">
+                        {getOutcomeButton('over', `Over ${match.totalsMarket.point}`, match.totalsMarket.overOdds, match.totalsMarket.point)}
+                        {getOutcomeButton('under', `Under ${match.totalsMarket.point}`, match.totalsMarket.underOdds, match.totalsMarket.point)}
+                        </div>
+                    </div>
+                  )}
                   
-                  {selectedOutcome && (
+                  {selectedBet && (
                     <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
                       <h3 className="font-semibold text-lg text-center">
-                        Betting on: {selectedOutcome === 'teamA' ? match.teamA : selectedOutcome === 'draw' ? 'Draw' : match.teamB}
+                        Betting on: {selectedOutcomeText()}
                       </h3>
                       <div>
                         <label htmlFor="betAmount" className="block text-sm font-medium text-foreground mb-1">
@@ -220,7 +268,7 @@ export default function MatchDetailClientContent({ initialMatch }: MatchDetailCl
                       <Button 
                         className="w-full font-semibold text-lg py-3 bg-accent text-accent-foreground hover:bg-accent/90" 
                         onClick={handlePlaceBet}
-                        disabled={!selectedOutcome || !betAmount || parseFloat(betAmount) <= 0 || isFinished || parseFloat(betAmount) > balance}
+                        disabled={!selectedBet || !betAmount || parseFloat(betAmount) <= 0 || isFinished || parseFloat(betAmount) > balance}
                       >
                         Place Bet
                       </Button>
@@ -229,7 +277,7 @@ export default function MatchDetailClientContent({ initialMatch }: MatchDetailCl
                       )}
                     </div>
                   )}
-                  {!selectedOutcome && !isFinished && (
+                  {!selectedBet && !isFinished && (
                        <p className="text-sm text-muted-foreground text-center py-4">
                          Please select an outcome above to place a bet.
                        </p>
@@ -248,8 +296,8 @@ export default function MatchDetailClientContent({ initialMatch }: MatchDetailCl
                 <CardContent>
                   <p className="text-muted-foreground">Detailed match statistics will be available here. (e.g., possession, shots, score history)</p>
                   <div className="mt-4 space-y-2">
-                      <p>Possession: {match.teamA} 55% - {match.teamB} 45% (Mock)</p>
-                      <p>Score: {match.teamA} 1 - {match.teamB} 0 (If live/finished) (Mock)</p>
+                      <p>Possession: {match.homeTeam} 55% - {match.awayTeam} 45% (Mock)</p>
+                      <p>Score: {match.homeTeam} 1 - {match.awayTeam} 0 (If live/finished) (Mock)</p>
                   </div>
                 </CardContent>
               </Card>
@@ -273,8 +321,8 @@ export default function MatchDetailClientContent({ initialMatch }: MatchDetailCl
                 <CardContent>
                   <p className="text-muted-foreground">Live chat feature coming soon! Discuss the match with other fans.</p>
                    <div className="mt-4 h-40 border rounded p-2 overflow-y-auto bg-muted/20">
-                      <p className="text-sm">Fan123: Go Team A!</p>
-                      <p className="text-sm">ProBetPlayer: Team B looks strong today.</p>
+                      <p className="text-sm">Fan123: Go {match.homeTeam}!</p>
+                      <p className="text-sm">ProBetPlayer: {match.awayTeam} looks strong today.</p>
                   </div>
                   <Input placeholder="Type your message..." className="mt-2" disabled />
                 </CardContent>
