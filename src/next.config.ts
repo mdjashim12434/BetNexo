@@ -1,15 +1,14 @@
 
 import type {NextConfig} from 'next';
-import type { Configuration as WebpackConfiguration } from 'webpack'; // Added for typing
+import type { Configuration as WebpackConfiguration } from 'webpack';
 
 const nextConfig: NextConfig = {
-  output: 'export', // Reinstated for static export
-  /* config options here */
+  output: 'export', // Ensuring static export is enabled
   typescript: {
-    ignoreBuildErrors: true, // Explicitly ignore TS errors for dev server stability
+    ignoreBuildErrors: true, 
   },
   eslint: {
-    ignoreDuringBuilds: true, // Explicitly ignore ESLint errors for dev server stability
+    ignoreDuringBuilds: true, 
   },
   images: {
     remotePatterns: [
@@ -20,15 +19,11 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
     ],
-    unoptimized: true, // Can be kept, or set to false if a custom image loader is configured for serverful deployment
+    unoptimized: true, 
   },
   webpack: (
     config: WebpackConfiguration,
-    // options: { buildId: string; dev: boolean; isServer: boolean; defaultLoaders: any; webpack: any }
   ) => {
-    // Aliasing handlebars to its precompiled browser version
-    // to avoid `require.extensions` issue with Webpack.
-    // This path assumes a standard Handlebars package structure.
     config.resolve = {
       ...config.resolve,
       alias: {
@@ -41,4 +36,3 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
-
