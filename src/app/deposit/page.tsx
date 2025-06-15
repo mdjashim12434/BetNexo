@@ -71,7 +71,20 @@ export default function DepositPage() {
       setAvailableMethods(methods);
     } catch (error: any) {
       console.error("Error fetching deposit methods:", error);
-      toast({ title: "Error", description: "Could not load deposit methods. " + error.message, variant: "destructive" });
+      let description = "Could not load deposit methods.";
+      if (error.message) {
+        if (error.message.toLowerCase().includes("missing or insufficient permissions")) {
+          description += ` Firestore reported: "${error.message}". This usually means your Firestore security rules are not allowing this query. Please double-check the rules for the 'paymentMethods' collection to ensure authenticated users can read documents where transactionType is 'deposit' and enabled is true.`;
+        } else if (error.message.toLowerCase().includes("index")) {
+          description += ` Firestore reported: "${error.message}". This means a composite index is required. Please open your browser's developer console, find this exact Firebase error message, and click the link it provides to create the index. The required index is likely for 'paymentMethods' on fields 'transactionType' (Ascending) and 'enabled' (Ascending).`;
+        } else {
+          description += ` Details: ${error.message}`;
+        }
+      }
+      if (error.code) {
+          description += ` (Code: ${error.code})`;
+      }
+      toast({ title: "Error Loading Methods", description, variant: "destructive", duration: 15000 });
     } finally {
       setLoadingMethods(false);
     }
