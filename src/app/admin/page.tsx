@@ -2,8 +2,8 @@
 'use client';
 
 import AppLayout from "@/components/AppLayout";
-import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarInset, SidebarFooter } from "@/components/ui/sidebar"; // Added SidebarFooter
-import { LayoutDashboard, Users, DollarSign, History, Briefcase, ShieldAlert, ListChecks, CreditCard, LogOut } from "lucide-react"; // Added CreditCard and LogOut
+import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarInset } from "@/components/ui/sidebar"; // Removed SidebarFooter
+import { LayoutDashboard, Users, DollarSign, History, Briefcase, ShieldAlert, ListChecks, CreditCard } from "lucide-react"; // Removed LogOut
 import UserManagementTab from "@/components/admin/UserManagementTab";
 import BalanceControlTab from "@/components/admin/BalanceControlTab";
 import AgentManagementTab from "@/components/admin/AgentManagementTab";
@@ -15,8 +15,7 @@ import PaymentMethodsManagementTab from "@/components/admin/PaymentMethodsManage
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useToast } from '@/hooks/use-toast';
-
+// Removed useToast as it's no longer used for logout here
 
 interface NavItem {
   id: string;
@@ -36,9 +35,9 @@ const navItems: NavItem[] = [
 ];
 
 export default function AdminPage() {
-  const { user, loadingAuth, logout } = useAuth(); // Added logout
+  const { user, loadingAuth } = useAuth(); // Removed logout from here
   const router = useRouter();
-  const { toast } = useToast();
+  // Removed toast hook
   const [activeSection, setActiveSection] = useState<string>('dashboard');
 
   useEffect(() => {
@@ -51,35 +50,22 @@ export default function AdminPage() {
         console.log('AdminPage: User email is not verified (current value: ' + user.emailVerified + '). Redirecting to /login.');
         router.push('/login');
       } else if (typeof user.role === 'undefined') {
-        // Role might still be loading from Firestore. The render conditions below will show a loading state.
         console.log('AdminPage: User role is undefined. Waiting for role to be loaded.');
       } else if (user.role !== 'Admin') { 
         console.log(`AdminPage: User role is "${user.role}" (not 'Admin'). Redirecting to /.`);
         router.push('/'); 
       } else {
-        // User is present, emailVerified is true, and role is 'Admin'
         console.log('AdminPage: User is admin and verified. Proceeding to render admin content.');
       }
     }
   }, [user, loadingAuth, router]);
 
-  const handleAdminLogout = async () => {
-    try {
-      await logout();
-      toast({ title: "Logged Out", description: "You have been successfully logged out." });
-      router.push('/login');
-    } catch (error) {
-      console.error("Admin logout failed:", error);
-      toast({ title: "Logout Failed", description: "Could not log out. Please try again.", variant: "destructive" });
-    }
-  };
+  // Removed handleAdminLogout function as logout is now handled in Header
 
   if (loadingAuth || (user && typeof user.role === 'undefined')) {
     return <AppLayout><div className="flex items-center justify-center min-h-screen"><div className="text-center p-10">Loading authentication for Admin...</div></div></AppLayout>;
   }
 
-  // These checks are primarily for the initial render before useEffect can redirect.
-  // The useEffect handles the definitive redirection.
   if (!user || user.emailVerified !== true) {
     return <AppLayout><div className="flex items-center justify-center min-h-screen"><div className="text-center p-10">Redirecting to login... (User not authenticated or email not verified for admin access)</div></div></AppLayout>;
   }
@@ -120,20 +106,7 @@ export default function AdminPage() {
                 ))}
               </SidebarMenu>
             </SidebarContent>
-            <SidebarFooter className="p-2 border-t border-border/60">
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    onClick={handleAdminLogout}
-                    tooltip={{ children: "Logout", side: "right", align: "center" }}
-                    className="justify-start text-red-500 hover:bg-red-500/10 hover:text-red-600"
-                  >
-                    <LogOut className="h-5 w-5" />
-                    <span>Logout</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </SidebarFooter>
+            {/* SidebarFooter with logout button removed */}
           </Sidebar>
           <SidebarInset className="flex-1 bg-background">
             <div className="p-4 md:p-6 lg:p-8">
