@@ -74,17 +74,16 @@ export default function DepositPage() {
       let description = "Could not load deposit methods.";
       if (error.message) {
         if (error.message.toLowerCase().includes("missing or insufficient permissions")) {
-          description += ` Firestore reported: "${error.message}". This usually means your Firestore security rules are not allowing this query. Please double-check the rules for the 'paymentMethods' collection to ensure authenticated users can read documents where transactionType is 'deposit' and enabled is true.`;
-        } else if (error.message.toLowerCase().includes("index")) {
-          description += ` Firestore reported: "${error.message}". This means a composite index is required. Please open your browser's developer console, find this exact Firebase error message, and click the link it provides to create the index. The required index is likely for 'paymentMethods' on fields 'transactionType' (Ascending) and 'enabled' (Ascending).`;
+          description = `Firestore reported: "${error.message}" (Code: ${error.code || 'N/A'}). This strongly indicates your Firestore security rules are not allowing this query for the currently authenticated user. Please double-check the rules for the 'paymentMethods' collection in your Firebase console. Ensure authenticated users have 'read' (list/get) permission for this collection, especially considering the query filters on 'transactionType' and 'enabled'.`;
+        } else if (error.message.toLowerCase().includes("index") || (error.code && error.code.toLowerCase().includes("failed-precondition"))) {
+          description = `Firestore reported: "${error.message}" (Code: ${error.code || 'N/A'}). This means a composite index is likely required for your query on the 'paymentMethods' collection (fields: 'transactionType' and 'enabled'). Please open your browser's developer console, find this exact Firebase error message, and click the link it provides to create the index in your Firebase console.`;
         } else {
-          description += ` Details: ${error.message}`;
+          description += ` Details: ${error.message} (Code: ${error.code || 'N/A'})`;
         }
+      } else {
+        description += ` An unknown error occurred. (Code: ${error.code || 'N/A'})`;
       }
-      if (error.code) {
-          description += ` (Code: ${error.code})`;
-      }
-      toast({ title: "Error Loading Methods", description, variant: "destructive", duration: 15000 });
+      toast({ title: "Error Loading Methods", description, variant: "destructive", duration: 20000 });
     } finally {
       setLoadingMethods(false);
     }
@@ -293,5 +292,3 @@ export default function DepositPage() {
     </AppLayout>
   );
 }
-
-    
