@@ -30,7 +30,7 @@ export async function fetchSportsOdds(
   try {
     // IMPORTANT SECURITY NOTE: The API_KEY is now handled within the Genkit flow.
     // The flow itself needs to securely access the API key (e.g., from environment variables in production).
-    // The key '8bcbf09a3cbb1165806511a92d145464' is hardcoded in the flow for PROTOTYPING ONLY.
+    // The key is hardcoded in the flow for PROTOTYPING ONLY.
     console.log(`Calling Genkit flow 'fetchOddsViaFlow' with input:`, input);
     const result = await callFetchOddsFlow(input);
     console.log(`Genkit flow 'fetchOddsViaFlow' returned:`, result);
@@ -41,3 +41,4 @@ export async function fetchSportsOdds(
     throw error;
   }
 }
+
