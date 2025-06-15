@@ -195,7 +195,7 @@ export default function LiveOddsDisplay({ sportKey, sportDisplayName, region = '
               </CardContent>
                <CardFooter className="px-3 sm:px-4 py-2.5 bg-muted/20 border-t border-border/50">
                  <Button variant="ghost" size="sm" className="text-primary hover:text-primary/80 w-full justify-center text-xs" asChild>
-                   <Link href={`/match/${match.id}`}>View Match & Bet</Link>
+                   <Link href={`/match/${match.id}?sportKey=${sportKey}`}>View Match & Bet</Link>
                  </Button>
                </CardFooter>
             </Card>
