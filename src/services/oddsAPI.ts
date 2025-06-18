@@ -1,5 +1,5 @@
 
-import type { MatchDataAPI, SimplifiedMatchOdds, TotalMarketOutcome } from '@/types/odds';
+import type { MatchDataAPI, SimplifiedMatchOdds, TotalMarketOutcome, BTTSMarketOutcome, DrawNoBetMarketOutcome, DoubleChanceMarketOutcome } from '@/types/odds';
 
 // Re-export SimplifiedMatchOdds type if components need it
 export type { SimplifiedMatchOdds } from '@/types/odds';
@@ -11,17 +11,17 @@ const ODDS_API_BASE_URL = 'https://api.the-odds-api.com/v4/sports';
  * Fetches live or upcoming odds for a given sport by calling The Odds API directly from the client.
  * @param sportKey - The key for the sport (e.g., 'upcoming_cricket', 'soccer_epl').
  * @param regions - Comma-separated list of regions (e.g., 'uk', 'us', 'eu', 'au'). Defaults to 'uk'.
- * @param markets - Comma-separated list of markets (e.g., 'h2h,totals', 'spreads'). Defaults to 'h2h,totals'.
+ * @param markets - Comma-separated list of markets (e.g., 'h2h,totals', 'spreads'). Defaults to 'h2h,totals,btts,draw_no_bet,double_chance'.
  * @param oddsFormat - 'decimal' or 'american'. Defaults to 'decimal'.
  * @returns A promise that resolves to an array of simplified match odds.
  */
 export async function fetchSportsOdds(
   sportKey: string,
   regions: string = 'uk',
-  markets: string = 'h2h,totals',
+  markets: string = 'h2h,totals,btts,draw_no_bet,double_chance', // Requesting more markets
   oddsFormat: string = 'decimal'
 ): Promise<SimplifiedMatchOdds[]> {
-  
+
   const queryParams = new URLSearchParams({
     apiKey: ODDS_API_KEY,
     regions,
@@ -35,7 +35,7 @@ export async function fetchSportsOdds(
 
   try {
     const response = await fetch(url);
-    
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ message: "Failed to parse error response from The Odds API." }));
       console.error(`Error from The Odds API (status ${response.status}):`, errorData.message);
@@ -45,44 +45,81 @@ export async function fetchSportsOdds(
       }
       throw new Error(`Failed to fetch odds from The Odds API. ${apiErrorMessage}`);
     }
-    
-    const data: MatchDataAPI[] = await response.json();
-    console.log(`The Odds API returned for ${sportKey}:`, data.length, "matches");
 
-    // Parse and simplify the data (logic moved from the deleted API route)
+    const data: MatchDataAPI[] = await response.json();
+    console.log(`The Odds API returned for ${sportKey}:`, data.length, "matches. Raw Data:", JSON.parse(JSON.stringify(data[0])));
+
+
     return data.map(match => {
       let homeWinOdds: number | undefined;
       let awayWinOdds: number | undefined;
       let drawOdds: number | undefined;
       let bookmakerTitle: string | undefined;
       let totalsMarketData: TotalMarketOutcome | undefined;
+      let bttsMarketData: BTTSMarketOutcome | undefined;
+      let drawNoBetMarketData: DrawNoBetMarketOutcome | undefined;
+      let doubleChanceMarketData: DoubleChanceMarketOutcome | undefined;
 
       if (match.bookmakers && match.bookmakers.length > 0) {
         const bookie = match.bookmakers.find(b => ['bet365', 'unibet', 'williamhill', 'paddypower', 'ladbrokes', 'coral', 'betfair_exchange', 'betfair_sportsbook', 'draftkings', 'fanduel', 'pointsbetus'].includes(b.key.toLowerCase())) || match.bookmakers[0];
         bookmakerTitle = bookie.title;
 
-        const h2hMarket = bookie.markets.find(m => m.key === 'h2h');
-        if (h2hMarket) {
-          h2hMarket.outcomes.forEach(outcome => {
-            if (outcome.name === match.home_team) homeWinOdds = outcome.price;
-            else if (outcome.name === match.away_team) awayWinOdds = outcome.price;
-            else if (outcome.name.toLowerCase() === 'draw') drawOdds = outcome.price;
-          });
-        }
-
-        const totalsAPIMarket = bookie.markets.find(m => m.key === 'totals');
-        if (totalsAPIMarket && totalsAPIMarket.outcomes.length >= 2) {
-          const firstOverOutcome = totalsAPIMarket.outcomes.find(o => o.name === 'Over' && o.point !== undefined);
-          if (firstOverOutcome && firstOverOutcome.point !== undefined) {
-            totalsMarketData = { point: firstOverOutcome.point };
-            totalsAPIMarket.outcomes.forEach(outcome => {
-              if (outcome.point === firstOverOutcome.point) {
-                if (outcome.name === 'Over') totalsMarketData!.overOdds = outcome.price;
-                else if (outcome.name === 'Under') totalsMarketData!.underOdds = outcome.price;
+        bookie.markets.forEach(market => {
+          switch (market.key) {
+            case 'h2h':
+              market.outcomes.forEach(outcome => {
+                if (outcome.name === match.home_team) homeWinOdds = outcome.price;
+                else if (outcome.name === match.away_team) awayWinOdds = outcome.price;
+                else if (outcome.name.toLowerCase() === 'draw') drawOdds = outcome.price;
+              });
+              break;
+            case 'totals':
+              const firstOverOutcome = market.outcomes.find(o => o.name === 'Over' && o.point !== undefined);
+              if (firstOverOutcome && firstOverOutcome.point !== undefined) {
+                totalsMarketData = { point: firstOverOutcome.point };
+                market.outcomes.forEach(outcome => {
+                  if (outcome.point === firstOverOutcome.point) {
+                    if (outcome.name === 'Over') totalsMarketData!.overOdds = outcome.price;
+                    else if (outcome.name === 'Under') totalsMarketData!.underOdds = outcome.price;
+                  }
+                });
               }
-            });
+              break;
+            case 'btts':
+              bttsMarketData = {};
+              market.outcomes.forEach(outcome => {
+                if (outcome.name.toLowerCase() === 'yes') bttsMarketData!.yesOdds = outcome.price;
+                else if (outcome.name.toLowerCase() === 'no') bttsMarketData!.noOdds = outcome.price;
+              });
+              if (Object.keys(bttsMarketData).length === 0) bttsMarketData = undefined;
+              break;
+            case 'draw_no_bet':
+              drawNoBetMarketData = {};
+              market.outcomes.forEach(outcome => {
+                // The Odds API might return team names directly for DNB outcomes
+                if (outcome.name === match.home_team) drawNoBetMarketData!.homeOdds = outcome.price;
+                else if (outcome.name === match.away_team) drawNoBetMarketData!.awayOdds = outcome.price;
+              });
+               if (Object.keys(drawNoBetMarketData).length === 0) drawNoBetMarketData = undefined;
+              break;
+            case 'double_chance':
+              doubleChanceMarketData = {};
+              market.outcomes.forEach(outcome => {
+                // Outcome names are typically "Home or Draw", "Away or Draw", "Home or Away"
+                const nameLower = outcome.name.toLowerCase();
+                if (nameLower.includes(match.home_team.toLowerCase()) && nameLower.includes('draw')) doubleChanceMarketData!.homeOrDrawOdds = outcome.price;
+                else if (nameLower.includes(match.away_team.toLowerCase()) && nameLower.includes('draw')) doubleChanceMarketData!.awayOrDrawOdds = outcome.price;
+                else if (nameLower.includes(match.home_team.toLowerCase()) && nameLower.includes(match.away_team.toLowerCase())) doubleChanceMarketData!.homeOrAwayOdds = outcome.price;
+                // Fallbacks for generic names if team names aren't in outcome.name string
+                else if (nameLower === 'home or draw' || nameLower === '1x') doubleChanceMarketData!.homeOrDrawOdds = outcome.price;
+                else if (nameLower === 'away or draw' || nameLower === 'x2') doubleChanceMarketData!.awayOrDrawOdds = outcome.price;
+                else if (nameLower === 'home or away' || nameLower === '12') doubleChanceMarketData!.homeOrAwayOdds = outcome.price;
+
+              });
+              if (Object.keys(doubleChanceMarketData).length === 0) doubleChanceMarketData = undefined;
+              break;
           }
-        }
+        });
       }
 
       return {
@@ -97,11 +134,14 @@ export async function fetchSportsOdds(
         awayWinOdds,
         drawOdds,
         totalsMarket: totalsMarketData,
+        bttsMarket: bttsMarketData,
+        drawNoBetMarket: drawNoBetMarketData,
+        doubleChanceMarket: doubleChanceMarketData,
       };
     });
 
   } catch (error) {
     console.error('Error in client-side fetchSportsOdds service:', error);
-    throw error; 
+    throw error;
   }
 }

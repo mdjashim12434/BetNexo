@@ -16,7 +16,13 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
 type BetStatus = 'pending' | 'won' | 'lost' | 'cancelled';
-type BetOutcome = 'teamA' | 'draw' | 'teamB' | 'over' | 'under';
+// Extended BetOutcome to match MatchDetailClientContent
+type BetOutcome Firestore =
+  | 'teamA' | 'draw' | 'teamB' // H2H
+  | 'over' | 'under' // Totals
+  | 'bttsYes' | 'bttsNo' // BTTS
+  | 'dnbHome' | 'dnbAway' // Draw No Bet
+  | 'dc1X' | 'dcX2' | 'dc12'; // Double Chance
 
 interface BetDocument {
   id: string;
@@ -26,7 +32,7 @@ interface BetDocument {
   matchHomeTeam: string;
   matchAwayTeam: string;
   matchSportTitle: string;
-  betOutcome: BetOutcome;
+  betOutcome: BetOutcomeFirestore; // Use the extended type
   betPoint: number | null;
   betAmount: number;
   oddsAtBetTime: number;
@@ -61,7 +67,7 @@ export default function BetHistoryPage() {
     } catch (error: any) {
       console.error("Error fetching bet history:", error);
       let description = "Could not fetch your bet history.";
-       if (error.message && error.message.toLowerCase().includes("index required") && error.message.toLowerCase().includes("firebase")) {
+      if (error.message && error.message.toLowerCase().includes("index required") && error.message.toLowerCase().includes("firebase")) {
         description = `Firestore reported: "${error.message}". This means a composite index is required. Please open your browser's developer console, find this exact Firebase error message, and click the link it provides to create the index in your Firestore settings for the 'bets' collection (fields: 'userId' (Ascending) and 'betTimestamp' (Descending)).`;
       } else if (error.message) {
         description += ` Details: ${error.message}`;
@@ -87,7 +93,18 @@ export default function BetHistoryPage() {
       case 'draw': return 'Draw';
       case 'over': return `Over ${bet.betPoint}`;
       case 'under': return `Under ${bet.betPoint}`;
-      default: return 'N/A';
+      case 'bttsYes': return 'BTTS: Yes';
+      case 'bttsNo': return 'BTTS: No';
+      case 'dnbHome': return `DNB: ${bet.matchHomeTeam}`;
+      case 'dnbAway': return `DNB: ${bet.matchAwayTeam}`;
+      case 'dc1X': return `DC: ${bet.matchHomeTeam} or Draw`;
+      case 'dcX2': return `DC: ${bet.matchAwayTeam} or Draw`;
+      case 'dc12': return `DC: ${bet.matchHomeTeam} or ${bet.matchAwayTeam}`;
+      default:
+        // Attempt to provide a fallback for unknown betOutcome from older data
+        const exhaustiveCheck: never = bet.betOutcome;
+        console.warn("Unknown bet.betOutcome in getBetOutcomeText:", exhaustiveCheck);
+        return `Unknown (${String(bet.betOutcome)})`;
     }
   };
 
@@ -120,7 +137,6 @@ export default function BetHistoryPage() {
     }
   };
 
-
   if (loadingAuth || isLoading && !user) {
     return <AppLayout><div className="flex items-center justify-center min-h-screen"><div className="text-center p-10">Loading session and bet history...</div></div></AppLayout>;
   }
@@ -141,12 +157,12 @@ export default function BetHistoryPage() {
               <CardDescription>Review your past and pending bets.</CardDescription>
             </div>
             <Button variant="outline" size="icon" onClick={fetchBetHistory} disabled={isLoading} aria-label="Refresh bet history">
-              <RefreshCw className={cn("h-4 w-4", {"animate-spin": isLoading})} />
+              <RefreshCw className={cn("h-4 w-4", { "animate-spin": isLoading })} />
             </Button>
           </CardHeader>
           <CardContent>
             {isLoading && bets.length === 0 ? (
-               <div className="text-center py-10 text-muted-foreground">Loading your bets...</div>
+              <div className="text-center py-10 text-muted-foreground">Loading your bets...</div>
             ) : !isLoading && bets.length === 0 ? (
               <div className="min-h-[200px] flex flex-col items-center justify-center border-2 border-dashed border-border rounded-lg p-8">
                 <Info className="h-16 w-16 text-muted-foreground mb-4" />
@@ -183,7 +199,7 @@ export default function BetHistoryPage() {
                               <TrendingUp className="mr-1 h-4 w-4" />{currency} {bet.potentialWinnings.toFixed(2)}
                             </span>
                           ) : bet.status === 'lost' || bet.status === 'cancelled' ? (
-                             <span className="text-red-500 flex items-center">
+                            <span className="text-red-500 flex items-center">
                               <TrendingDown className="mr-1 h-4 w-4" />{currency} 0.00
                             </span>
                           ) : (
@@ -193,10 +209,10 @@ export default function BetHistoryPage() {
                         <TableCell>
                           <Badge
                             variant={getStatusBadgeVariant(bet.status)}
-                             className={cn("capitalize text-xs flex items-center gap-1", {
-                                'bg-green-500/20 text-green-700 border-green-500/30 dark:text-green-400 dark:border-green-700/50': bet.status === 'won',
-                                'bg-yellow-500/20 text-yellow-700 border-yellow-500/30 dark:text-yellow-400 dark:border-yellow-700/50': bet.status === 'pending',
-                             })}
+                            className={cn("capitalize text-xs flex items-center gap-1", {
+                              'bg-green-500/20 text-green-700 border-green-500/30 dark:text-green-400 dark:border-green-700/50': bet.status === 'won',
+                              'bg-yellow-500/20 text-yellow-700 border-yellow-500/30 dark:text-yellow-400 dark:border-yellow-700/50': bet.status === 'pending',
+                            })}
                           >
                             {getStatusIcon(bet.status)}
                             {bet.status}
@@ -215,5 +231,3 @@ export default function BetHistoryPage() {
     </AppLayout>
   );
 }
-
-    

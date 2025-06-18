@@ -5,27 +5,17 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Calendar, Clock } from "lucide-react";
 import type { FC } from 'react';
-import type { SimplifiedMatchOdds } from '@/types/odds'; // Import the updated type
+import type { SimplifiedMatchOdds } from '@/types/odds';
 
-// Define Match type based on SimplifiedMatchOdds, but potentially simplified for card display
-export interface Match extends Pick<SimplifiedMatchOdds, 
-  'id' | 
-  'sportKey' | // Ensure sportKey is part of Match for linking
-  'homeTeam' | 
-  'awayTeam' | 
-  'commenceTime' | 
-  'sportTitle' | 
-  'homeWinOdds' | 
-  'drawOdds' | 
-  'awayWinOdds' |
-  'totalsMarket' // Include totalsMarket
-  > {
-  league?: string; // Keep if used, otherwise can be derived from sportTitle if needed
+// The Match type for MatchCard should reflect the structure of SimplifiedMatchOdds
+// to ensure all necessary data (like new markets) is available if needed for display here,
+// even if not all of it is rendered on the card itself.
+export interface Match extends SimplifiedMatchOdds {
+  league?: string;
   imageUrl?: string;
   imageAiHint?: string;
-  status?: 'upcoming' | 'live' | 'finished'; // Status determined client-side or from API if available
+  status?: 'upcoming' | 'live' | 'finished';
 }
-
 
 interface MatchCardProps {
   match: Match;
@@ -39,11 +29,11 @@ const MatchCard: FC<MatchCardProps> = ({ match }) => {
     <Card className="overflow-hidden shadow-lg hover:shadow-primary/20 transition-shadow duration-300">
       {match.imageUrl && (
         <div className="relative h-40 w-full">
-          <Image 
-            src={match.imageUrl} 
-            alt={`${match.homeTeam} vs ${match.awayTeam}`} 
-            layout="fill" 
-            objectFit="cover" 
+          <Image
+            src={match.imageUrl}
+            alt={`${match.homeTeam} vs ${match.awayTeam}`}
+            layout="fill"
+            objectFit="cover"
             data-ai-hint={match.imageAiHint || `${match.sportTitle} match`}
           />
           {isLive && (
@@ -59,10 +49,9 @@ const MatchCard: FC<MatchCardProps> = ({ match }) => {
       <CardContent>
         <div className="flex items-center text-sm text-muted-foreground mb-3">
           {isUpcoming || !match.status ? <Calendar className="h-4 w-4 mr-2" /> : <Clock className="h-4 w-4 mr-2" />}
-          {/* Use commenceTime from match object, it's an ISO string */}
-          <span>{new Date(match.commenceTime).toLocaleString()}</span> 
+          <span>{new Date(match.commenceTime).toLocaleString()}</span>
           {!match.imageUrl && isLive && (
-             <span className="ml-auto bg-red-600 text-white px-2 py-0.5 text-xs font-bold rounded animate-pulse">LIVE</span>
+            <span className="ml-auto bg-red-600 text-white px-2 py-0.5 text-xs font-bold rounded animate-pulse">LIVE</span>
           )}
         </div>
         { (match.homeWinOdds || match.awayWinOdds) && (
@@ -72,16 +61,14 @@ const MatchCard: FC<MatchCardProps> = ({ match }) => {
             <Button variant="outline" size="sm" className="flex-1">2: {match.awayWinOdds?.toFixed(2) || 'N/A'}</Button>
           </div>
         )}
-        {/* Optional: Display Over/Under in card if desired, for now keeping it simple */}
-        {/* {match.totalsMarket && (
-          <div className="mt-2 text-center text-xs text-muted-foreground">
-            O/U {match.totalsMarket.point}: Over {match.totalsMarket.overOdds?.toFixed(2)} / Under {match.totalsMarket.underOdds?.toFixed(2)}
-          </div>
+        {/* Minimal display of other markets if needed - keeping card simple for now */}
+        {/* Example: Show if BTTS odds exist */}
+        {/* {match.bttsMarket && (match.bttsMarket.yesOdds || match.bttsMarket.noOdds) && (
+          <p className="text-xs text-muted-foreground text-center mt-1">BTTS available</p>
         )} */}
       </CardContent>
       <CardFooter>
         <Button variant="default" className="w-full" asChild>
-          {/* Pass sportKey to the match detail page */}
           <Link href={`/match/${match.id}?sportKey=${match.sportKey}`}>
             View Details <ArrowRight className="ml-2 h-4 w-4" />
           </Link>
