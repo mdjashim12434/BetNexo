@@ -28,7 +28,8 @@ const formatMatchTime = (timeString?: string): string => {
   if (isValid(date)) {
     return format(date, 'MMM d, h:mm a');
   }
-  return timeString;
+  // If date is invalid, return a fallback string
+  return 'N/A'; 
 };
 
 export default function LiveOddsDisplay({
@@ -158,7 +159,9 @@ export default function LiveOddsDisplay({
         )}
         <div className="space-y-3">
           {matches.map((match) => {
-            const keyForLink = match.sportKey || sportKey; // Fallback to the list's sportKey prop
+            // Ensure a valid sportKey is used for the link.
+            // Prioritize match.sportKey, then the component's sportKey prop.
+            const linkSportKey = match.sportKey || sportKey; 
             return (
               <Card key={match.id} className="overflow-hidden hover:shadow-md transition-shadow bg-background border border-border/50">
                 <CardHeader className="pb-2 pt-3 px-3 sm:px-4">
@@ -217,7 +220,7 @@ export default function LiveOddsDisplay({
                 </CardContent>
                  <CardFooter className="px-3 sm:px-4 py-2.5 bg-muted/20 border-t border-border/50">
                    <Button variant="ghost" size="sm" className="text-primary hover:text-primary/80 w-full justify-center text-xs" asChild>
-                     <Link href={`/match/${match.id}?sportKey=${keyForLink}`}>View Match & Bet</Link>
+                     <Link href={`/match/${match.id}?sportKey=${linkSportKey}`}>View Match & Bet</Link>
                    </Button>
                  </CardFooter>
               </Card>
