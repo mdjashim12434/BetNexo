@@ -15,10 +15,18 @@ function transformApiMatchToDisplayMatch(apiMatch: SimplifiedMatchOdds): Match {
   let status: 'upcoming' | 'live' | 'finished' = 'upcoming';
   const commenceDateTime = new Date(apiMatch.commenceTime);
   const now = new Date();
+  
+  // A simple heuristic for status. Could be refined.
+  // If commenceTime is in the past, assume live if odds are present, otherwise finished.
+  // If commenceTime is in the future, it's upcoming.
   if (commenceDateTime <= now) {
-     // A simple heuristic: if odds are present, assume live, otherwise upcoming (could be more sophisticated)
-    status = (apiMatch.homeWinOdds || apiMatch.awayWinOdds || apiMatch.drawOdds || apiMatch.totalsMarket) ? 'live' : 'upcoming'; 
+    // Check if any primary odds are present for "live" status
+    const hasAnyOdds = apiMatch.homeWinOdds || apiMatch.awayWinOdds || apiMatch.drawOdds || 
+                       apiMatch.totalsMarket?.overOdds || apiMatch.totalsMarket?.underOdds ||
+                       apiMatch.bttsMarket?.yesOdds || apiMatch.bttsMarket?.noOdds;
+    status = hasAnyOdds ? 'live' : 'finished'; 
   }
+
 
   return {
     id: apiMatch.id,
@@ -32,19 +40,15 @@ function transformApiMatchToDisplayMatch(apiMatch: SimplifiedMatchOdds): Match {
     awayWinOdds: apiMatch.awayWinOdds,
     drawOdds: apiMatch.drawOdds,
     totalsMarket: apiMatch.totalsMarket,
+    bttsMarket: apiMatch.bttsMarket,
+    drawNoBetMarket: apiMatch.drawNoBetMarket,
+    doubleChanceMarket: apiMatch.doubleChanceMarket,
     imageUrl: `https://placehold.co/800x400.png?text=${encodeURIComponent(apiMatch.homeTeam)}+vs+${encodeURIComponent(apiMatch.awayTeam)}`,
-    imageAiHint: `${apiMatch.sportTitle.toLowerCase().split('_')[0]} game`,
+    imageAiHint: `${apiMatch.sportTitle.toLowerCase().split('_')[0]} game`, // e.g. "soccer game"
     status: status,
   };
 }
 
-// For static export, generateStaticParams can pre-render some paths if needed,
-// but dynamic paths will fetch client-side.
-// For now, we'll rely on client-side fetching for all API-based match IDs.
-// export async function generateStaticParams() {
-//   // return mockMatches.map((match) => ({ id: match.id }));
-//   return []; // Or pre-render some known popular matches
-// }
 
 export default function MatchDetailPage() {
   const params = useParams();
@@ -62,15 +66,16 @@ export default function MatchDetailPage() {
       console.log(`MatchDetailPage Client: Fetching odds for sportKey: ${sportKey} to find matchId: ${matchId}`);
       setLoading(true);
       setError(null);
-      fetchSportsOdds(sportKey, 'uk', 'h2h,totals')
+      // Request a comprehensive set of markets for the detail page
+      fetchSportsOdds(sportKey, 'uk', 'h2h,totals,btts,draw_no_bet,double_chance')
         .then(allMatchesForSport => {
           const apiMatch = allMatchesForSport.find(m => m.id === matchId);
           if (apiMatch) {
             console.log(`MatchDetailPage Client: Found API match ${matchId} in sportKey ${sportKey}. Transforming.`);
             setMatch(transformApiMatchToDisplayMatch(apiMatch));
           } else {
-            console.warn(`MatchDetailPage Client: API match ${matchId} not found in sportKey ${sportKey} results.`);
-            setError(`Match with ID ${matchId} not found for sport ${sportKey}.`);
+            console.warn(`MatchDetailPage Client: API match ${matchId} not found in sportKey ${sportKey} results. This might be due to the match not being active or available from the API for the requested markets.`);
+            setError(`Match with ID ${matchId} not found for sport ${sportKey}. The match might no longer be available or the API did not return data for it.`);
           }
         })
         .catch(err => {
@@ -81,11 +86,7 @@ export default function MatchDetailPage() {
           setLoading(false);
         });
     } else if (matchId && !sportKey) {
-      // Fallback for mock matches if any were defined and didn't need sportKey
-      // const mockMatch = mockMatches.find(m => m.id === matchId);
-      // if (mockMatch) setMatch(mockMatch);
-      // else setError(`Match details require a sportKey parameter for ID: ${matchId}.`);
-      setError(`Sport key not provided for match ID: ${matchId}.`);
+      setError(`Sport key not provided for match ID: ${matchId}. Cannot fetch details.`);
       setLoading(false);
     } else {
       setError('Match ID or Sport Key is missing.');
@@ -109,8 +110,8 @@ export default function MatchDetailPage() {
       <AppLayout>
         <div className="text-center p-10">
           <h1 className="text-2xl font-bold mb-4 text-destructive">Error Loading Match</h1>
-          <p className="text-muted-foreground">{error}</p>
-          <p className="text-muted-foreground mt-2">This could be due to an invalid link, or the match is no longer available.</p>
+          <p className="text-muted-foreground whitespace-pre-wrap">{error}</p>
+          <p className="text-muted-foreground mt-2">This could be due to an invalid link, an API issue, or the match is no longer available with the requested markets.</p>
         </div>
       </AppLayout>
     );
