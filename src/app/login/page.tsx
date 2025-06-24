@@ -95,7 +95,10 @@ export default function LoginPage() {
     } catch (error: any) {
       console.error("Login failed on page:", error);
       let errorMessage = "Could not log in. Please check credentials or try again.";
-      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+      
+      if (error.code === 'permission-denied' || error.code === 'PERMISSION_DENIED') {
+        errorMessage = "You do not have permission to access your user data. This is a Firestore Security Rule issue. Please ensure the rules allow an authenticated user to read their own document in the 'users' collection.";
+      } else if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
         errorMessage = "Invalid email or password. Please try again.";
         form.setError("emailOrPhone", { type: "manual", message: " " });
         form.setError("password", { type: "manual", message: "Invalid email or password." });
@@ -104,7 +107,8 @@ export default function LoginPage() {
       } else if (error.message) { 
         errorMessage = error.message;
       }
-      toast({ title: "Login Failed", description: errorMessage, variant: "destructive" });
+      
+      toast({ title: "Login Failed", description: errorMessage, variant: "destructive", duration: 10000 });
     }
   }
 

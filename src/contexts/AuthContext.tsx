@@ -63,7 +63,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return null;
     } catch (error) {
       console.error("AuthContext: Error fetching user document for UID " + uid + ":", error);
-      return null;
+      // Re-throw the error so the calling function can handle it, especially for permissions issues.
+      throw error;
     }
   }, []);
 
@@ -282,4 +283,3 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
-
