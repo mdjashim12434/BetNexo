@@ -1,4 +1,3 @@
-
 'use client';
 
 import type React from 'react';
@@ -188,7 +187,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         setUser(finalUserData);
-        setLocalCurrency(finalUserData.currency);
+        setLocalCurrency(finalUserData.currency || 'USD');
         setLocalBalance(finalUserData.balance || 0);
         if(emailVerifiedStatus) { // Only set in localStorage if email is verified to align with onAuthStateChanged logic
             localStorage.setItem('betbabu-user-uid', uid);
