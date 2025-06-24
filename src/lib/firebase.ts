@@ -8,13 +8,13 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, se
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyCZvkhsQfHWujjMipHAyWB4SpRwU-AZYb0",
-  authDomain: "betbabu-5e02b.firebaseapp.com",
-  projectId: "betbabu-5e02b",
-  storageBucket: "betbabu-5e02b.firebasestorage.app",
-  messagingSenderId: "99347182224",
-  appId: "1:99347182224:web:089e71e13f87887c511e15",
-  measurementId: "G-8HD0X351BK"
+  apiKey: "AIzaSyDKGnwFB_t8avhuoDBubBgR0BqVyXz1soc",
+  authDomain: "qwiklabs-gcp-04-a5e03f21bee9.firebaseapp.com",
+  projectId: "qwiklabs-gcp-04-a5e03f21bee9",
+  storageBucket: "qwiklabs-gcp-04-a5e03f21bee9.firebasestorage.app",
+  messagingSenderId: "604410604222",
+  appId: "1:604410604222:web:379d2d0988ecec8be50cef",
+  measurementId: "G-FJ6TT56G25"
 };
 
 // Initialize Firebase
@@ -61,4 +61,3 @@ const updateUserBalanceInFirestore = async (userId: string, amountChange: number
 
 
 export { app, auth, analytics, db, collection, doc, setDoc, getDoc, serverTimestamp, updateDoc, addDoc, query, where, getDocs, orderBy, Timestamp, runTransaction, updateUserBalanceInFirestore, firebaseConfig, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, signOut, onAuthStateChanged, type FirebaseUserType, limit, startAfter, type QueryDocumentSnapshot, deleteDoc }; // Added deleteDoc
-
