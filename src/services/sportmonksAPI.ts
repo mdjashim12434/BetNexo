@@ -1,14 +1,8 @@
 import type { SportmonksResponse, ProcessedLiveScore, SportmonksOddsFixture, SportmonksRoundResponse, ProcessedFixture, SportmonksSingleFixtureResponse } from '@/types/sportmonks';
 
-// TODO: Replace this with your actual Firebase Function URL after deployment
-const FIREBASE_FUNCTION_URL = 'https://us-central1-summer-function-461109-t2.cloudfunctions.net/getLiveScores';
-const SPORTMONKS_ODDS_BASE_URL = 'https://api.sportmonks.com/v3/football';
-const SPORTMONKS_API_KEY = 'wBdgpfNzldWhiDQfTrMEuMlHUU1BhjLtOJn8NSZZJscrvGRVs6qoUOIp2rVh';
-
-
-const processApiResponse = (data: any): ProcessedLiveScore[] => {
+const processLiveScoresApiResponse = (data: any): ProcessedLiveScore[] => {
     if (!Array.isArray(data)) {
-        console.warn("Sportmonks data is not an array:", data);
+        console.warn("Sportmonks data for live scores is not an array:", data);
         return [];
     }
 
@@ -41,24 +35,18 @@ const processApiResponse = (data: any): ProcessedLiveScore[] => {
 };
 
 export async function fetchLiveScores(): Promise<ProcessedLiveScore[]> {
-    if (!FIREBASE_FUNCTION_URL.startsWith('https://')) {
-        const errorMessage = "Firebase Function URL is not configured. Please deploy the function and update the URL in src/services/sportmonksAPI.ts";
-        console.error(errorMessage);
-        throw new Error(errorMessage);
-    }
-    
-    console.log(`Client-side: Fetching live scores from Firebase Function: ${FIREBASE_FUNCTION_URL}`);
+    console.log(`Client-side: Fetching live scores from internal proxy API: /api/live-scores`);
 
     try {
-        const response = await fetch(FIREBASE_FUNCTION_URL);
+        const response = await fetch('/api/live-scores');
         if (!response.ok) {
             const errorText = await response.text();
-            console.error(`Error from Firebase Function (status ${response.status}):`, errorText);
-            throw new Error(`Failed to fetch live scores via Firebase Function. Status: ${response.status}`);
+            console.error(`Error from proxy API (status ${response.status}):`, errorText);
+            throw new Error(`Failed to fetch live scores from proxy. Status: ${response.status}`);
         }
 
         const responseData: SportmonksResponse = await response.json();
-        return processApiResponse(responseData.data);
+        return processLiveScoresApiResponse(responseData.data);
     } catch (error) {
         console.error('Error in fetchLiveScores service:', error);
         throw error;
@@ -107,18 +95,14 @@ export const processFixtureData = (fixtures: SportmonksOddsFixture[]): Processed
 
 
 export async function fetchFixturesByRound(roundId: number): Promise<SportmonksRoundResponse> {
-    const includes = "fixtures.odds.market;fixtures.odds.bookmaker;fixtures.participants;fixtures.state;league.country";
-    // Filter for a specific bookmaker (e.g., ID 2 for bet365) and market (ID 1 for Fulltime Result)
-    const filters = "markets:1;bookmakers:2";
-    const url = `${SPORTMONKS_ODDS_BASE_URL}/rounds/${roundId}?api_token=${SPORTMONKS_API_KEY}&include=${includes}&filters=${filters}`;
-
-    console.log(`Fetching fixtures for round: ${roundId}`);
+    const url = `/api/football/fixtures?roundId=${roundId}`;
+    console.log(`Fetching fixtures for round: ${roundId} via proxy`);
     try {
         const response = await fetch(url);
         if (!response.ok) {
             const errorData = await response.json();
-            console.error('Error fetching fixtures from Sportmonks:', errorData.message);
-            throw new Error(`Failed to fetch fixtures: ${errorData.message}`);
+            console.error('Error fetching fixtures from proxy:', errorData.error);
+            throw new Error(`Failed to fetch fixtures: ${errorData.error}`);
         }
         return await response.json();
     } catch (error) {
@@ -129,17 +113,14 @@ export async function fetchFixturesByRound(roundId: number): Promise<SportmonksR
 
 
 export async function fetchFixtureById(fixtureId: number): Promise<SportmonksOddsFixture> {
-    const includes = "odds.market;odds.bookmaker;participants;state;league.country";
-    const filters = "markets:1;bookmakers:2";
-    const url = `${SPORTMONKS_ODDS_BASE_URL}/fixtures/${fixtureId}?api_token=${SPORTMONKS_API_KEY}&include=${includes}&filters=${filters}`;
-
-    console.log(`Fetching single fixture: ${fixtureId}`);
+    const url = `/api/football/fixtures?fixtureId=${fixtureId}`;
+    console.log(`Fetching single fixture: ${fixtureId} via proxy`);
      try {
         const response = await fetch(url);
         if (!response.ok) {
             const errorData = await response.json();
-            console.error('Error fetching fixture from Sportmonks:', errorData.message);
-            throw new Error(`Failed to fetch fixture ${fixtureId}: ${errorData.message}`);
+            console.error('Error fetching fixture from proxy:', errorData.error);
+            throw new Error(`Failed to fetch fixture ${fixtureId}: ${errorData.error}`);
         }
         const fixtureResponse: SportmonksSingleFixtureResponse = await response.json();
         return fixtureResponse.data;
