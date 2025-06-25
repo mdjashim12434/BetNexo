@@ -4,7 +4,8 @@ import { useEffect, useState, useCallback } from 'react';
 import { fetchLiveScores } from '@/services/sportmonksAPI';
 import type { ProcessedLiveScore } from '@/types/sportmonks';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { AlertTriangle, Loader2, RefreshCw, Info, Flame } from 'lucide-react';
+import { AlertTriangle, Loader2, RefreshCw, Info } from 'lucide-react';
+import { CricketIcon } from '@/components/icons/CricketIcon';
 import { formatDistanceToNowStrict, isValid } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -30,7 +31,7 @@ export default function LiveScoresDisplay() {
       setMatches(fetchedMatches);
       setLastUpdated(new Date());
       if (isManualRefresh) {
-        toast({ title: "Live Scores Updated", description: "Football live scores have been refreshed." });
+        toast({ title: "Live Scores Updated", description: "Cricket live scores have been refreshed." });
       }
     } catch (err: any) {
       const errorMessage = err.message || 'An unknown error occurred while fetching live scores.';
@@ -53,7 +54,7 @@ export default function LiveScoresDisplay() {
     return (
       <div className="flex flex-col items-center justify-center py-10 my-4 text-muted-foreground bg-card rounded-lg shadow-lg min-h-[200px]">
         <Loader2 className="mr-2 h-8 w-8 animate-spin text-primary" />
-        <p className="mt-2 text-lg">Loading Live Football Scores...</p>
+        <p className="mt-2 text-lg">Loading Live Cricket Scores...</p>
       </div>
     );
   }
@@ -72,8 +73,8 @@ export default function LiveScoresDisplay() {
       <CardHeader className="flex flex-row justify-between items-center pb-4 border-b border-border/60">
         <div>
           <CardTitle className="font-headline text-xl md:text-2xl flex items-center text-primary">
-            <Flame className="mr-2 h-5 w-5 md:h-6 md:w-6 text-red-500" />
-            Live Football Scores
+            <CricketIcon className="mr-2 h-5 w-5 md:h-6 md:w-6 text-green-500" />
+            Live Cricket Scores
           </CardTitle>
           <CardDescription className="text-xs md:text-sm mt-1">
             Live scores from Sportmonks. {renderTimeSinceUpdate()}
@@ -94,26 +95,28 @@ export default function LiveScoresDisplay() {
         {matches.length === 0 && !loading && !error && (
           <div className="text-center py-10 text-muted-foreground min-h-[150px] flex flex-col items-center justify-center">
             <Info className="h-10 w-10 mb-3 text-primary/50" />
-            <p className="font-semibold">No live football matches found at the moment.</p>
+            <p className="font-semibold">No live cricket matches found at the moment.</p>
             <p className="text-sm">Please check back later.</p>
           </div>
         )}
         <div className="space-y-3">
           {matches.map((match) => (
-            <Card key={match.id} className="overflow-hidden bg-background border border-border/50">
-              <CardHeader className="pb-3 pt-3 px-3 sm:px-4">
-                <div className="flex justify-between items-center">
-                    <p className="text-xs text-muted-foreground">{match.leagueName} - {match.countryName}</p>
-                    <Badge variant="destructive" className="animate-pulse">LIVE</Badge>
+            <Card key={match.id} className="overflow-hidden bg-background border border-border/50 p-3 sm:p-4">
+              <div className="flex justify-between items-center mb-2">
+                  <p className="text-xs text-muted-foreground truncate">{match.leagueName}</p>
+                  <Badge variant="destructive" className="animate-pulse">LIVE</Badge>
+              </div>
+              <div className="space-y-1">
+                 <div className="flex justify-between items-center text-md font-semibold">
+                    <span className="truncate pr-2">{match.homeTeam.name}</span>
+                    <span className="font-bold text-primary">{match.homeTeam.score}</span>
                 </div>
-              </CardHeader>
-              <CardContent className="pb-3 px-3 sm:px-4">
-                <div className="flex items-center justify-between text-lg font-semibold">
-                    <span className="flex-1 text-right pr-4 truncate">{match.homeTeam.name}</span>
-                    <span className="text-xl font-bold text-primary bg-muted px-3 py-1 rounded-md">{match.homeTeam.score} - {match.awayTeam.score}</span>
-                    <span className="flex-1 text-left pl-4 truncate">{match.awayTeam.name}</span>
+                <div className="flex justify-between items-center text-md font-semibold">
+                    <span className="truncate pr-2">{match.awayTeam.name}</span>
+                    <span className="font-bold text-primary">{match.awayTeam.score}</span>
                 </div>
-              </CardContent>
+                {match.note && <p className="text-xs text-center pt-2 text-accent font-medium">{match.note}</p>}
+              </div>
             </Card>
           ))}
         </div>

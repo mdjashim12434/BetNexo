@@ -1,7 +1,8 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
 
-const SPORTMONKS_API_BASE_URL = "https://api.sportmonks.com/v3/football/livescores/inplay";
+// Updated to Cricket API v2.0 endpoint for Live Scores
+const SPORTMONKS_API_URL = "https://cricket.sportmonks.com/api/v2.0/livescores";
 
 // API key is loaded from environment variables for security.
 const apiKey = process.env.SPORTMONKS_API_KEY;
@@ -13,10 +14,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'API key is not configured on the server.' }, { status: 500 });
   }
 
-  // Simplified includes to the minimum required by the UI to reduce permission error chances
-  const includes = "participants;scores;league.country";
-  // Authenticate using the 'api_token' query parameter for reliability
-  const url = `${SPORTMONKS_API_BASE_URL}?include=${includes}&api_token=${apiKey}`;
+  // Authenticate using the 'api_token' query parameter for reliability with v2
+  // Note: v2.0 endpoints might not use 'include' in the same way as v3. Removed it for simplicity.
+  const url = `${SPORTMONKS_API_URL}?api_token=${apiKey}`;
 
   try {
     const apiResponse = await fetch(url, {

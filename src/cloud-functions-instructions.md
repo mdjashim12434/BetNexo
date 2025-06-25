@@ -75,7 +75,8 @@ admin.initializeApp();
 
 const corsHandler = cors({ origin: true });
 
-const SPORTMONKS_API_BASE_URL = "https://api.sportmonks.com/v3/football/livescores/inplay";
+// Switched to Cricket API v2.0
+const SPORTMONKS_API_BASE_URL = "https://cricket.sportmonks.com/api/v2.0/livescores";
 
 export const getLiveScores = functions.https.onRequest((request, response) => {
   // Handle CORS for the web app
@@ -87,11 +88,11 @@ export const getLiveScores = functions.https.onRequest((request, response) => {
         response.status(500).send("API key is not configured on the server.");
         return;
       }
+      
+      // V2 endpoint does not use 'includes' in the same way, can be added if needed for specific data
+      const url = `${SPORTMONKS_API_BASE_URL}?api_token=${apiKey}`;
 
-      const includes = "participants;scores;periods;events;league.country;round";
-      const url = `${SPORTMONKS_API_BASE_URL}?api_token=${apiKey}&include=${includes}`;
-
-      functions.logger.info("Fetching live scores from Sportmonks...");
+      functions.logger.info("Fetching live cricket scores from Sportmonks...");
 
       const apiResponse = await axios.get(url);
 

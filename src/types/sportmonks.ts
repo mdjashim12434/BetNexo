@@ -1,70 +1,67 @@
+// --- Types for Cricket API v2.0 Live Scores ---
 
-// Types for Live Scores
-export interface SportmonksParticipant {
+export interface CricketTeam {
     id: number;
-    sport_id: number;
-    country_id: number;
-    venue_id: number;
-    gender: string;
     name: string;
-    short_code: string;
+    code: string;
     image_path: string;
-    last_played_at: string;
-    meta: {
-        location: 'home' | 'away';
-    };
 }
 
-export interface SportmonksScore {
-    id: number;
+export interface CricketRun {
     fixture_id: number;
-    type_id: number;
-    participant_id: number;
-    score: {
-        goals: number;
-        participant: 'home' | 'away';
-    };
-    description: string;
+    team_id: number;
+    inning: number;
+    score: number;
+    wickets: number;
+    overs: number;
 }
 
-export interface SportmonksLeague {
+export interface CricketLeague {
     id: number;
     name: string;
-    country: {
+    code: string;
+    country?: {
         id: number;
         name: string;
     }
 }
 
-export interface SportmonksLiveScore {
+export interface SportmonksCricketLiveScore {
     id: number;
-    name: string; // e.g. "Team A vs Team B"
+    league_id: number;
+    season_id: number;
+    stage_id: number;
+    round: string;
+    localteam_id: number;
+    visitorteam_id: number;
     starting_at: string;
-    league: SportmonksLeague;
-    participants: SportmonksParticipant[];
-    scores: SportmonksScore[];
-    periods: any[]; // define if needed
-    events: any[]; // define if needed
+    status: string;
+    note: string;
+    runs: CricketRun[];
+    localteam: CricketTeam;
+    visitorteam: CricketTeam;
+    league: CricketLeague;
 }
 
-export interface SportmonksResponse {
-    data: SportmonksLiveScore[];
-    // pagination etc. if needed
+export interface SportmonksCricketResponse {
+    data: SportmonksCricketLiveScore[];
 }
 
-// Simplified structure for our live score component
+// Simplified structure for our live score component, adapted for Cricket
 export interface ProcessedLiveScore {
     id: number;
     name: string;
-    homeTeam: { name: string; score: number };
-    awayTeam: { name: string; score: number };
+    homeTeam: { name: string; score: string }; // Score as "runs/wickets (overs)"
+    awayTeam: { name: string; score: string };
     leagueName: string;
     countryName: string;
     startTime: string;
+    status: string;
+    note: string;
 }
 
 
-// --- Types for Odds by Round ---
+// --- Types for Football Odds by Round (Kept for now to avoid breaking fixture pages) ---
 
 export interface SportmonksComment {
     id: number;
@@ -121,7 +118,7 @@ export interface SportmonksOddsFixture {
     state: SportmonksState;
     participants: SportmonksOddsParticipant[];
     odds: SportmonksOdd[];
-    league?: SportmonksLeague;
+    league?: SportmonksLeague; // Note: Reusing CricketLeague type here, might need adjustment
     comments?: SportmonksComment[];
 }
 

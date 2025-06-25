@@ -1,4 +1,4 @@
-import type { SportmonksResponse, ProcessedLiveScore, SportmonksOddsFixture, SportmonksRoundResponse, ProcessedFixture, SportmonksSingleFixtureResponse } from '@/types/sportmonks';
+import type { SportmonksCricketResponse, ProcessedLiveScore, SportmonksOddsFixture, SportmonksRoundResponse, ProcessedFixture, SportmonksSingleFixtureResponse, SportmonksCricketLiveScore, CricketRun } from '@/types/sportmonks';
 
 // Helper to generate user-friendly error messages based on HTTP status
 const handleApiResponse = async (response: Response) => {
@@ -39,34 +39,36 @@ const handleApiResponse = async (response: Response) => {
 
 const processLiveScoresApiResponse = (data: any): ProcessedLiveScore[] => {
     if (!Array.isArray(data)) {
-        console.warn("Sportmonks data for live scores is not an array:", data);
+        console.warn("Sportmonks cricket data for live scores is not an array:", data);
         return [];
     }
 
-    return data.map(match => {
-        const homeParticipant = match.participants.find((p: any) => p.meta.location === 'home');
-        const awayParticipant = match.participants.find((p: any) => p.meta.location === 'away');
+    return data.map((match: SportmonksCricketLiveScore) => {
+        const localTeamRun = match.runs.find(r => r.team_id === match.localteam_id);
+        const visitorTeamRun = match.runs.find(r => r.team_id === match.visitorteam_id);
 
-        const homeScoreObj = match.scores.find((s: any) => s.participant_id === homeParticipant?.id && s.description === 'CURRENT');
-        const awayScoreObj = match.scores.find((s: any) => s.participant_id === awayParticipant?.id && s.description === 'CURRENT');
-
-        const homeScore = homeScoreObj ? homeScoreObj.score.goals : 0;
-        const awayScore = awayScoreObj ? awayScoreObj.score.goals : 0;
+        const formatScore = (run?: CricketRun) => {
+            if (!run) return "Yet to bat";
+            return `${run.score}/${run.wickets} (${run.overs})`;
+        };
 
         return {
             id: match.id,
-            name: match.name,
+            // The cricket v2 API doesn't seem to have a top-level `name` field for the match itself
+            name: `${match.localteam.name} vs ${match.visitorteam.name}`,
             homeTeam: {
-                name: homeParticipant?.name ?? 'Home Team',
-                score: homeScore,
+                name: match.localteam.name,
+                score: formatScore(localTeamRun),
             },
             awayTeam: {
-                name: awayParticipant?.name ?? 'Away Team',
-                score: awayScore,
+                name: match.visitorteam.name,
+                score: formatScore(visitorTeamRun),
             },
             leagueName: match.league?.name ?? 'N/A',
             countryName: match.league?.country?.name ?? 'N/A',
             startTime: match.starting_at,
+            status: match.status,
+            note: match.note,
         };
     });
 };
@@ -75,7 +77,7 @@ export async function fetchLiveScores(): Promise<ProcessedLiveScore[]> {
     console.log(`Client-side: Fetching live scores from internal proxy API: /api/live-scores`);
     try {
         const response = await fetch('/api/live-scores');
-        const responseData: SportmonksResponse = await handleApiResponse(response);
+        const responseData: SportmonksCricketResponse = await handleApiResponse(response);
         return processLiveScoresApiResponse(responseData.data);
     } catch (error) {
         console.error('Error in fetchLiveScores service:', error);
