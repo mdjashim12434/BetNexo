@@ -32,6 +32,7 @@ export default async function SportCategoryPage({ params }: SportCategoryPagePro
   const categoryName = categoryMapping[categorySlug] || 'Sports';
 
   let matchesForCategory: ProcessedFixture[] = [];
+  let fetchError: string | null = null;
 
   // Only fetch for football for now, other sports will show a "coming soon" message
   if (categorySlug === 'football' || categorySlug === 'upcoming' || categorySlug === 'all-sports') {
@@ -40,9 +41,10 @@ export default async function SportCategoryPage({ params }: SportCategoryPagePro
         if (rawRoundData && rawRoundData.fixtures) {
             matchesForCategory = processFixtureData(rawRoundData.fixtures);
         }
-      } catch (error) {
+      } catch (error: any) {
           console.error(`Failed to fetch fixtures for ${categorySlug}:`, error);
-          // Keep matchesForCategory empty, the client component will show an error or empty state
+          fetchError = error.message || "An unknown error occurred while fetching matches.";
+          // Keep matchesForCategory empty, the client component will show an error
       }
   }
 
@@ -56,6 +58,7 @@ export default async function SportCategoryPage({ params }: SportCategoryPagePro
         categorySlug={categorySlug}
         categoryName={categoryName}
         allMatchesForFiltering={allMatchesForFiltering}
+        error={fetchError}
       />
     </AppLayout>
   );

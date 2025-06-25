@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import MatchCard from '@/components/sports/MatchCard';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Search, Frown } from 'lucide-react';
+import { ArrowLeft, Search, Frown, AlertTriangle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
 import type { ProcessedFixture } from '@/types/sportmonks';
@@ -15,6 +15,7 @@ interface SportsCategoryClientContentProps {
   categorySlug: string;
   categoryName: string;
   allMatchesForFiltering: ProcessedFixture[];
+  error?: string | null;
 }
 
 export default function SportsCategoryClientContent({
@@ -22,6 +23,7 @@ export default function SportsCategoryClientContent({
   categorySlug,
   categoryName,
   allMatchesForFiltering,
+  error,
 }: SportsCategoryClientContentProps) {
   const router = useRouter();
   const { user, loadingAuth } = useAuth();
@@ -97,14 +99,23 @@ export default function SportsCategoryClientContent({
           />
         </div>
       </div>
+      
+      {error && (
+         <div className="text-center text-destructive py-10 my-4 bg-destructive/10 rounded-lg">
+            <AlertTriangle className="mx-auto h-12 w-12 mb-4" />
+            <p className="text-lg font-semibold">Failed to load matches</p>
+            <p className="text-sm mt-2 max-w-md mx-auto">{error}</p>
+            <p className="text-xs mt-4 text-muted-foreground">This might be due to an issue with the API provider or an invalid API key.</p>
+        </div>
+      )}
 
-      {displayedMatches.length > 0 ? (
+      {!error && displayedMatches.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {displayedMatches.map((match) => (
             <MatchCard key={match.id} match={match} />
           ))}
         </div>
-      ) : (
+      ) : !error && (
         <p className="text-center text-muted-foreground py-10">
           No upcoming football matches found. Please check back later.
         </p>

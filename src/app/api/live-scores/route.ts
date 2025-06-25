@@ -14,7 +14,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'API key is not configured on the server.' }, { status: 500 });
   }
 
-  const includes = "participants;scores;periods;events;league.country;round";
+  // Simplified includes to the minimum required by the UI to reduce permission error chances
+  const includes = "participants;scores;league.country";
   const url = `${SPORTMONKS_API_BASE_URL}?api_token=${apiKey}&include=${includes}`;
 
   try {

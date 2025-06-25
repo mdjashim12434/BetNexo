@@ -26,10 +26,12 @@ export async function GET(request: NextRequest) {
     const filters = "markets:1;bookmakers:2"; // Example filters, adjust as needed
 
     if (fixtureId) {
-        const includes = "odds.market;odds.bookmaker;participants;state;league.country";
+        // Removed 'state' for simplicity and to reduce potential permission issues
+        const includes = "odds.market;odds.bookmaker;participants;league.country";
         url = `${SPORTMONKS_ODDS_BASE_URL}/fixtures/${fixtureId}?api_token=${apiKey}&include=${includes}&filters=${filters}`;
     } else if (roundId) {
-        const includes = "fixtures.odds.market;fixtures.odds.bookmaker;fixtures.participants;fixtures.state;league.country";
+        // Removed 'fixtures.state' to reduce complexity and potential permission errors
+        const includes = "fixtures.odds.market;fixtures.odds.bookmaker;fixtures.participants;league.country";
         url = `${SPORTMONKS_ODDS_BASE_URL}/rounds/${roundId}?api_token=${apiKey}&include=${includes}&filters=${filters}`;
     }
     
