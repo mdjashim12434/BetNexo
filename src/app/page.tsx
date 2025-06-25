@@ -12,7 +12,6 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import LiveOddsDisplay from '@/components/sports/LiveOddsDisplay';
 import LiveScoresDisplay from '@/components/sports/LiveScoresDisplay';
 
 interface SportCategoryButton {
@@ -83,16 +82,6 @@ export default function HomePage() {
           <LiveScoresDisplay />
         </section>
 
-        <section>
-          {/* Live Odds Display Section for Cricket */}
-          <LiveOddsDisplay 
-            sportKey="cricket_international_t20" 
-            sportDisplayName="International T20 Cricket" 
-            region="uk" 
-            maxItems={3} 
-          />
-        </section>
-        
       </div>
       <BottomNav />
     </AppLayout>
