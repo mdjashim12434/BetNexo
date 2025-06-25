@@ -38,8 +38,9 @@ export default async function SportCategoryPage({ params }: SportCategoryPagePro
   if (categorySlug === 'football' || categorySlug === 'upcoming' || categorySlug === 'all-sports') {
       try {
         const rawRoundData = await fetchFixturesByRound(EPL_CURRENT_ROUND_ID);
-        if (rawRoundData && rawRoundData.fixtures) {
-            matchesForCategory = processFixtureData(rawRoundData.fixtures);
+        // Correctly access the fixtures array inside the nested 'data' object from the API response.
+        if (rawRoundData && rawRoundData.data && rawRoundData.data.fixtures) {
+            matchesForCategory = processFixtureData(rawRoundData.data.fixtures);
         }
       } catch (error: any) {
           console.error(`Failed to fetch fixtures for ${categorySlug}:`, error);
