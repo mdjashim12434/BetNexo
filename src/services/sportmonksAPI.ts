@@ -1,15 +1,20 @@
-import type { SportmonksResponse, SportmonksLiveScore, ProcessedLiveScore } from '@/types/sportmonks';
+import type { SportmonksResponse, ProcessedLiveScore } from '@/types/sportmonks';
 
-const SPORTMONKS_API_KEY = 'wBdgpfNzldWhiDQfTrMEuMlHUU1BhjLtOJn8NSZZJscrvGRVs6qoUOIp2rVh';
-const SPORTMONKS_API_BASE_URL = 'https://api.sportmonks.com/v3/football/livescores/inplay';
+// TODO: Replace this with your actual Firebase Function URL after deployment
+const FIREBASE_FUNCTION_URL = 'https://us-central1-summer-function-461109-t2.cloudfunctions.net/getLiveScores';
 
-const processApiResponse = (data: SportmonksLiveScore[]): ProcessedLiveScore[] => {
+const processApiResponse = (data: any): ProcessedLiveScore[] => {
+    if (!Array.isArray(data)) {
+        console.warn("Sportmonks data is not an array:", data);
+        return [];
+    }
+
     return data.map(match => {
-        const homeParticipant = match.participants.find(p => p.meta.location === 'home');
-        const awayParticipant = match.participants.find(p => p.meta.location === 'away');
+        const homeParticipant = match.participants.find((p: any) => p.meta.location === 'home');
+        const awayParticipant = match.participants.find((p: any) => p.meta.location === 'away');
 
-        const homeScoreObj = match.scores.find(s => s.participant_id === homeParticipant?.id && s.description === 'CURRENT');
-        const awayScoreObj = match.scores.find(s => s.participant_id === awayParticipant?.id && s.description === 'CURRENT');
+        const homeScoreObj = match.scores.find((s: any) => s.participant_id === homeParticipant?.id && s.description === 'CURRENT');
+        const awayScoreObj = match.scores.find((s: any) => s.participant_id === awayParticipant?.id && s.description === 'CURRENT');
 
         const homeScore = homeScoreObj ? homeScoreObj.score.goals : 0;
         const awayScore = awayScoreObj ? awayScoreObj.score.goals : 0;
@@ -33,21 +38,24 @@ const processApiResponse = (data: SportmonksLiveScore[]): ProcessedLiveScore[] =
 };
 
 export async function fetchLiveScores(): Promise<ProcessedLiveScore[]> {
-    const includes = 'participants;scores;periods;events;league.country;round';
-    const url = `${SPORTMONKS_API_BASE_URL}?api_token=${SPORTMONKS_API_KEY}&include=${includes}`;
-
-    console.log(`Client-side: Fetching live scores from Sportmonks`);
+    if (!FIREBASE_FUNCTION_URL.startsWith('https://')) {
+        const errorMessage = "Firebase Function URL is not configured. Please deploy the function and update the URL in src/services/sportmonksAPI.ts";
+        console.error(errorMessage);
+        throw new Error(errorMessage);
+    }
+    
+    console.log(`Client-side: Fetching live scores from Firebase Function: ${FIREBASE_FUNCTION_URL}`);
 
     try {
-        const response = await fetch(url);
+        const response = await fetch(FIREBASE_FUNCTION_URL);
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ message: "Failed to parse error response from Sportmonks API." }));
-            console.error(`Error from Sportmonks API (status ${response.status}):`, errorData.message || response.statusText);
-            throw new Error(`Failed to fetch live scores from Sportmonks API. Status: ${response.status}`);
+            const errorText = await response.text();
+            console.error(`Error from Firebase Function (status ${response.status}):`, errorText);
+            throw new Error(`Failed to fetch live scores via Firebase Function. Status: ${response.status}`);
         }
 
-        const data: SportmonksResponse = await response.json();
-        return processApiResponse(data.data);
+        const responseData: SportmonksResponse = await response.json();
+        return processApiResponse(responseData.data);
     } catch (error) {
         console.error('Error in fetchLiveScores service:', error);
         throw error;
