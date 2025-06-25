@@ -3,7 +3,6 @@ import type {NextConfig} from 'next';
 import type { Configuration as WebpackConfiguration } from 'webpack';
 
 const nextConfig: NextConfig = {
-  output: 'export', // Ensuring static export is enabled
   typescript: {
     ignoreBuildErrors: true, 
   },
