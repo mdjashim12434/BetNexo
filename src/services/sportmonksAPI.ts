@@ -64,6 +64,14 @@ export const processFixtureData = (fixtures: SportmonksOddsFixture[]): Processed
         const drawOdd = h2hOdds.find(o => o.original_label === 'Draw');
         const awayOdd = h2hOdds.find(o => o.original_label === '2');
 
+        const comments = fixture.comments?.map(comment => ({
+            id: comment.id,
+            comment: comment.comment,
+            minute: comment.minute,
+            extra_minute: comment.extra_minute,
+            is_goal: comment.is_goal,
+        })).sort((a, b) => b.minute - a.minute) || [];
+
         return {
             id: fixture.id,
             name: fixture.name,
@@ -88,7 +96,8 @@ export const processFixtureData = (fixtures: SportmonksOddsFixture[]): Processed
                 home: homeOdd ? parseFloat(homeOdd.value) : undefined,
                 draw: drawOdd ? parseFloat(drawOdd.value) : undefined,
                 away: awayOdd ? parseFloat(awayOdd.value) : undefined,
-            }
+            },
+            comments: comments,
         };
     });
 };

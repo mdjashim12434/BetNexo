@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
 
     if (fixtureId) {
         // Removed 'state' for simplicity and to reduce potential permission issues
-        const includes = "odds.market;odds.bookmaker;participants;league.country";
+        const includes = "odds.market;odds.bookmaker;participants;league.country;comments";
         url = `${SPORTMONKS_ODDS_BASE_URL}/fixtures/${fixtureId}?api_token=${apiKey}&include=${includes}&filters=${filters}`;
     } else if (roundId) {
         // Removed 'fixtures.state' to reduce complexity and potential permission errors

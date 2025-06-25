@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, BarChart2, Info, MessageSquare, TrendingUp, ArrowDownUp, Goal, ShieldBan, ThumbsUp, ThumbsDown, Handshake, Shuffle } from 'lucide-react';
+import { ArrowLeft, BarChart2, Info, TrendingUp, Goal, BookText } from 'lucide-react';
 import Image from 'next/image';
 import type { ProcessedFixture } from '@/types/sportmonks';
 import { useAuth } from '@/contexts/AuthContext';
@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { db, addDoc, collection, serverTimestamp } from '@/lib/firebase';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 // Extended BetOutcome to include new markets
 type BetOutcome =
@@ -211,7 +212,7 @@ export default function MatchDetailClientContent({ initialMatch }: MatchDetailCl
               <TabsTrigger value="odds">Odds & Bet</TabsTrigger>
               <TabsTrigger value="stats">Stats</TabsTrigger>
               <TabsTrigger value="info">Info</TabsTrigger>
-              <TabsTrigger value="chat">Chat</TabsTrigger>
+              <TabsTrigger value="commentary">Commentary</TabsTrigger>
             </TabsList>
             <TabsContent value="odds">
               <Card>
@@ -302,16 +303,33 @@ export default function MatchDetailClientContent({ initialMatch }: MatchDetailCl
                 </CardContent>
               </Card>
             </TabsContent>
-            <TabsContent value="chat">
+            <TabsContent value="commentary">
               <Card>
-                <CardHeader><CardTitle className="font-headline flex items-center"><MessageSquare className="mr-2 h-5 w-5" />Live Chat</CardTitle></CardHeader>
+                <CardHeader><CardTitle className="font-headline flex items-center"><BookText className="mr-2 h-5 w-5"/>Live Commentary</CardTitle></CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground">Live chat feature coming soon! Discuss the match with other fans.</p>
-                  <div className="mt-4 h-40 border rounded p-2 overflow-y-auto bg-muted/20">
-                    <p className="text-sm">Fan123: Go {match.homeTeam.name}!</p>
-                    <p className="text-sm">ProBetPlayer: {match.awayTeam.name} looks strong today.</p>
-                  </div>
-                  <Input placeholder="Type your message..." className="mt-2" disabled />
+                  {match.comments && match.comments.length > 0 ? (
+                    <ScrollArea className="h-72 w-full rounded-md border p-4">
+                      <div className="space-y-4">
+                        {match.comments.map((comment) => (
+                          <div key={comment.id} className="flex items-start gap-3">
+                            <div className="flex-shrink-0">
+                              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-sm font-semibold">
+                                {comment.minute}'
+                              </span>
+                            </div>
+                            <div className="pt-1">
+                              <p className={cn("text-sm", { "font-bold text-primary": comment.is_goal })}>
+                                {comment.is_goal && <Goal className="inline-block h-4 w-4 mr-1.5 text-green-500" />}
+                                {comment.comment}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  ) : (
+                    <p className="text-muted-foreground text-center py-10">No live commentary available for this match.</p>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>

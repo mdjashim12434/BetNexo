@@ -66,6 +66,15 @@ export interface ProcessedLiveScore {
 
 // --- Types for Odds by Round ---
 
+export interface SportmonksComment {
+    id: number;
+    fixture_id: number;
+    comment: string;
+    minute: number;
+    extra_minute: number | null;
+    is_goal: boolean;
+}
+
 export interface SportmonksOddsParticipant {
     id: number;
     name: string;
@@ -113,6 +122,7 @@ export interface SportmonksOddsFixture {
     participants: SportmonksOddsParticipant[];
     odds: SportmonksOdd[];
     league?: SportmonksLeague;
+    comments?: SportmonksComment[];
 }
 
 export interface SportmonksRoundResponse {
@@ -130,6 +140,14 @@ export interface SportmonksSingleFixtureResponse {
 }
 
 // Simplified structure for our odds components
+export interface ProcessedComment {
+    id: number;
+    comment: string;
+    minute: number;
+    extra_minute: number | null;
+    is_goal: boolean;
+}
+
 export interface ProcessedFixture {
     id: number;
     name: string;
@@ -155,4 +173,5 @@ export interface ProcessedFixture {
         draw?: number;
         away?: number;
     };
+    comments?: ProcessedComment[];
 }
