@@ -1,7 +1,6 @@
 const functions = require("firebase-functions");
 const axios = require("axios");
 
-// SportsMonks API Token
 const API_KEY = "5FRoem2oLHlu1xmtF0IdRPTwdm37Znh60OjaNrl29MgRO1NVU6yyONOA8jbH";
 
 exports.getMatchOdds = functions.https.onRequest(async (req, res) => {
@@ -16,9 +15,9 @@ exports.getMatchOdds = functions.https.onRequest(async (req, res) => {
     res.status(204).send('');
     return;
   }
-
-  const fixtureId = req.query.id; 
   
+  const fixtureId = req.query.id;
+
   if (!fixtureId) {
     res.status(400).send("Fixture ID is required. Please provide it as a query parameter (e.g., ?id=YOUR_FIXTURE_ID).");
     return;
