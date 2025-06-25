@@ -3,8 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 
 const SPORTMONKS_API_BASE_URL = "https://api.sportmonks.com/v3/football/livescores/inplay";
 
-// Switched to using Authorization header as per docs.
-// API key is now loaded from environment variables.
+// API key is loaded from environment variables for security.
 const apiKey = process.env.SPORTMONKS_API_KEY;
 
 export async function GET(request: NextRequest) {
@@ -16,14 +15,12 @@ export async function GET(request: NextRequest) {
 
   // Simplified includes to the minimum required by the UI to reduce permission error chances
   const includes = "participants;scores;league.country";
-  // api_token query parameter removed from URL
-  const url = `${SPORTMONKS_API_BASE_URL}?include=${includes}`;
+  // Authenticate using the 'api_token' query parameter for reliability
+  const url = `${SPORTMONKS_API_BASE_URL}?include=${includes}&api_token=${apiKey}`;
 
   try {
     const apiResponse = await fetch(url, {
-        headers: {
-            'Authorization': apiKey
-        },
+        // The API token is in the URL, so no special headers are needed.
         next: { revalidate: 60 } // Cache for 60 seconds
     });
 

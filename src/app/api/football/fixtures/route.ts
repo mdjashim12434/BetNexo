@@ -3,8 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 
 const SPORTMONKS_ODDS_BASE_URL = 'https://api.sportmonks.com/v3/football';
 
-// Switched to using Authorization header as per docs.
-// API key is now loaded from environment variables.
+// API key is loaded from environment variables for security.
 const apiKey = process.env.SPORTMONKS_API_KEY;
 
 // This route handles fetching fixtures by either round ID or fixture ID
@@ -21,26 +20,25 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'Either roundId or fixtureId must be provided.' }, { status: 400 });
     }
 
-    let url = '';
+    let baseUrl = '';
     const filters = "markets:1;bookmakers:2"; // Example filters, adjust as needed
 
     if (fixtureId) {
-        // Removed 'state' for simplicity and to reduce potential permission issues
+        // Includes for a single fixture
         const includes = "odds.market;odds.bookmaker;participants;league.country;comments";
-        // api_token query parameter removed from URL
-        url = `${SPORTMONKS_ODDS_BASE_URL}/fixtures/${fixtureId}?include=${includes}&filters=${filters}`;
+        baseUrl = `${SPORTMONKS_ODDS_BASE_URL}/fixtures/${fixtureId}?include=${includes}&filters=${filters}`;
     } else if (roundId) {
-        // Removed 'fixtures.state' to reduce complexity and potential permission errors
+        // Includes for all fixtures in a round
         const includes = "fixtures.odds.market;fixtures.odds.bookmaker;fixtures.participants;league.country";
-        // api_token query parameter removed from URL
-        url = `${SPORTMONKS_ODDS_BASE_URL}/rounds/${roundId}?include=${includes}&filters=${filters}`;
+        baseUrl = `${SPORTMONKS_ODDS_BASE_URL}/rounds/${roundId}?include=${includes}&filters=${filters}`;
     }
+    
+    // Authenticate using the 'api_token' query parameter for reliability
+    const url = `${baseUrl}&api_token=${apiKey}`;
     
     try {
         const response = await fetch(url, {
-            headers: {
-                'Authorization': apiKey
-            },
+            // The API token is in the URL, so no special headers are needed.
             next: { revalidate: 60 * 5 } // Cache for 5 minutes
         });
 
