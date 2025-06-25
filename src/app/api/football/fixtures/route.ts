@@ -3,13 +3,16 @@ import { NextResponse, type NextRequest } from 'next/server';
 
 const SPORTMONKS_ODDS_BASE_URL = 'https://api.sportmonks.com/v3/football';
 
+// IMPORTANT: Hardcoding API keys is not recommended for production.
+// This is a temporary measure for debugging the 401 error.
+const apiKey = "wBdgpfNzldWhiDQfTrMEuMlHUU1BhjLtOJn8NSZZJscrvGRVs6qoUOIp2rVh";
+
+
 // This route handles fetching fixtures by either round ID or fixture ID
 export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const roundId = searchParams.get('roundId');
     const fixtureId = searchParams.get('fixtureId');
-
-    const apiKey = process.env.SPORTMONKS_API_KEY;
 
     if (!apiKey) {
         return NextResponse.json({ error: 'API key is not configured on the server.' }, { status: 500 });

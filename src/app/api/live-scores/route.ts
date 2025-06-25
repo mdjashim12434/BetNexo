@@ -3,11 +3,14 @@ import { NextResponse, type NextRequest } from 'next/server';
 
 const SPORTMONKS_API_BASE_URL = "https://api.sportmonks.com/v3/football/livescores/inplay";
 
+// IMPORTANT: Hardcoding API keys is not recommended for production.
+// This is a temporary measure for debugging the 401 error.
+const apiKey = "wBdgpfNzldWhiDQfTrMEuMlHUU1BhjLtOJn8NSZZJscrvGRVs6qoUOIp2rVh";
+
 export async function GET(request: NextRequest) {
-  const apiKey = process.env.SPORTMONKS_API_KEY;
 
   if (!apiKey) {
-    console.error("SPORTMONKS_API_KEY environment variable not set.");
+    console.error("SPORTMONKS_API_KEY is not set.");
     return NextResponse.json({ error: 'API key is not configured on the server.' }, { status: 500 });
   }
 
