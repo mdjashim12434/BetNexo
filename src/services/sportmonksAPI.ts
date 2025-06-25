@@ -1,5 +1,42 @@
 import type { SportmonksResponse, ProcessedLiveScore, SportmonksOddsFixture, SportmonksRoundResponse, ProcessedFixture, SportmonksSingleFixtureResponse } from '@/types/sportmonks';
 
+// Helper to generate user-friendly error messages based on HTTP status
+const handleApiResponse = async (response: Response) => {
+    if (response.ok) {
+        return response.json();
+    }
+
+    // Try to parse error JSON, with a fallback
+    const errorJson = await response.json().catch(() => ({}));
+    const apiMessage = errorJson.error || errorJson.message || 'The API did not provide a specific error message.';
+
+    let userFriendlyMessage: string;
+    switch (response.status) {
+        case 400:
+            userFriendlyMessage = `Bad Request: The server could not understand the request. Details: ${apiMessage}`;
+            break;
+        case 401:
+            userFriendlyMessage = `Authentication Failed: The API key is likely invalid or missing. Please check the server configuration.`;
+            break;
+        case 403:
+            userFriendlyMessage = `Forbidden: Your current API plan does not allow access to this data.`;
+            break;
+        case 429:
+            userFriendlyMessage = `Too Many Requests: The hourly API limit has been reached. Please try again later.`;
+            break;
+        case 500:
+            userFriendlyMessage = `Internal Server Error: The API provider encountered an error. Please try again later.`;
+            break;
+        default:
+            userFriendlyMessage = `An unexpected API error occurred. Status: ${response.status}, Message: ${apiMessage}`;
+            break;
+    }
+    // Add the original status for debugging
+    console.error(`API Error (Status ${response.status}): ${apiMessage}`);
+    throw new Error(userFriendlyMessage);
+};
+
+
 const processLiveScoresApiResponse = (data: any): ProcessedLiveScore[] => {
     if (!Array.isArray(data)) {
         console.warn("Sportmonks data for live scores is not an array:", data);
@@ -36,16 +73,9 @@ const processLiveScoresApiResponse = (data: any): ProcessedLiveScore[] => {
 
 export async function fetchLiveScores(): Promise<ProcessedLiveScore[]> {
     console.log(`Client-side: Fetching live scores from internal proxy API: /api/live-scores`);
-
     try {
         const response = await fetch('/api/live-scores');
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error(`Error from proxy API (status ${response.status}):`, errorText);
-            throw new Error(`Failed to fetch live scores from proxy. Status: ${response.status}`);
-        }
-
-        const responseData: SportmonksResponse = await response.json();
+        const responseData: SportmonksResponse = await handleApiResponse(response);
         return processLiveScoresApiResponse(responseData.data);
     } catch (error) {
         console.error('Error in fetchLiveScores service:', error);
@@ -108,12 +138,7 @@ export async function fetchFixturesByRound(roundId: number): Promise<SportmonksR
     console.log(`Fetching fixtures for round: ${roundId} via proxy`);
     try {
         const response = await fetch(url);
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error('Error fetching fixtures from proxy:', errorData.error);
-            throw new Error(`Failed to fetch fixtures: ${errorData.error}`);
-        }
-        return await response.json();
+        return await handleApiResponse(response);
     } catch (error) {
         console.error('Error in fetchFixturesByRound:', error);
         throw error;
@@ -126,12 +151,7 @@ export async function fetchFixtureById(fixtureId: number): Promise<SportmonksOdd
     console.log(`Fetching single fixture: ${fixtureId} via proxy`);
      try {
         const response = await fetch(url);
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error('Error fetching fixture from proxy:', errorData.error);
-            throw new Error(`Failed to fetch fixture ${fixtureId}: ${errorData.error}`);
-        }
-        const fixtureResponse: SportmonksSingleFixtureResponse = await response.json();
+        const fixtureResponse: SportmonksSingleFixtureResponse = await handleApiResponse(response);
         return fixtureResponse.data;
     } catch (error) {
         console.error('Error in fetchFixtureById:', error);
