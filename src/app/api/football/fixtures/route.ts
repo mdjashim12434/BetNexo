@@ -3,10 +3,9 @@ import { NextResponse, type NextRequest } from 'next/server';
 
 const SPORTMONKS_ODDS_BASE_URL = 'https://api.sportmonks.com/v3/football';
 
-// IMPORTANT: Hardcoding API keys is not recommended for production.
-// This is a temporary measure for debugging the 401 error.
-const apiKey = "wBdgpfNzldWhiDQfTrMEuMlHUU1BhjLtOJn8NSZZJscrvGRVs6qoUOIp2rVh";
-
+// Switched to using Authorization header as per docs.
+// API key is now loaded from environment variables.
+const apiKey = process.env.SPORTMONKS_API_KEY;
 
 // This route handles fetching fixtures by either round ID or fixture ID
 export async function GET(request: NextRequest) {
@@ -28,15 +27,20 @@ export async function GET(request: NextRequest) {
     if (fixtureId) {
         // Removed 'state' for simplicity and to reduce potential permission issues
         const includes = "odds.market;odds.bookmaker;participants;league.country;comments";
-        url = `${SPORTMONKS_ODDS_BASE_URL}/fixtures/${fixtureId}?api_token=${apiKey}&include=${includes}&filters=${filters}`;
+        // api_token query parameter removed from URL
+        url = `${SPORTMONKS_ODDS_BASE_URL}/fixtures/${fixtureId}?include=${includes}&filters=${filters}`;
     } else if (roundId) {
         // Removed 'fixtures.state' to reduce complexity and potential permission errors
         const includes = "fixtures.odds.market;fixtures.odds.bookmaker;fixtures.participants;league.country";
-        url = `${SPORTMONKS_ODDS_BASE_URL}/rounds/${roundId}?api_token=${apiKey}&include=${includes}&filters=${filters}`;
+        // api_token query parameter removed from URL
+        url = `${SPORTMONKS_ODDS_BASE_URL}/rounds/${roundId}?include=${includes}&filters=${filters}`;
     }
     
     try {
         const response = await fetch(url, {
+            headers: {
+                'Authorization': apiKey
+            },
             next: { revalidate: 60 * 5 } // Cache for 5 minutes
         });
 
