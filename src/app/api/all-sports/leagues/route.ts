@@ -24,3 +24,5 @@ export async function GET() {
     return new Response("Failed to load leagues", { status: 500 });
   }
 }
+
+export const dynamic = 'force-dynamic';
