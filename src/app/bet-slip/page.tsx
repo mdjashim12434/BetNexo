@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button';
 
 type BetStatus = 'pending' | 'won' | 'lost' | 'cancelled';
 // Extended BetOutcome to match MatchDetailClientContent
-type BetOutcome Firestore =
+type BetOutcomeFirestore =
   | 'teamA' | 'draw' | 'teamB' // H2H
   | 'over' | 'under' // Totals
   | 'bttsYes' | 'bttsNo' // BTTS
