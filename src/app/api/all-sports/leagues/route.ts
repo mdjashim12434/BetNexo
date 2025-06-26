@@ -10,7 +10,7 @@ export async function GET() {
   try {
     const [footballRes, cricketRes] = await Promise.all([
       fetch(`https://api.sportmonks.com/v3/football/leagues?api_token=${apiKey}`, { next: { revalidate: 3600 } }), // Cache for 1 hour
-      fetch(`https://cricket.sportmonks.com/api/v2.0/leagues?api_token=${apiKey}`, { next: { revalidate: 3600 } }) // Cache for 1 hour
+      fetch(`https://api.sportmonks.com/v3/cricket/leagues?api_token=${apiKey}`, { next: { revalidate: 3600 } }) // Cache for 1 hour, V3 URL
     ]);
 
     if (!footballRes.ok) {
