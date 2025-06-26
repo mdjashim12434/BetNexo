@@ -45,7 +45,7 @@ export default function FootballLiveScoresDisplay() {
     } finally {
       setLoading(false);
     }
-  }, [toast, loading]);
+  }, [toast]);
 
   useEffect(() => {
     loadScores();
@@ -109,7 +109,7 @@ export default function FootballLiveScoresDisplay() {
                 <div className="flex justify-between items-center mb-2">
                     <p className="text-xs text-muted-foreground truncate">{match.leagueName}</p>
                     <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold text-yellow-500">{match.minute}'</span>
+                        {match.minute && <span className="text-xs font-semibold text-yellow-500">{match.minute}'</span>}
                         <Badge variant="destructive" className="animate-pulse">LIVE</Badge>
                     </div>
                 </div>

@@ -174,13 +174,18 @@ const processFootballLiveScoresApiResponse = (data: SportmonksFootballLiveScore[
             return score?.score.goals ?? 0;
         };
         
-        const latestEvent = match.events?.filter(e => e.type.name.toLowerCase() !== 'period start').sort((a, b) => b.id - a.id)[0];
         let latestEventString;
-        if (latestEvent) {
-            const playerName = latestEvent.participant?.name;
-            latestEventString = `${latestEvent.minute}' - ${latestEvent.type.name}`;
-            if (playerName && (latestEvent.type.name.toLowerCase().includes('goal') || latestEvent.type.name.toLowerCase().includes('card'))) {
-                latestEventString += ` (${playerName})`;
+        if (match.events && match.events.length > 0) {
+            const latestEvent = match.events
+                .filter(e => e.type && e.type.name.toLowerCase() !== 'period start')
+                .sort((a, b) => b.id - a.id)[0];
+            
+            if (latestEvent) {
+                const playerName = latestEvent.participant?.name;
+                latestEventString = `${latestEvent.minute}' - ${latestEvent.type.name}`;
+                if (playerName && (latestEvent.type.name.toLowerCase().includes('goal') || latestEvent.type.name.toLowerCase().includes('card'))) {
+                    latestEventString += ` (${playerName})`;
+                }
             }
         }
 
@@ -190,7 +195,7 @@ const processFootballLiveScoresApiResponse = (data: SportmonksFootballLiveScore[
             homeTeam: { name: homeTeam?.name ?? 'Home', score: homeTeam ? getScore(homeTeam.id) : 0 },
             awayTeam: { name: awayTeam?.name ?? 'Away', score: awayTeam ? getScore(awayTeam.id) : 0 },
             leagueName: match.league?.name || 'N/A',
-            minute: match.periods?.find(p => p.has_timer)?.minutes,
+            minute: match.periods?.find(p => p.ticking)?.minutes,
             status: match.state?.name || 'Live',
             latestEvent: latestEventString
         };
