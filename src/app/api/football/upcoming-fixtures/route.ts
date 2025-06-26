@@ -27,8 +27,8 @@ export async function GET(request: NextRequest) {
     const startDate = formatDate(today);
     const endDate = formatDate(futureDate);
 
-    // Includes for upcoming fixtures. participants = teams, league for league info. Removed odds.
-    const includes = "participants;league.country;state";
+    // Includes for upcoming fixtures. participants = teams, league for league info. Added odds.
+    const includes = "participants;league.country;state;odds";
     
     // NOTE: Removed specific filters for leagues and markets to make the query more robust,
     // aligning with a "Worldwide Plan" that should fetch all available matches.
