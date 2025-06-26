@@ -14,11 +14,11 @@ import { useAuth, type User } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { Mail, Phone, MessageSquare, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { auth, signInWithEmailAndPassword, sendEmailVerification, type FirebaseUserType } from '@/lib/firebase';
+import { auth, signInWithEmailAndPassword, sendEmailVerification, findUserByCustomId, type FirebaseUserType } from '@/lib/firebase';
 import { useEffect, useState } from 'react';
 
 const loginSchema = z.object({
-  emailOrPhone: z.string().email({ message: 'Please enter a valid email address' }),
+  emailOrUserId: z.string().min(1, { message: 'Email or User ID is required.' }),
   password: z.string().min(6, { message: 'Password must be at least 6 characters' }),
   rememberMe: z.boolean().optional(),
 });
@@ -38,7 +38,7 @@ export default function LoginPage() {
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      emailOrPhone: '',
+      emailOrUserId: '',
       password: '',
       rememberMe: false,
     },
@@ -59,10 +59,31 @@ export default function LoginPage() {
     form.clearErrors();
     setShowVerificationMessage(false);
     setCurrentUserForVerification(null);
-    form.setValue('emailOrPhone', data.emailOrPhone.trim());
+    form.setValue('emailOrUserId', data.emailOrUserId.trim());
+
+    let emailToLogin = data.emailOrUserId.trim();
+    const isCustomId = /^\d{9}$/.test(emailToLogin);
 
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, data.emailOrPhone, data.password);
+      if (isCustomId) {
+        const userDoc = await findUserByCustomId(emailToLogin);
+        if (userDoc && userDoc.email) {
+          emailToLogin = userDoc.email;
+        } else {
+          toast({ title: "Login Failed", description: "User ID not found. Please check the ID or try logging in with your email.", variant: "destructive", duration: 7000 });
+          form.setError("emailOrUserId", { type: "manual", message: "User ID not found." });
+          return;
+        }
+      }
+
+      // Check if the resulting string is a valid email, especially after potential ID lookup
+      if (!z.string().email().safeParse(emailToLogin).success) {
+          toast({ title: "Invalid Input", description: "Please enter a valid email address or a 9-digit User ID.", variant: "destructive" });
+          form.setError("emailOrUserId", { type: "manual", message: "Invalid email format." });
+          return;
+      }
+        
+      const userCredential = await signInWithEmailAndPassword(auth, emailToLogin, data.password);
       const fbUser = userCredential.user;
 
       if (!fbUser.emailVerified) {
@@ -99,11 +120,13 @@ export default function LoginPage() {
       if (error.code === 'permission-denied' || error.code === 'PERMISSION_DENIED') {
         errorMessage = "You do not have permission to access your user data. This is a Firestore Security Rule issue. Please ensure the rules allow an authenticated user to read their own document in the 'users' collection.";
       } else if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-        errorMessage = "Invalid email or password. Please try again.";
-        form.setError("emailOrPhone", { type: "manual", message: " " });
-        form.setError("password", { type: "manual", message: "Invalid email or password." });
+        errorMessage = "Invalid credentials. Please try again.";
+        form.setError("emailOrUserId", { type: "manual", message: " " });
+        form.setError("password", { type: "manual", message: "Invalid email/User ID or password." });
       } else if (error.code === 'auth/too-many-requests') {
         errorMessage = "Too many login attempts. Please try again later.";
+      } else if (error.message && error.message.toLowerCase().includes('firestore')) {
+         errorMessage = "There was a problem accessing user data. It's possible a database index is required. Please check the browser console for a Firebase link to create it.";
       } else if (error.message) { 
         errorMessage = error.message;
       }
@@ -186,12 +209,12 @@ export default function LoginPage() {
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField
                   control={form.control}
-                  name="emailOrPhone"
+                  name="emailOrUserId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-muted-foreground">E-mail or ID*</FormLabel>
+                      <FormLabel className="text-muted-foreground">Email or User ID*</FormLabel>
                       <FormControl>
-                        <Input type="email" placeholder="your@email.com" {...field} className="bg-background border-border focus:border-primary" />
+                        <Input type="text" placeholder="your@email.com or 123456789" {...field} className="bg-background border-border focus:border-primary" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

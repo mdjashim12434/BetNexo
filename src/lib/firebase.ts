@@ -50,6 +50,30 @@ const db = getFirestore(app);
 // Initialize Analytics if supported (client-side)
 const analytics = isSupported().then(yes => yes ? getAnalytics(app) : null);
 
+// Helper function to find user by custom 9-digit ID
+export const findUserByCustomId = async (customId: string): Promise<{ email: string } | null> => {
+    const usersRef = collection(db, "users");
+    // Firestore stores numbers, so we need to convert the string ID to a number for the query.
+    const q = query(usersRef, where("customUserId", "==", Number(customId)));
+    try {
+        const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+            // Assuming customUserId is unique, there should be only one doc.
+            const userDoc = querySnapshot.docs[0];
+            const userData = userDoc.data();
+            if (userData && userData.email) {
+                return { email: userData.email };
+            }
+        }
+        return null;
+    } catch (error) {
+        console.error("Error finding user by custom ID:", error);
+        // This could be a permissions error or a missing index.
+        // A toast in the calling component will notify the user.
+        throw error;
+    }
+};
+
 // Helper function to update user balance - important for transactions
 const updateUserBalanceInFirestore = async (userId: string, amountChange: number) => {
     const userDocRef = doc(db, "users", userId);

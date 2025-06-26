@@ -7,6 +7,7 @@ import { db, doc, getDoc, setDoc, updateDoc, serverTimestamp, auth, signOut, onA
 
 export interface User {
   id: string; // Firebase UID
+  customUserId?: number; // 9-digit user ID
   name?: string;
   email?: string;
   phone?: string;
@@ -22,7 +23,7 @@ export interface User {
 
 interface AuthContextType {
   user: User | null;
-  login: (userData: { id: string; email?: string; phone?: string; name?: string; currency?: string; country?: string; emailVerified?: boolean, role?: 'Admin' | 'User' | 'Agent' }, isNewUser?: boolean) => Promise<User | null>;
+  login: (userData: { id: string; email?: string; phone?: string; name?: string; currency?: string; country?: string; emailVerified?: boolean, role?: 'Admin' | 'User' | 'Agent', customUserId?: number }, isNewUser?: boolean) => Promise<User | null>;
   logout: () => Promise<void>;
   balance: number;
   currency: string;
@@ -63,6 +64,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return {
           id: uid,
           ...firestoreData,
+          customUserId: firestoreData.customUserId,
           currency: firestoreData.currency || 'USD',
           role: ensuredRole
         } as User;
@@ -121,7 +123,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => unsubscribe();
   }, [fetchUserDocument]);
 
-  const login = async (userDataFromAuth: { id: string; email?: string; phone?: string; name?: string; currency?: string; country?: string; emailVerified?: boolean, role?: 'Admin' | 'User' | 'Agent' }, isNewUser: boolean = false): Promise<User | null> => {
+  const login = async (userDataFromAuth: { id: string; email?: string; phone?: string; name?: string; currency?: string; country?: string; emailVerified?: boolean, role?: 'Admin' | 'User' | 'Agent', customUserId?: number }, isNewUser: boolean = false): Promise<User | null> => {
     setLoadingAuth(true);
     console.log("AuthContext: Login function called. isNewUser:", isNewUser, "UID:", userDataFromAuth.id);
     try {
@@ -140,7 +142,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log("AuthContext: Handling as NEW user for UID:", uid);
         const userDocRef = doc(db, "users", uid);
         const initialBalance = 0;
-        const newUserDocData: Omit<User, 'id' | 'emailVerified' | 'avatarUrl' | 'isVerified'> & { createdAt: any, isVerified: boolean, role: 'Admin' | 'User' | 'Agent', currency: string } = {
+        const newUserDocData: Omit<User, 'id' | 'emailVerified' | 'avatarUrl' | 'isVerified'> & { createdAt: any, isVerified: boolean, role: 'Admin' | 'User' | 'Agent', currency: string, customUserId: number } = {
+          customUserId: userDataFromAuth.customUserId!,
           name: defaultName,
           email: defaultEmail,
           phone: defaultPhone,
@@ -167,7 +170,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           console.warn(`AuthContext login: Firestore document NOT FOUND for existing Firebase user ${uid}. Creating one with defaults.`);
           const userDocRef = doc(db, "users", uid);
-          const docDataToSet: Omit<User, 'id' | 'emailVerified' | 'avatarUrl' | 'isVerified'> & { createdAt: any, isVerified: boolean, role: 'Admin' | 'User' | 'Agent', currency: string } = {
+          const docDataToSet: Omit<User, 'id' | 'emailVerified' | 'avatarUrl' | 'isVerified'> & { createdAt: any, isVerified: boolean, role: 'Admin' | 'User' | 'Agent', currency: string, customUserId: number } = {
+            customUserId: Math.floor(100000000 + Math.random() * 900000000), // Fallback custom ID
             name: defaultName,
             email: defaultEmail,
             phone: defaultPhone,

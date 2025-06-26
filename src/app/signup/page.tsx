@@ -73,9 +73,11 @@ export default function SignupPage() {
       const firebaseUser = userCredential.user;
       await sendEmailVerification(firebaseUser);
       
+      const customUserId = Math.floor(100000000 + Math.random() * 900000000);
+
       toast({ 
         title: "Signup Successful!", 
-        description: "A verification email has been sent. Please check your inbox to verify your account before logging in.",
+        description: `Your new User ID is ${customUserId}. A verification email has been sent. Please verify your account before logging in.`,
         duration: 10000,
       });
 
@@ -86,6 +88,7 @@ export default function SignupPage() {
         currency: data.currency,
         country: data.country,
         emailVerified: firebaseUser.emailVerified, // false at this point
+        customUserId: customUserId,
       };
       
       await loginToAppContext(newUserPayloadForAppContext, true);

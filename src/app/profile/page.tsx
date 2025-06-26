@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
-import { LogOut, Mail, User as UserIcon, Calendar, ShieldCheck } from 'lucide-react';
+import { LogOut, Mail, User as UserIcon, Calendar, ShieldCheck, Fingerprint, Hash } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { format } from 'date-fns';
@@ -75,7 +75,11 @@ export default function ProfilePage() {
             <Separator />
             <div className="space-y-4 text-sm">
                 <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground flex items-center"><UserIcon className="h-5 w-5 mr-3 text-primary" /> User ID</span>
+                    <span className="text-muted-foreground flex items-center"><Hash className="h-5 w-5 mr-3 text-primary" /> User ID</span>
+                    <span className="font-mono text-foreground">{user.customUserId || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground flex items-center"><Fingerprint className="h-5 w-5 mr-3 text-primary" /> Firebase UID</span>
                     <span className="font-mono text-xs text-foreground">{user.id}</span>
                 </div>
                  <div className="flex justify-between items-center">
