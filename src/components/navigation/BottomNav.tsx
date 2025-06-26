@@ -30,7 +30,7 @@ export default function BottomNav() {
           if (item.isCenter) {
             return (
               <div key={item.label} className="flex justify-center">
-                 <Link href={item.href} className="relative -top-8 flex h-16 w-16 items-center justify-center rounded-full bg-primary shadow-lg ring-4 ring-background cursor-pointer">
+                 <Link href={item.href} className="relative -top-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary shadow-lg ring-4 ring-background cursor-pointer">
                     <item.icon className="h-8 w-8 text-primary-foreground" />
                     <span className="sr-only">{item.label}</span>
                 </Link>
