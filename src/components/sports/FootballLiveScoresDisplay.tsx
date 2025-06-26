@@ -13,15 +13,25 @@ import { format } from 'date-fns';
 
 const REFRESH_INTERVAL_MS = 60000; // 60 seconds
 
-export default function FootballLiveScoresDisplay() {
-  const [liveMatches, setLiveMatches] = useState<ProcessedFootballLiveScore[]>([]);
-  const [upcomingFixtures, setUpcomingFixtures] = useState<ProcessedFixture[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+interface FootballLiveScoresDisplayProps {
+  initialLiveMatches?: ProcessedFootballLiveScore[];
+  initialUpcomingFixtures?: ProcessedFixture[];
+  initialError?: string;
+}
+
+export default function FootballLiveScoresDisplay({
+  initialLiveMatches = [],
+  initialUpcomingFixtures = [],
+  initialError,
+}: FootballLiveScoresDisplayProps) {
+  const [liveMatches, setLiveMatches] = useState<ProcessedFootballLiveScore[]>(initialLiveMatches);
+  const [upcomingFixtures, setUpcomingFixtures] = useState<ProcessedFixture[]>(initialUpcomingFixtures);
+  const [loading, setLoading] = useState(false); // No initial loading state needed
+  const [error, setError] = useState<string | null>(initialError || null);
   const { toast } = useToast();
 
   const loadData = useCallback(async (isManualRefresh: boolean = false) => {
-    if (!isManualRefresh) {
+    if (isManualRefresh) {
         setLoading(true);
     }
     setError(null);
@@ -35,13 +45,10 @@ export default function FootballLiveScoresDisplay() {
             setLiveMatches([]); // Clear live matches
             const fetchedUpcoming = await fetchUpcomingFootballFixtures();
             
-            // Filter for matches that have not started yet (State: Not Started or To Be Announced).
-            // This prevents finished matches from today from showing up as "Upcoming".
             const trulyUpcoming = fetchedUpcoming.filter(match => 
                 match.state?.state === 'NS' || match.state?.state === 'TBA'
             );
 
-            // Sort the truly upcoming matches by starting time
             const sortedUpcoming = trulyUpcoming
                 .sort((a, b) => new Date(a.startingAt).getTime() - new Date(b.startingAt).getTime());
 
@@ -58,24 +65,26 @@ export default function FootballLiveScoresDisplay() {
             toast({ title: "Refresh Failed", description: errorMessage, variant: "destructive", duration: 10000 });
         }
     } finally {
-        setLoading(false);
+        if (isManualRefresh) {
+            setLoading(false);
+        }
     }
   }, [toast]);
 
   useEffect(() => {
-    loadData(); // Initial fetch
-    const intervalId = setInterval(() => loadData(), REFRESH_INTERVAL_MS);
+    // Data is pre-fetched, so this interval is just for background updates.
+    const intervalId = setInterval(() => loadData(false), REFRESH_INTERVAL_MS);
     return () => clearInterval(intervalId);
   }, [loadData]);
 
   const hasLiveMatches = liveMatches.length > 0;
   const hasUpcomingMatches = upcomingFixtures.length > 0;
   
-  if (loading && !hasLiveMatches && !hasUpcomingMatches) {
+  if (loading) { // Only show loader on manual refresh, not initial load.
     return (
       <div className="flex flex-col items-center justify-center py-10 my-4 text-muted-foreground bg-card rounded-lg shadow-lg min-h-[200px]">
         <Loader2 className="mr-2 h-8 w-8 animate-spin text-primary" />
-        <p className="mt-2 text-lg">Loading Matches...</p>
+        <p className="mt-2 text-lg">Refreshing Matches...</p>
       </div>
     );
   }
@@ -101,10 +110,10 @@ export default function FootballLiveScoresDisplay() {
           </div>
         )}
 
-        {!hasLiveMatches && !hasUpcomingMatches && !loading && !error && (
+        {!hasLiveMatches && !hasUpcomingMatches && !error && (
           <div className="text-center py-10 text-muted-foreground min-h-[150px] flex flex-col items-center justify-center">
             <Info className="h-10 w-10 mb-3 text-primary/50" />
-            <p className="font-semibold">No live or upcoming matches found at the moment.</p>
+            <p className="font-semibold">No live or upcoming football matches found.</p>
             <p className="text-sm">Please check back later.</p>
           </div>
         )}

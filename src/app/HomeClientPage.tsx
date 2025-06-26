@@ -1,0 +1,180 @@
+'use client';
+
+import AppLayout from '@/components/AppLayout';
+import BottomNav from '@/components/navigation/BottomNav';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { Star, Swords, Gamepad2, Dice5, Zap, Dribbble, Goal, CheckSquare, Tablet, Circle, Disc, Image as ImageIcon } from 'lucide-react';
+import { CricketIcon } from '@/components/icons/CricketIcon';
+import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+import FootballLiveScoresDisplay from '@/components/sports/FootballLiveScoresDisplay';
+import Image from 'next/image';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { cn } from '@/lib/utils';
+import type { ProcessedFootballLiveScore, ProcessedFixture } from '@/types/sportmonks';
+
+// --- Top Navigation Data ---
+const topNavItems = [
+  { name: 'Top', href: '#', icon: Star },
+  { name: 'Sports', href: '/sports/all-sports', icon: Swords },
+  { name: 'Esports', href: '#', icon: Gamepad2 },
+  { name: 'Casino', href: '/casino', icon: Dice5 },
+  { name: 'Fast Games', href: '#', icon: Zap },
+];
+
+// --- Sports Grid Data ---
+const sportsGridItems = [
+  { name: 'All', href: '/sports/all-sports', icon: CheckSquare },
+  { name: 'Cricket', href: '/sports/cricket', icon: CricketIcon },
+  { name: 'Football', href: '/sports/football', icon: Goal },
+  { name: 'Basketball', href: '#', icon: Dribbble },
+  { name: 'Table Tennis', href: '#', icon: Tablet },
+  { name: 'Tennis', href: '#', icon: Circle },
+  { name: 'Ice Hockey', href: '#', icon: Disc },
+];
+
+// --- Promotional Banners Data ---
+const promoBanners = [
+  { title: "WINtality Blast", imageHint: "cricket player celebrating", href: "#" },
+  { title: "Grand Slam - Grand Win", imageHint: "tennis players action", href: "#" },
+  { title: "Sure Bet", imageHint: "cricket ball fire", href: "#" },
+  { title: "Deposit Bonus", imageHint: "money coins gold", href: "/deposit" },
+];
+
+// --- Casino Quick Links Data ---
+const casinoLinks = [
+  { name: "All Games", imageHint: "dice pattern", href: "/casino" },
+  { name: "Western slot", imageHint: "cowboy slot machine", href: "/casino" },
+  { name: "21", imageHint: "blackjack cards", href: "/casino" },
+  { name: "Under and Over 7", imageHint: "dice seven", href: "/casino" },
+  { name: "Midgard Zombies", imageHint: "zombie cartoon", href: "/casino" },
+];
+
+interface HomeClientPageProps {
+  initialLiveMatches: ProcessedFootballLiveScore[];
+  initialUpcomingFixtures: ProcessedFixture[];
+  initialError: string | null;
+}
+
+export default function HomeClientPage({
+  initialLiveMatches,
+  initialUpcomingFixtures,
+  initialError,
+}: HomeClientPageProps) {
+  const { user, loadingAuth } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loadingAuth && !user) {
+      router.push('/login');
+    }
+  }, [user, loadingAuth, router]);
+
+  if (loadingAuth || !user) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center min-h-[calc(100vh-theme(spacing.32))]">
+          <div className="text-center p-10">Loading...</div>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  return (
+    <AppLayout>
+      <div className="container py-6">
+        <div className="space-y-4 md:space-y-6 pb-24">
+          
+          {/* Top Navigation */}
+          <ScrollArea className="w-full whitespace-nowrap -mt-4">
+            <div className="flex justify-between items-center p-2 gap-4">
+              {topNavItems.map((item, index) => (
+                <Link href={item.href} key={item.name} className={cn("flex flex-col items-center justify-center gap-1.5 pb-2 text-muted-foreground hover:text-primary transition-colors", index === 0 ? "text-primary border-b-2 border-primary" : "")}>
+                  <item.icon className="h-6 w-6" />
+                  <span className="text-xs font-medium tracking-tight">{item.name}</span>
+                </Link>
+              ))}
+            </div>
+            <ScrollBar orientation="horizontal" className="hidden"/>
+          </ScrollArea>
+          
+          {/* Sports Grid */}
+          <ScrollArea className="w-full whitespace-nowrap">
+            <div className="flex gap-3 px-1 py-1">
+              {sportsGridItems.map(sport => (
+                <Link href={sport.href} key={sport.name} className="flex flex-col items-center justify-center w-20 h-20 bg-card rounded-lg shadow-sm hover:shadow-md transition-shadow gap-1.5 p-2">
+                    <div className="w-8 h-8 flex items-center justify-center bg-primary/20 rounded-full">
+                      <sport.icon className="h-5 w-5 text-primary" />
+                    </div>
+                    <span className="text-xs font-medium text-foreground truncate">{sport.name}</span>
+                </Link>
+              ))}
+            </div>
+            <ScrollBar orientation="horizontal" className="hidden"/>
+          </ScrollArea>
+
+          {/* Promotional Banners */}
+          <ScrollArea className="w-full whitespace-nowrap">
+            <div className="flex gap-3 px-1 py-1">
+                {promoBanners.map(banner => (
+                  <Link href={banner.href} key={banner.title} legacyBehavior passHref>
+                    <a className="block">
+                      <Card className="w-64 h-32 overflow-hidden relative group">
+                        <Image 
+                          src={`https://placehold.co/400x200.png`} 
+                          alt={banner.title} 
+                          fill
+                          className="object-cover group-hover:scale-105 transition-transform duration-300"
+                          data-ai-hint={banner.imageHint}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                        <CardContent className="absolute bottom-0 left-0 p-3">
+                          <h3 className="text-white font-bold text-sm">{banner.title}</h3>
+                        </CardContent>
+                      </Card>
+                    </a>
+                  </Link>
+                ))}
+            </div>
+            <ScrollBar orientation="horizontal" className="hidden"/>
+          </ScrollArea>
+
+          {/* Casino Quick Links */}
+          <ScrollArea className="w-full whitespace-nowrap">
+            <div className="flex gap-4 px-1 py-1">
+              {casinoLinks.map(link => (
+                  <Link href={link.href} key={link.name} className="flex flex-col items-center justify-center gap-2 w-20 text-center">
+                      <Avatar className="h-16 w-16 border-2 border-primary/20">
+                          <AvatarImage src={`https://placehold.co/128x128.png`} data-ai-hint={link.imageHint}/>
+                          <AvatarFallback><ImageIcon /></AvatarFallback>
+                      </Avatar>
+                      <span className="text-xs font-medium text-muted-foreground truncate w-full">{link.name}</span>
+                  </Link>
+              ))}
+            </div>
+            <ScrollBar orientation="horizontal" className="hidden"/>
+          </ScrollArea>
+          
+          {/* Live Matches Section */}
+          <section className="pt-4">
+            <div className="mb-2 flex justify-between items-center">
+              <h2 className="font-headline text-xl font-bold text-foreground">Top LIVE <Button variant="ghost" size="sm" className="ml-1 text-primary">Sport</Button></h2>
+              <Button variant="link" asChild><Link href="/sports/live">All</Link></Button>
+            </div>
+            <FootballLiveScoresDisplay 
+              initialLiveMatches={initialLiveMatches}
+              initialUpcomingFixtures={initialUpcomingFixtures}
+              initialError={initialError || undefined}
+            />
+          </section>
+
+        </div>
+      </div>
+      <BottomNav />
+    </AppLayout>
+  );
+}
