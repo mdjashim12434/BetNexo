@@ -12,8 +12,15 @@ export async function GET() {
       }),
     ]);
 
-    const football = await footballRes.json();
-    const cricket = await cricketRes.json();
+    if (!footballRes.ok) {
+      console.error('Failed to fetch football leagues:', footballRes.status, await footballRes.text());
+    }
+    if (!cricketRes.ok) {
+      console.error('Failed to fetch cricket leagues:', cricketRes.status, await cricketRes.text());
+    }
+
+    const football = footballRes.ok ? await footballRes.json() : { data: [] };
+    const cricket = cricketRes.ok ? await cricketRes.json() : { data: [] };
 
     return Response.json({
       footballLeagues: football.data || [],
@@ -24,5 +31,3 @@ export async function GET() {
     return new Response("Failed to load leagues", { status: 500 });
   }
 }
-
-export const dynamic = 'force-dynamic';
