@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -30,8 +29,8 @@ export default function BottomNav() {
           if (item.isCenter) {
             return (
               <div key={item.label} className="flex justify-center">
-                 <Link href={item.href} className="relative -top-2 flex h-16 w-16 items-center justify-center rounded-full bg-primary shadow-lg ring-4 ring-background cursor-pointer">
-                    <item.icon className="h-8 w-8 text-primary-foreground" />
+                 <Link href={item.href} className="relative -top-2 flex h-14 w-14 items-center justify-center rounded-full bg-primary shadow-lg ring-4 ring-background cursor-pointer">
+                    <item.icon className="h-7 w-7 text-primary-foreground" />
                     <span className="sr-only">{item.label}</span>
                 </Link>
               </div>
