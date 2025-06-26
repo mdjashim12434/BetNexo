@@ -19,14 +19,13 @@ export async function GET(request: NextRequest) {
   let url = '';
 
   if (fixtureId) {
-    // Fetch a single fixture with details
-    // Note: includes might differ for cricket, adjust as needed. Common ones are team, league, odds.
+    // Fetch a single fixture with details. 'odds' is included, but can be removed if plan issues arise.
     const includes = "localteam,visitorteam,league,runs,odds"; 
     url = `${SPORTMONKS_CRICKET_API_URL}/fixtures/${fixtureId}?api_token=${apiKey}&include=${includes}`;
   } else {
-    // Fetch upcoming fixtures (default)
-    // Filters can be added, e.g., status=NS for 'Not Started'
-    url = `${SPORTMONKS_CRICKET_API_URL}/fixtures?api_token=${apiKey}&sort=starting_at&filter[status]=NS`;
+    // Fetch upcoming fixtures. Essential 'includes' are added to ensure data consistency.
+    const includes = "localteam,visitorteam,league";
+    url = `${SPORTMONKS_CRICKET_API_URL}/fixtures?api_token=${apiKey}&sort=starting_at&filter[status]=NS&include=${includes}`;
   }
 
   try {
@@ -35,9 +34,10 @@ export async function GET(request: NextRequest) {
     });
 
     if (!apiResponse.ok) {
-        const errorData = await apiResponse.json();
+        const errorData = await apiResponse.json().catch(() => ({}));
         console.error("Error from Sportmonks Cricket API:", errorData);
-        return NextResponse.json({ error: errorData.message || 'Failed to fetch cricket fixtures' }, { status: apiResponse.status });
+        const message = errorData.message || 'Failed to fetch cricket fixtures from the provider.';
+        return NextResponse.json({ error: message }, { status: apiResponse.status });
     }
 
     const data = await apiResponse.json();
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
 
   } catch (error: any) {
     console.error("Error fetching from Sportmonks Cricket API via proxy:", error);
-    return NextResponse.json({ error: 'An internal server error occurred.' }, { status: 500 });
+    return NextResponse.json({ error: 'An internal server error occurred while contacting the proxy API.' }, { status: 500 });
   }
 }
 
