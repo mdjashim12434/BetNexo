@@ -67,11 +67,16 @@ export default function BetHistoryPage() {
     } catch (error: any) {
       console.error("Error fetching bet history:", error);
       let description = "Could not fetch your bet history.";
-      if (error.message && error.message.toLowerCase().includes("index required") && error.message.toLowerCase().includes("firebase")) {
-        description = `Firestore reported: "${error.message}". This means a composite index is required. Please open your browser's developer console, find this exact Firebase error message, and click the link it provides to create the index in your Firestore settings for the 'bets' collection (fields: 'userId' (Ascending) and 'betTimestamp' (Descending)).`;
+      
+      const isIndexError = (error.code && error.code.toLowerCase().includes("failed-precondition")) || 
+                           (error.message && error.message.toLowerCase().includes("index"));
+
+      if (isIndexError) {
+        description = `A Firestore index is needed to see your bet history. Please check your browser's developer console for a link to create it, or manually create an index on the 'bets' collection (userId ASC, betTimestamp DESC).`;
       } else if (error.message) {
         description += ` Details: ${error.message}`;
       }
+      
       toast({ title: "Error", description, variant: "destructive", duration: 15000 });
     } finally {
       setIsLoading(false);

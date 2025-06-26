@@ -73,6 +73,7 @@ const processCricketV3LiveScoresApiResponse = (data: SportmonksV3Fixture[]): Pro
 // --- Football & V3 Cricket Processing (V3) ---
 
 const processV3FixtureData = (fixtures: SportmonksV3Fixture[], sportKey: 'football' | 'cricket'): ProcessedFixture[] => {
+    if (!Array.isArray(fixtures)) return [];
     return fixtures.map(fixture => {
         const homeTeam = fixture.participants?.find(p => p.meta.location === 'home');
         const awayTeam = fixture.participants?.find(p => p.meta.location === 'away');
@@ -225,13 +226,12 @@ const processLiveFootballFixtures = (fixtures: SportmonksFootballLiveScore[]): P
 
 
 // --- Public Fetching Functions ---
-// The fetchLiveScores function is no longer needed as the component using it has been removed.
 
 export async function fetchFootballLiveScores(): Promise<ProcessedFootballLiveScore[]> {
   try {
     const response = await fetch('/api/football/live-scores');
     const responseData: SportmonksFootballLiveResponse = await handleApiResponse(response);
-    return processFootballLiveScoresApiResponse(responseData.data);
+    return processFootballLiveScoresApiResponse(responseData?.data || []);
   } catch (error) {
     console.error('Error in fetchFootballLiveScores service:', error);
     throw error;
@@ -243,7 +243,7 @@ export async function fetchLiveFootballFixtures(leagueId?: number): Promise<Proc
     const url = leagueId ? `/api/football/live-scores?leagueId=${leagueId}` : '/api/football/live-scores';
     const response = await fetch(url);
     const responseData: SportmonksFootballLiveResponse = await handleApiResponse(response);
-    return processLiveFootballFixtures(responseData.data);
+    return processLiveFootballFixtures(responseData?.data || []);
   } catch (error) {
     console.error('Error in fetchLiveFootballFixtures service:', error);
     throw error;
@@ -257,7 +257,7 @@ export async function fetchLiveCricketFixtures(leagueId?: number): Promise<Proce
     const url = leagueId ? `/api/cricket/live-scores?leagueId=${leagueId}` : '/api/cricket/live-scores';
     const response = await fetch(url);
     const responseData: SportmonksV3FixturesResponse = await handleApiResponse(response);
-    return processV3FixtureData(responseData.data, 'cricket');
+    return processV3FixtureData(responseData?.data || [], 'cricket');
   } catch (error) {
     console.error('Error in fetchLiveCricketFixtures (V3) service:', error);
     throw error;
@@ -269,7 +269,7 @@ export async function fetchUpcomingFootballFixtures(leagueId?: number): Promise<
         const url = leagueId ? `/api/football/upcoming-fixtures?leagueId=${leagueId}` : '/api/football/upcoming-fixtures';
         const response = await fetch(url);
         const rawData: SportmonksV3FixturesResponse = await handleApiResponse(response);
-        return processV3FixtureData(rawData.data, 'football');
+        return processV3FixtureData(rawData?.data || [], 'football');
     } catch (error) {
         console.error('Error in fetchUpcomingFootballFixtures service:', error);
         throw error;
@@ -281,7 +281,7 @@ export async function fetchUpcomingCricketFixtures(leagueId?: number): Promise<P
         const url = leagueId ? `/api/cricket/upcoming-fixtures?leagueId=${leagueId}` : '/api/cricket/upcoming-fixtures';
         const response = await fetch(url);
         const rawData: SportmonksV3FixturesResponse = await handleApiResponse(response);
-        return processV3FixtureData(rawData.data, 'cricket');
+        return processV3FixtureData(rawData?.data || [], 'cricket');
     } catch (error) {
         console.error('Error in fetchUpcomingCricketFixtures (V3) service:', error);
         throw error;
