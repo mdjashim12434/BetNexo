@@ -252,6 +252,15 @@ export interface ProcessedFixture {
         home?: number;
         draw?: number;
         away?: number;
+        overUnder?: {
+            over?: number;
+            under?: number;
+            point?: number;
+        };
+        btts?: {
+            yes?: number;
+            no?: number;
+        };
     };
     comments?: ProcessedComment[];
 }

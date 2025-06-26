@@ -22,8 +22,8 @@ export async function GET(request: NextRequest) {
 
     // Includes for a single fixture: odds (with market/bookmaker), participants, league, and commentary
     const includes = "odds.market;odds.bookmaker;participants;league.country;comments";
-    // Filters for main odds market (1=3-Way Result) and a popular bookmaker (2=Bet365)
-    const filters = "markets:1;bookmakers:2"; 
+    // Filters for main odds markets (1=3-Way, 10=Over/Under, 12=BTTS) and a popular bookmaker (2=Bet365)
+    const filters = "markets:1,10,12;bookmakers:2"; 
 
     const url = `${SPORTMONKS_FOOTBALL_API_URL}/fixtures/${fixtureId}?api_token=${apiKey}&include=${includes}&filters=${filters}`;
     

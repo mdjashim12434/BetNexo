@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, BarChart2, Info, TrendingUp, Goal, BookText } from 'lucide-react';
+import { ArrowLeft, BarChart2, Info, TrendingUp, Goal, BookText, ShieldQuestion } from 'lucide-react';
 import Image from 'next/image';
 import type { ProcessedFixture } from '@/types/sportmonks';
 import { useAuth } from '@/contexts/AuthContext';
@@ -18,7 +18,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 
 // Extended BetOutcome to include new markets
 type BetOutcome =
-  | 'teamA' | 'draw' | 'teamB'; // H2H for now, can be extended
+  | 'teamA' | 'draw' | 'teamB' // H2H
+  | 'over' | 'under' // Totals
+  | 'bttsYes' | 'bttsNo'; // BTTS
 
 interface SelectedBetInfo {
   outcome: BetOutcome;
@@ -60,6 +62,10 @@ export default function MatchDetailClientContent({ initialMatch }: MatchDetailCl
         case 'teamA': odds = match.odds.home || 0; break;
         case 'draw': odds = match.odds.draw || 0; break;
         case 'teamB': odds = match.odds.away || 0; break;
+        case 'over': odds = match.odds.overUnder?.over || 0; break;
+        case 'under': odds = match.odds.overUnder?.under || 0; break;
+        case 'bttsYes': odds = match.odds.btts?.yes || 0; break;
+        case 'bttsNo': odds = match.odds.btts?.no || 0; break;
       }
 
       if (!isNaN(amount) && amount > 0 && odds > 0) {
@@ -100,12 +106,16 @@ export default function MatchDetailClientContent({ initialMatch }: MatchDetailCl
 
     setIsPlacingBet(true);
     let oddsAtBetTime = 0;
-    let outcomeText = selectedOutcomeTextDisplay(); // Use the display function
+    let outcomeText = selectedOutcomeTextDisplay();
 
     switch (selectedBet.outcome) {
       case 'teamA': oddsAtBetTime = match.odds.home || 0; break;
       case 'draw': oddsAtBetTime = match.odds.draw || 0; break;
       case 'teamB': oddsAtBetTime = match.odds.away || 0; break;
+      case 'over': oddsAtBetTime = match.odds.overUnder?.over || 0; break;
+      case 'under': oddsAtBetTime = match.odds.overUnder?.under || 0; break;
+      case 'bttsYes': oddsAtBetTime = match.odds.btts?.yes || 0; break;
+      case 'bttsNo': oddsAtBetTime = match.odds.btts?.no || 0; break;
     }
 
     if (oddsAtBetTime <= 0) {
@@ -119,12 +129,12 @@ export default function MatchDetailClientContent({ initialMatch }: MatchDetailCl
       const betData = {
         userId: user.id,
         userName: user.name || user.email || 'Unknown User',
-        matchId: match.id,
+        matchId: String(match.id),
         matchHomeTeam: match.homeTeam.name,
         matchAwayTeam: match.awayTeam.name,
         matchSportTitle: match.league.name,
         betOutcome: selectedBet.outcome,
-        betPoint: selectedBet.point || null,
+        betPoint: (selectedBet.outcome === 'over' || selectedBet.outcome === 'under') ? (match.odds.overUnder?.point || null) : null,
         betAmount: amount,
         oddsAtBetTime: oddsAtBetTime,
         potentialWinnings: potentialWinnings,
@@ -156,7 +166,7 @@ export default function MatchDetailClientContent({ initialMatch }: MatchDetailCl
   const isFinished = match.state?.state === 'Finished' || match.state?.state === 'FT';
 
   const getOutcomeButton = (outcomeType: BetOutcome, label: string, oddsValue?: number, pointValue?: number, icon?: React.ElementType) => {
-    if (oddsValue === undefined || oddsValue === null || oddsValue <=0) return null; // Don't render if no odds or invalid odds
+    if (oddsValue === undefined || oddsValue === null || oddsValue <=0) return null;
     const isSelected = selectedBet?.outcome === outcomeType && selectedBet?.point === pointValue;
     const IconComponent = icon;
     return (
@@ -184,11 +194,17 @@ export default function MatchDetailClientContent({ initialMatch }: MatchDetailCl
       case 'teamA': return match.homeTeam.name;
       case 'draw': return 'Draw';
       case 'teamB': return match.awayTeam.name;
+      case 'over': return `Over ${match.odds.overUnder?.point}`;
+      case 'under': return `Under ${match.odds.overUnder?.point}`;
+      case 'bttsYes': return 'Both Teams to Score: Yes';
+      case 'bttsNo': return 'Both Teams to Score: No';
       default: return 'N/A';
     }
   };
   
   const isLive = match.state?.state === 'INPLAY' || match.state?.state === 'Live';
+  const hasAnyFootballOdds = match.sportKey === 'football' && (match.odds.home || (match.odds.overUnder && match.odds.overUnder.over) || (match.odds.btts && match.odds.btts.yes));
+  const hasAnyCricketOdds = match.sportKey === 'cricket' && (match.odds.home || match.odds.away);
 
   return (
     <div className="space-y-6">
@@ -222,7 +238,7 @@ export default function MatchDetailClientContent({ initialMatch }: MatchDetailCl
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {/* H2H Odds */}
-                  {(match.odds.home || match.odds.away || match.odds.draw) && (
+                  {(match.odds.home || match.odds.away) && (
                     <div className="space-y-2">
                       <p className="text-sm font-medium text-muted-foreground">Match Winner:</p>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-stretch">
@@ -232,6 +248,37 @@ export default function MatchDetailClientContent({ initialMatch }: MatchDetailCl
                       </div>
                     </div>
                   )}
+
+                  {/* Over/Under Odds */}
+                  {match.odds.overUnder?.point && (
+                     <div className="space-y-2">
+                        <p className="text-sm font-medium text-muted-foreground">Total Goals Over/Under ({match.odds.overUnder.point}):</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-stretch">
+                            {getOutcomeButton('over', `Over ${match.odds.overUnder.point}`, match.odds.overUnder?.over, match.odds.overUnder.point)}
+                            {getOutcomeButton('under', `Under ${match.odds.overUnder.point}`, match.odds.overUnder?.under, match.odds.overUnder.point)}
+                        </div>
+                    </div>
+                  )}
+
+                   {/* BTTS Odds */}
+                  {match.odds.btts && (
+                     <div className="space-y-2">
+                        <p className="text-sm font-medium text-muted-foreground">Both Teams to Score?</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-stretch">
+                            {getOutcomeButton('bttsYes', 'Yes', match.odds.btts?.yes)}
+                            {getOutcomeButton('bttsNo', 'No', match.odds.btts?.no)}
+                        </div>
+                    </div>
+                  )}
+
+                   {/* No Odds Available */}
+                   {!hasAnyFootballOdds && !hasAnyCricketOdds && !isFinished && (
+                        <div className="text-center py-10 text-muted-foreground flex flex-col items-center justify-center">
+                            <ShieldQuestion className="h-10 w-10 mb-3 text-primary/50" />
+                            <p className="font-semibold">Odds not available for this match yet.</p>
+                            <p className="text-sm">Please check back closer to the start time.</p>
+                        </div>
+                   )}
 
                   {selectedBet && (
                     <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
@@ -271,7 +318,7 @@ export default function MatchDetailClientContent({ initialMatch }: MatchDetailCl
                       )}
                     </div>
                   )}
-                  {!selectedBet && !isFinished && (
+                  {!selectedBet && !isFinished && (hasAnyFootballOdds || hasAnyCricketOdds) && (
                     <p className="text-sm text-muted-foreground text-center py-4">
                       Please select an outcome above to place a bet.
                     </p>

@@ -112,10 +112,6 @@ const processFootballFixtureData = (fixtures: SportmonksOddsFixture[]): Processe
     return fixtures.map(fixture => {
         const homeTeam = fixture.participants?.find(p => p.meta.location === 'home');
         const awayTeam = fixture.participants?.find(p => p.meta.location === 'away');
-        const h2hOdds = fixture.odds?.filter(o => o.market_id === 1) || [];
-        const homeOdd = h2hOdds.find(o => o.original_label === '1');
-        const drawOdd = h2hOdds.find(o => o.original_label === 'Draw');
-        const awayOdd = h2hOdds.find(o => o.original_label === '2');
         const comments = fixture.comments?.map(comment => ({
             id: comment.id,
             comment: comment.comment,
@@ -123,6 +119,22 @@ const processFootballFixtureData = (fixtures: SportmonksOddsFixture[]): Processe
             extra_minute: comment.extra_minute,
             is_goal: comment.is_goal,
         })).sort((a, b) => b.minute - a.minute) || [];
+
+        // H2H Odds (Market ID: 1)
+        const h2hOdds = fixture.odds?.filter(o => o.market_id === 1) || [];
+        const homeOdd = h2hOdds.find(o => o.original_label === '1');
+        const drawOdd = h2hOdds.find(o => o.original_label === 'Draw');
+        const awayOdd = h2hOdds.find(o => o.original_label === '2');
+
+        // Over/Under 2.5 Odds (Market ID: 10, Label: '2.5')
+        const overUnderOdds = fixture.odds?.filter(o => o.market_id === 10 && o.label === '2.5') || [];
+        const overOdd = overUnderOdds.find(o => o.original_label === 'Over');
+        const underOdd = overUnderOdds.find(o => o.original_label === 'Under');
+
+        // BTTS Odds (Market ID: 12)
+        const bttsOdds = fixture.odds?.filter(o => o.market_id === 12) || [];
+        const bttsYesOdd = bttsOdds.find(o => o.original_label === 'Yes');
+        const bttsNoOdd = bttsOdds.find(o => o.original_label === 'No');
 
         return {
             id: fixture.id,
@@ -137,6 +149,15 @@ const processFootballFixtureData = (fixtures: SportmonksOddsFixture[]): Processe
                 home: homeOdd ? parseFloat(homeOdd.value) : undefined,
                 draw: drawOdd ? parseFloat(drawOdd.value) : undefined,
                 away: awayOdd ? parseFloat(awayOdd.value) : undefined,
+                overUnder: {
+                    over: overOdd ? parseFloat(overOdd.value) : undefined,
+                    under: underOdd ? parseFloat(underOdd.value) : undefined,
+                    point: overOdd || underOdd ? 2.5 : undefined,
+                },
+                btts: {
+                    yes: bttsYesOdd ? parseFloat(bttsYesOdd.value) : undefined,
+                    no: bttsNoOdd ? parseFloat(bttsNoOdd.value) : undefined,
+                }
             },
             comments: comments,
         };
