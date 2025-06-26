@@ -13,8 +13,8 @@ export async function GET(request: NextRequest) {
 
   try {
     const [footballRes, cricketRes] = await Promise.all([
-      fetch(`${FOOTBALL_API_URL}?api_token=${apiKey}`),
-      fetch(`${CRICKET_API_URL}?api_token=${apiKey}`)
+      fetch(`${FOOTBALL_API_URL}?api_token=${apiKey}`, { cache: 'no-store' }),
+      fetch(`${CRICKET_API_URL}?api_token=${apiKey}`, { cache: 'no-store' })
     ]);
 
     // Handle football response
