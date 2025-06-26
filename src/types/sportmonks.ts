@@ -97,6 +97,7 @@ export interface SportmonksCricketFixture {
     localteam: CricketTeam;
     visitorteam: CricketTeam;
     league?: CricketLeague;
+    runs?: CricketRun[];
     odds?: { data: SportmonksOdd[] };
 }
 

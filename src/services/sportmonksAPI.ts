@@ -41,9 +41,9 @@ const handleApiResponse = async (response: Response) => {
 
 // --- Cricket Processing ---
 
-const processCricketLiveScoresApiResponse = (data: any[]): ProcessedLiveScore[] => {
+const processCricketLiveScoresApiResponse = (data: SportmonksCricketFixture[]): ProcessedLiveScore[] => {
     if (!Array.isArray(data)) return [];
-    return data.map((match: SportmonksCricketLiveScore) => {
+    return data.map((match: SportmonksCricketFixture) => {
         const localTeamRun = match.runs?.find(r => r.team_id === match.localteam_id);
         const visitorTeamRun = match.runs?.find(r => r.team_id === match.visitorteam_id);
         const formatScore = (run?: CricketRun) => run ? `${run.score}/${run.wickets} (${run.overs})` : "Yet to bat";
@@ -89,7 +89,7 @@ const processCricketFixtureData = (fixtures: SportmonksCricketFixture[]): Proces
     });
 };
 
-const processLiveCricketFixtures = (fixtures: SportmonksCricketLiveScore[]): ProcessedFixture[] => {
+const processLiveCricketFixtures = (fixtures: SportmonksCricketFixture[]): ProcessedFixture[] => {
     if (!Array.isArray(fixtures)) return [];
     return fixtures.map(fixture => ({
         id: fixture.id,
@@ -236,8 +236,8 @@ const processLiveFootballFixtures = (fixtures: SportmonksFootballLiveScore[]): P
 
 export async function fetchLiveScores(): Promise<ProcessedLiveScore[]> {
     try {
-        const response = await fetch('/api/live-scores'); // Cricket Live Scores Proxy
-        const responseData: SportmonksCricketResponse = await handleApiResponse(response);
+        const response = await fetch('/api/cricket/live-scores'); // Use the new V3 proxy
+        const responseData: SportmonksCricketFixturesResponse = await handleApiResponse(response);
         return processCricketLiveScoresApiResponse(responseData.data);
     } catch (error) {
         console.error('Error in fetchLiveScores (Cricket) service:', error);
@@ -269,8 +269,8 @@ export async function fetchLiveFootballFixtures(): Promise<ProcessedFixture[]> {
 
 export async function fetchLiveCricketFixtures(): Promise<ProcessedFixture[]> {
   try {
-    const response = await fetch('/api/live-scores');
-    const responseData: SportmonksCricketResponse = await handleApiResponse(response);
+    const response = await fetch('/api/cricket/live-scores'); // Use new endpoint
+    const responseData: SportmonksCricketFixturesResponse = await handleApiResponse(response);
     return processLiveCricketFixtures(responseData.data);
   } catch (error) {
     console.error('Error in fetchLiveCricketFixtures service:', error);
