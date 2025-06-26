@@ -21,13 +21,11 @@ export default function FootballLiveScoresDisplay() {
   const { toast } = useToast();
 
   const loadScores = useCallback(async (isManualRefresh: boolean = false) => {
-    // For subsequent refreshes (manual or interval), we don't want the main loader, just the button spinner.
-    // The main `loading` state is for the initial load only.
-    if (!loading) {
-        setLoading(true); // Trigger refresh spinner on subsequent loads
+    setLoading(true);
+    if (isManualRefresh) {
+      setError(null);
     }
     
-    setError(null);
     try {
       const fetchedMatches = await fetchFootballLiveScores();
       setMatches(fetchedMatches);
@@ -43,7 +41,7 @@ export default function FootballLiveScoresDisplay() {
     } finally {
       setLoading(false);
     }
-  }, [toast, loading]);
+  }, [toast]);
 
   useEffect(() => {
     loadScores(); // Initial fetch
