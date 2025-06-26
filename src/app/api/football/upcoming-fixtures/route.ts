@@ -30,8 +30,8 @@ export async function GET(request: NextRequest) {
     // Includes for upcoming fixtures. participants = teams, league for league info. Added odds.
     const includes = "participants;league.country;state;odds";
     
-    // NOTE: Removed specific filters for leagues and markets to make the query more robust,
-    // aligning with a "Worldwide Plan" that should fetch all available matches.
+    // Fetch all available fixtures within the date range, removing any specific filters 
+    // to make the query robust and align with a "Worldwide Plan".
     const url = `${SPORTMONKS_FOOTBALL_API_URL}/fixtures/between/${startDate}/${endDate}?api_token=${apiKey}&include=${includes}`;
     
     try {

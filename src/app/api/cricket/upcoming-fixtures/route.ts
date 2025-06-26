@@ -30,7 +30,8 @@ export async function GET(request: NextRequest) {
   // Includes for upcoming fixtures using V3 format
   const includes = "participants;league.country;state;odds";
   
-  const url = `${SPORTMONKS_CRICKET_API_URL}/fixtures/between/${startDate}/${endDate}?api_token=${apiKey}&include=${includes}&sort=starting_at`;
+  // Fetch all available fixtures within the date range, without extra filters, to support a "Worldwide Plan".
+  const url = `${SPORTMONKS_CRICKET_API_URL}/fixtures/between/${startDate}/${endDate}?api_token=${apiKey}&include=${includes}`;
 
   try {
     const apiResponse = await fetch(url, {
