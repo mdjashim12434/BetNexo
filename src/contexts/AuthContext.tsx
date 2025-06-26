@@ -48,14 +48,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const userDocSnap = await getDoc(userDocRef);
       if (userDocSnap.exists()) {
         const firestoreData = userDocSnap.data();
-        console.log(`AuthContext: Fetched Firestore data for UID ${uid}:`, JSON.parse(JSON.stringify(firestoreData || {}))); // Log raw data safely
-        const ensuredCurrency = firestoreData.currency || 'USD';
-        const ensuredRole = firestoreData.role || 'User'; // Default to 'User' if role is missing
-        console.log(`AuthContext: UID ${uid} - Firestore role found: '${firestoreData.role}', Ensured/Defaulted role: '${ensuredRole}'`);
+        let ensuredRole = firestoreData.role || 'User'; // Default to 'User'
+        
+        // --- ADMIN OVERRIDE ---
+        // For development, if a user logs in with this specific email, they are granted Admin role.
+        // You can change this email or add more, or manage roles in your Firestore 'users' collection.
+        if (firestoreData.email === 'admin@betbabu.com') {
+            ensuredRole = 'Admin';
+        }
+        // --- END ADMIN OVERRIDE ---
+
+        console.log(`AuthContext: UID ${uid} - Firestore role found: '${firestoreData.role}', Final role set: '${ensuredRole}'`);
+        
         return {
           id: uid,
           ...firestoreData,
-          currency: ensuredCurrency,
+          currency: firestoreData.currency || 'USD',
           role: ensuredRole
         } as User;
       }
