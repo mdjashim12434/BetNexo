@@ -139,6 +139,10 @@ export interface SportmonksOddsFixture {
     comments?: SportmonksComment[];
 }
 
+export interface SportmonksFootballFixturesResponse {
+    data: SportmonksOddsFixture[];
+}
+
 export interface SportmonksRoundResponse {
     data: {
         id: number;

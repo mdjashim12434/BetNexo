@@ -3,6 +3,7 @@ import type {
     SportmonksCricketResponse, 
     ProcessedLiveScore, 
     SportmonksOddsFixture, 
+    SportmonksFootballFixturesResponse,
     SportmonksRoundResponse, 
     ProcessedFixture, 
     SportmonksSingleFixtureResponse, 
@@ -186,14 +187,14 @@ export async function fetchFootballLiveScores(): Promise<ProcessedFootballLiveSc
   }
 }
 
-export async function fetchFootballFixturesByRound(roundId: number): Promise<ProcessedFixture[]> {
-    const url = `/api/football/fixtures?roundId=${roundId}`;
+export async function fetchUpcomingFootballFixtures(): Promise<ProcessedFixture[]> {
+    const url = `/api/football/upcoming-fixtures`;
     try {
         const response = await fetch(url);
-        const rawData: SportmonksRoundResponse = await handleApiResponse(response);
-        return processFootballFixtureData(rawData.data.fixtures);
+        const rawData: SportmonksFootballFixturesResponse = await handleApiResponse(response);
+        return processFootballFixtureData(rawData.data);
     } catch (error) {
-        console.error('Error in fetchFootballFixturesByRound:', error);
+        console.error('Error in fetchUpcomingFootballFixtures:', error);
         throw error;
     }
 }

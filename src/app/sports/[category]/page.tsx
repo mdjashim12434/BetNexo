@@ -1,7 +1,7 @@
 
 import AppLayout from '@/components/AppLayout';
 import type { ProcessedFixture } from '@/types/sportmonks';
-import { fetchFootballFixturesByRound, fetchUpcomingCricketFixtures } from '@/services/sportmonksAPI';
+import { fetchUpcomingFootballFixtures, fetchUpcomingCricketFixtures } from '@/services/sportmonksAPI';
 import SportsCategoryClientContent from '@/components/sports/SportsCategoryClientContent';
 
 const validCategories = ['live', 'cricket', 'football', 'upcoming', 'all-sports'];
@@ -12,9 +12,6 @@ const categoryMapping: { [key: string]: string } = {
   upcoming: 'Upcoming Matches',
   'all-sports': 'All Sports',
 };
-
-// Example Round ID for EPL, replace with dynamic logic later if needed
-const EPL_CURRENT_ROUND_ID = 339273; 
 
 export async function generateStaticParams() {
   return validCategories.map((category) => ({
@@ -36,10 +33,8 @@ export default async function SportCategoryPage({ params }: SportCategoryPagePro
 
   try {
     if (categorySlug === 'football' || categorySlug === 'upcoming' || categorySlug === 'all-sports') {
-      const rawRoundData = await fetchFootballFixturesByRound(EPL_CURRENT_ROUND_ID);
-      if (rawRoundData && rawRoundData.data && rawRoundData.data.fixtures) {
-        matchesForCategory = rawRoundData.data.fixtures;
-      }
+      // Fetch all upcoming football fixtures instead of a specific round
+      matchesForCategory = await fetchUpcomingFootballFixtures();
     } else if (categorySlug === 'cricket') {
       matchesForCategory = await fetchUpcomingCricketFixtures();
     }
