@@ -49,16 +49,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const userDocSnap = await getDoc(userDocRef);
       if (userDocSnap.exists()) {
         const firestoreData = userDocSnap.data();
-        let ensuredRole = firestoreData.role || 'User'; // Default to 'User'
+        const ensuredRole = firestoreData.role || 'User'; // Default to 'User'
         
-        // --- ADMIN OVERRIDE ---
-        // For development, if a user logs in with this specific email, they are granted Admin role.
-        // You can change this email or add more, or manage roles in your Firestore 'users' collection.
-        if (firestoreData.email === 'admin@betbabu.com') {
-            ensuredRole = 'Admin';
-        }
-        // --- END ADMIN OVERRIDE ---
-
         console.log(`AuthContext: UID ${uid} - Firestore role found: '${firestoreData.role}', Final role set: '${ensuredRole}'`);
         
         return {
@@ -84,30 +76,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         if (fbUser) {
           setFirebaseUser(fbUser);
-          if (fbUser.emailVerified) {
-            console.log("AuthContext: Firebase user email IS verified for UID:", fbUser.uid);
-            const firestoreUser = await fetchUserDocument(fbUser.uid);
-            if (firestoreUser) {
+          const firestoreUser = await fetchUserDocument(fbUser.uid);
+          
+          if (firestoreUser) {
+            // Case 1: User is an Admin. Log them in regardless of email verification.
+            if (firestoreUser.role === 'Admin') {
               setUser({ ...firestoreUser, emailVerified: fbUser.emailVerified });
-              setLocalCurrency(firestoreUser.currency || 'USD'); // Ensure currency has a fallback
+              setLocalCurrency(firestoreUser.currency || 'USD');
               setLocalBalance(firestoreUser.balance || 0);
               localStorage.setItem('betbabu-user-uid', fbUser.uid);
-              console.log("AuthContext: App user state SET for verified user:", {...firestoreUser, emailVerified: fbUser.emailVerified});
-            } else {
-              console.warn("AuthContext: Firestore document MISSING for authenticated and verified Firebase user:", fbUser.uid, "User might need to complete signup or document was removed. App user state CLEARED.");
+              console.log("AuthContext: Admin user session SET for UID:", fbUser.uid, "Email verification status:", fbUser.emailVerified);
+            } 
+            // Case 2: User is NOT an Admin. They MUST have a verified email.
+            else if (fbUser.emailVerified) {
+              setUser({ ...firestoreUser, emailVerified: fbUser.emailVerified });
+              setLocalCurrency(firestoreUser.currency || 'USD');
+              setLocalBalance(firestoreUser.balance || 0);
+              localStorage.setItem('betbabu-user-uid', fbUser.uid);
+              console.log("AuthContext: Verified non-admin user session SET for UID:", fbUser.uid);
+            }
+            // Case 3: User is NOT an Admin and email is NOT verified. Do not log them in.
+            else {
               setUser(null);
               localStorage.removeItem('betbabu-user-uid');
+              console.log("AuthContext: Non-admin user email NOT verified. Session CLEARED for UID:", fbUser.uid);
             }
           } else {
-            console.log("AuthContext: Firebase user email NOT verified for UID:", fbUser.uid, "App user state CLEARED.");
+            // No Firestore document, no session.
             setUser(null);
             localStorage.removeItem('betbabu-user-uid');
+            console.warn("AuthContext: Firestore document MISSING for authenticated Firebase user:", fbUser.uid, "Session CLEARED.");
           }
         } else {
-          console.log("AuthContext: No Firebase user. App user state CLEARED.");
+          // No Firebase user, no session.
           setUser(null);
           setFirebaseUser(null);
           localStorage.removeItem('betbabu-user-uid');
+          console.log("AuthContext: No Firebase user. Session CLEARED.");
         }
       } catch (error) {
         console.error("AuthContext: Error in onAuthStateChanged listener:", error);
@@ -202,11 +207,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(finalUserData);
         setLocalCurrency(finalUserData.currency || 'USD');
         setLocalBalance(finalUserData.balance || 0);
-        if(emailVerifiedStatus) { // Only set in localStorage if email is verified to align with onAuthStateChanged logic
-            localStorage.setItem('betbabu-user-uid', uid);
-        } else {
-            localStorage.removeItem('betbabu-user-uid');
-        }
+        
+        // Let onAuthStateChanged handle localStorage based on its own logic (which now includes admin role check)
+        // This keeps the logic consistent.
+        
         console.log("AuthContext: App user state updated after login function for UID:", uid, "Role:", finalUserData.role, "EmailVerified:", emailVerifiedStatus);
         return finalUserData;
       } else {

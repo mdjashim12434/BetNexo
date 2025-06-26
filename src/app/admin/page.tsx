@@ -41,39 +41,39 @@ export default function AdminPage() {
   const [activeSection, setActiveSection] = useState<string>('dashboard');
 
   useEffect(() => {
-    console.log('AdminPage Effect Fired. State: loadingAuth:', loadingAuth, 'user exists:', !!user, 'user.emailVerified:', user?.emailVerified, 'user.role:', user?.role);
+    // This effect handles redirection based on auth state and role
     if (!loadingAuth) {
       if (!user) {
-        console.log('AdminPage: No user object found. Redirecting to /login.');
+        // If there's no user object at all, redirect to login
+        console.log('AdminPage: No user found. Redirecting to /login.');
         router.push('/login');
-      } else if (user.emailVerified !== true) { 
-        console.log('AdminPage: User email is not verified (current value: ' + user.emailVerified + '). Redirecting to /login.');
-        router.push('/login');
-      } else if (typeof user.role === 'undefined') {
-        console.log('AdminPage: User role is undefined. Waiting for role to be loaded.');
       } else if (user.role !== 'Admin') { 
+        // If a user is logged in but is not an admin, redirect to the homepage
         console.log(`AdminPage: User role is "${user.role}" (not 'Admin'). Redirecting to /.`);
         router.push('/'); 
-      } else {
-        console.log('AdminPage: User is admin and verified. Proceeding to render admin content.');
       }
+      // If user exists and user.role is 'Admin', do nothing and let the page render.
+      // The email verification check is now handled by the AuthContext.
     }
   }, [user, loadingAuth, router]);
 
-  // Removed handleAdminLogout function as logout is now handled in Header
 
+  // Show loading screen while auth state is being determined or role is being fetched
   if (loadingAuth || (user && typeof user.role === 'undefined')) {
     return <AppLayout><div className="flex items-center justify-center min-h-screen"><div className="text-center p-10">Loading authentication for Admin...</div></div></AppLayout>;
   }
 
-  if (!user || user.emailVerified !== true) {
-    return <AppLayout><div className="flex items-center justify-center min-h-screen"><div className="text-center p-10">Redirecting to login... (User not authenticated or email not verified for admin access)</div></div></AppLayout>;
+  // If after loading, there is still no user or user is not an Admin, show an appropriate message.
+  // This content will be shown briefly while the useEffect above performs the redirect.
+  if (!user) {
+    return <AppLayout><div className="flex items-center justify-center min-h-screen"><div className="text-center p-10">Redirecting to login... (Authentication required)</div></div></AppLayout>;
   }
   
   if (user.role !== 'Admin') {
-    return <AppLayout><div className="flex items-center justify-center min-h-screen"><div className="text-center p-10">Access Denied. Redirecting... (User is not Admin)</div></div></AppLayout>;
+    return <AppLayout><div className="flex items-center justify-center min-h-screen"><div className="text-center p-10">Access Denied. Redirecting... (Admin role required)</div></div></AppLayout>;
   }
 
+  // If all checks pass, render the admin dashboard
   const ActiveComponent = navItems.find(item => item.id === activeSection)?.component || DashboardTab;
 
   return (
