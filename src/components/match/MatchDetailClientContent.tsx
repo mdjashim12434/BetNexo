@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -6,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, BarChart2, Info, TrendingUp, Goal, BookText, ShieldQuestion, MapPin, Whistle } from 'lucide-react';
+import { ArrowLeft, BarChart2, Info, TrendingUp, Goal, BookText, ShieldQuestion, MapPin, Gavel } from 'lucide-react';
 import Image from 'next/image';
 import type { ProcessedFixture } from '@/types/sportmonks';
 import { useAuth } from '@/contexts/AuthContext';
@@ -359,7 +358,7 @@ export default function MatchDetailClientContent({ initialMatch }: MatchDetailCl
                       )}
                       {match.referee && (
                         <div className="flex items-start">
-                           <Whistle className="h-4 w-4 mr-2 mt-1 text-muted-foreground"/>
+                           <Gavel className="h-4 w-4 mr-2 mt-1 text-muted-foreground"/>
                            <div>
                             <h4 className="font-semibold text-muted-foreground">{match.sportKey === 'cricket' ? 'Umpire' : 'Referee'}</h4>
                             <p>{match.referee.name}</p>
