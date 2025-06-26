@@ -15,7 +15,7 @@ const categoryMapping: { [key: string]: string } = {
   cricket: 'Cricket',
   football: 'Football',
   upcoming: 'Upcoming Matches',
-  'all-sports': 'All Sports',
+  'all-sports': 'All Sports Leagues',
 };
 
 export async function generateStaticParams() {
@@ -44,36 +44,41 @@ export default async function SportCategoryPage({ params }: SportCategoryPagePro
     return []; // Return empty array on failure to not break Promise.all
   };
 
-  try {
-    if (categorySlug === 'live') {
-      const [footballMatches, cricketMatches] = await Promise.all([
-        fetchLiveFootballFixtures().catch((e) => handleFetchError('football', 'live', e)),
-        fetchLiveCricketFixtures().catch((e) => handleFetchError('cricket', 'live', e)),
-      ]);
-      matchesForCategory = [...footballMatches, ...cricketMatches];
-    } else if (categorySlug === 'football') {
-      const [liveMatches, upcomingMatches] = await Promise.all([
-        fetchLiveFootballFixtures().catch((e) => handleFetchError('football', 'live', e)),
-        fetchUpcomingFootballFixtures().catch((e) => handleFetchError('football', 'upcoming', e)),
-      ]);
-      matchesForCategory = [...liveMatches, ...upcomingMatches];
-    } else if (categorySlug === 'cricket') {
-      const [liveMatches, upcomingMatches] = await Promise.all([
-        fetchLiveCricketFixtures().catch((e) => handleFetchError('cricket', 'live', e)),
-        fetchUpcomingCricketFixtures().catch((e) => handleFetchError('cricket', 'upcoming', e)),
-      ]);
-      matchesForCategory = [...liveMatches, ...upcomingMatches];
-    } else if (categorySlug === 'upcoming' || categorySlug === 'all-sports') {
-      const [footballMatches, cricketMatches] = await Promise.all([
-        fetchUpcomingFootballFixtures().catch((e) => handleFetchError('football', 'upcoming', e)),
-        fetchUpcomingCricketFixtures().catch((e) => handleFetchError('cricket', 'upcoming', e)),
-      ]);
-      matchesForCategory = [...footballMatches, ...cricketMatches];
+  // For 'all-sports', we don't fetch matches on the server.
+  // The client component will fetch the leagues.
+  if (categorySlug !== 'all-sports') {
+    try {
+      if (categorySlug === 'live') {
+        const [footballMatches, cricketMatches] = await Promise.all([
+          fetchLiveFootballFixtures().catch((e) => handleFetchError('football', 'live', e)),
+          fetchLiveCricketFixtures().catch((e) => handleFetchError('cricket', 'live', e)),
+        ]);
+        matchesForCategory = [...footballMatches, ...cricketMatches];
+      } else if (categorySlug === 'football') {
+        const [liveMatches, upcomingMatches] = await Promise.all([
+          fetchLiveFootballFixtures().catch((e) => handleFetchError('football', 'live', e)),
+          fetchUpcomingFootballFixtures().catch((e) => handleFetchError('football', 'upcoming', e)),
+        ]);
+        matchesForCategory = [...liveMatches, ...upcomingMatches];
+      } else if (categorySlug === 'cricket') {
+        const [liveMatches, upcomingMatches] = await Promise.all([
+          fetchLiveCricketFixtures().catch((e) => handleFetchError('cricket', 'live', e)),
+          fetchUpcomingCricketFixtures().catch((e) => handleFetchError('cricket', 'upcoming', e)),
+        ]);
+        matchesForCategory = [...liveMatches, ...upcomingMatches];
+      } else if (categorySlug === 'upcoming') {
+        const [footballMatches, cricketMatches] = await Promise.all([
+          fetchUpcomingFootballFixtures().catch((e) => handleFetchError('football', 'upcoming', e)),
+          fetchUpcomingCricketFixtures().catch((e) => handleFetchError('cricket', 'upcoming', e)),
+        ]);
+        matchesForCategory = [...footballMatches, ...cricketMatches];
+      }
+    } catch (error: any) {
+      console.error(`A top-level error occurred while fetching fixtures for ${categorySlug}:`, error);
+      fetchError = error.message || `An unknown error occurred while fetching matches for ${categorySlug}.`;
     }
-  } catch (error: any) {
-    console.error(`A top-level error occurred while fetching fixtures for ${categorySlug}:`, error);
-    fetchError = error.message || `An unknown error occurred while fetching matches for ${categorySlug}.`;
   }
+
 
   // Combine any individual fetch errors into one message
   if (errorMessages.length > 0) {
