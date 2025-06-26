@@ -22,10 +22,10 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const leagueId = searchParams.get('leagueId');
     
-    // Define the date range for upcoming fixtures (e.g., today to 7 days from now)
+    // Define the date range for upcoming fixtures (e.g., today to 10 days from now)
     const today = new Date();
     const futureDate = new Date();
-    futureDate.setDate(today.getDate() + 7); // Fetch matches for the next 7 days
+    futureDate.setDate(today.getDate() + 10); // Fetch matches for the next 10 days
     
     const startDate = formatDate(today);
     const endDate = formatDate(futureDate);
