@@ -1,3 +1,4 @@
+
 'use client';
 
 import AppLayout from '@/components/AppLayout';
@@ -75,87 +76,89 @@ export default function HomePage() {
 
   return (
     <AppLayout>
-      <div className="space-y-4 md:space-y-6 pb-24">
-        
-        {/* Top Navigation */}
-        <ScrollArea className="w-full whitespace-nowrap -mt-4">
-          <div className="flex justify-between items-center p-2 gap-4">
-            {topNavItems.map((item, index) => (
-              <Link href={item.href} key={item.name} className={cn("flex flex-col items-center justify-center gap-1.5 pb-2 text-muted-foreground hover:text-primary transition-colors", index === 0 ? "text-primary border-b-2 border-primary" : "")}>
-                <item.icon className="h-6 w-6" />
-                <span className="text-xs font-medium tracking-tight">{item.name}</span>
-              </Link>
-            ))}
-          </div>
-          <ScrollBar orientation="horizontal" className="hidden"/>
-        </ScrollArea>
-        
-        {/* Sports Grid */}
-        <ScrollArea className="w-full whitespace-nowrap">
-          <div className="flex gap-3 px-1 py-1">
-            {sportsGridItems.map(sport => (
-               <Link href={sport.href} key={sport.name} className="flex flex-col items-center justify-center w-20 h-20 bg-card rounded-lg shadow-sm hover:shadow-md transition-shadow gap-1.5 p-2">
-                  <div className="w-8 h-8 flex items-center justify-center bg-primary/20 rounded-full">
-                     <sport.icon className="h-5 w-5 text-primary" />
-                  </div>
-                  <span className="text-xs font-medium text-foreground truncate">{sport.name}</span>
-              </Link>
-            ))}
-          </div>
-           <ScrollBar orientation="horizontal" className="hidden"/>
-        </ScrollArea>
-
-        {/* Promotional Banners */}
-        <ScrollArea className="w-full whitespace-nowrap">
-           <div className="flex gap-3 px-1 py-1">
-              {promoBanners.map(banner => (
-                <Link href={banner.href} key={banner.title} legacyBehavior passHref>
-                  <a className="block">
-                    <Card className="w-64 h-32 overflow-hidden relative group">
-                      <Image 
-                        src={`https://placehold.co/400x200.png`} 
-                        alt={banner.title} 
-                        fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-300"
-                        data-ai-hint={banner.imageHint}
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                      <CardContent className="absolute bottom-0 left-0 p-3">
-                        <h3 className="text-white font-bold text-sm">{banner.title}</h3>
-                      </CardContent>
-                    </Card>
-                  </a>
+      <div className="container py-6">
+        <div className="space-y-4 md:space-y-6 pb-24">
+          
+          {/* Top Navigation */}
+          <ScrollArea className="w-full whitespace-nowrap -mt-4">
+            <div className="flex justify-between items-center p-2 gap-4">
+              {topNavItems.map((item, index) => (
+                <Link href={item.href} key={item.name} className={cn("flex flex-col items-center justify-center gap-1.5 pb-2 text-muted-foreground hover:text-primary transition-colors", index === 0 ? "text-primary border-b-2 border-primary" : "")}>
+                  <item.icon className="h-6 w-6" />
+                  <span className="text-xs font-medium tracking-tight">{item.name}</span>
                 </Link>
               ))}
-           </div>
-           <ScrollBar orientation="horizontal" className="hidden"/>
-        </ScrollArea>
-
-         {/* Casino Quick Links */}
-        <ScrollArea className="w-full whitespace-nowrap">
-           <div className="flex gap-4 px-1 py-1">
-             {casinoLinks.map(link => (
-                <Link href={link.href} key={link.name} className="flex flex-col items-center justify-center gap-2 w-20 text-center">
-                    <Avatar className="h-16 w-16 border-2 border-primary/20">
-                        <AvatarImage src={`https://placehold.co/128x128.png`} data-ai-hint={link.imageHint}/>
-                        <AvatarFallback><ImageIcon /></AvatarFallback>
-                    </Avatar>
-                    <span className="text-xs font-medium text-muted-foreground truncate w-full">{link.name}</span>
+            </div>
+            <ScrollBar orientation="horizontal" className="hidden"/>
+          </ScrollArea>
+          
+          {/* Sports Grid */}
+          <ScrollArea className="w-full whitespace-nowrap">
+            <div className="flex gap-3 px-1 py-1">
+              {sportsGridItems.map(sport => (
+                <Link href={sport.href} key={sport.name} className="flex flex-col items-center justify-center w-20 h-20 bg-card rounded-lg shadow-sm hover:shadow-md transition-shadow gap-1.5 p-2">
+                    <div className="w-8 h-8 flex items-center justify-center bg-primary/20 rounded-full">
+                      <sport.icon className="h-5 w-5 text-primary" />
+                    </div>
+                    <span className="text-xs font-medium text-foreground truncate">{sport.name}</span>
                 </Link>
-             ))}
-           </div>
-           <ScrollBar orientation="horizontal" className="hidden"/>
-        </ScrollArea>
-        
-        {/* Live Matches Section */}
-        <section className="pt-4">
-          <div className="mb-2 flex justify-between items-center">
-             <h2 className="font-headline text-xl font-bold text-foreground">Top LIVE <Button variant="ghost" size="sm" className="ml-1 text-primary">Sport</Button></h2>
-             <Button variant="link" asChild><Link href="/sports/live">All</Link></Button>
-          </div>
-          <FootballLiveScoresDisplay />
-        </section>
+              ))}
+            </div>
+            <ScrollBar orientation="horizontal" className="hidden"/>
+          </ScrollArea>
 
+          {/* Promotional Banners */}
+          <ScrollArea className="w-full whitespace-nowrap">
+            <div className="flex gap-3 px-1 py-1">
+                {promoBanners.map(banner => (
+                  <Link href={banner.href} key={banner.title} legacyBehavior passHref>
+                    <a className="block">
+                      <Card className="w-64 h-32 overflow-hidden relative group">
+                        <Image 
+                          src={`https://placehold.co/400x200.png`} 
+                          alt={banner.title} 
+                          fill
+                          className="object-cover group-hover:scale-105 transition-transform duration-300"
+                          data-ai-hint={banner.imageHint}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                        <CardContent className="absolute bottom-0 left-0 p-3">
+                          <h3 className="text-white font-bold text-sm">{banner.title}</h3>
+                        </CardContent>
+                      </Card>
+                    </a>
+                  </Link>
+                ))}
+            </div>
+            <ScrollBar orientation="horizontal" className="hidden"/>
+          </ScrollArea>
+
+          {/* Casino Quick Links */}
+          <ScrollArea className="w-full whitespace-nowrap">
+            <div className="flex gap-4 px-1 py-1">
+              {casinoLinks.map(link => (
+                  <Link href={link.href} key={link.name} className="flex flex-col items-center justify-center gap-2 w-20 text-center">
+                      <Avatar className="h-16 w-16 border-2 border-primary/20">
+                          <AvatarImage src={`https://placehold.co/128x128.png`} data-ai-hint={link.imageHint}/>
+                          <AvatarFallback><ImageIcon /></AvatarFallback>
+                      </Avatar>
+                      <span className="text-xs font-medium text-muted-foreground truncate w-full">{link.name}</span>
+                  </Link>
+              ))}
+            </div>
+            <ScrollBar orientation="horizontal" className="hidden"/>
+          </ScrollArea>
+          
+          {/* Live Matches Section */}
+          <section className="pt-4">
+            <div className="mb-2 flex justify-between items-center">
+              <h2 className="font-headline text-xl font-bold text-foreground">Top LIVE <Button variant="ghost" size="sm" className="ml-1 text-primary">Sport</Button></h2>
+              <Button variant="link" asChild><Link href="/sports/live">All</Link></Button>
+            </div>
+            <FootballLiveScoresDisplay />
+          </section>
+
+        </div>
       </div>
       <BottomNav />
     </AppLayout>

@@ -90,22 +90,22 @@ export default function BetHistoryTab() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Bet ID</TableHead>
+                <TableHead className="hidden sm:table-cell">Bet ID</TableHead>
                 <TableHead>User</TableHead>
                 <TableHead>Match</TableHead>
                 <TableHead>Bet On</TableHead>
                 <TableHead>Stake</TableHead>
                 <TableHead>Odds</TableHead>
-                <TableHead>Potential Win</TableHead>
+                <TableHead className="hidden md:table-cell">Potential Win</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Bet Time</TableHead>
-                <TableHead>Resolved Time</TableHead>
+                <TableHead className="hidden lg:table-cell">Bet Time</TableHead>
+                <TableHead className="hidden lg:table-cell">Resolved Time</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredBets.length > 0 ? filteredBets.map((bet) => (
                 <TableRow key={bet.id} className="hover:bg-muted/50">
-                  <TableCell className="font-medium text-xs">{bet.id}</TableCell>
+                  <TableCell className="font-medium text-xs hidden sm:table-cell">{bet.id}</TableCell>
                   <TableCell>
                     <div>{bet.userName}</div>
                     <div className="text-xs text-muted-foreground">{bet.userId}</div>
@@ -117,7 +117,7 @@ export default function BetHistoryTab() {
                   <TableCell>{bet.betOn}</TableCell>
                   <TableCell>{bet.stake.toFixed(2)}</TableCell>
                   <TableCell>{bet.odds.toFixed(2)}</TableCell>
-                  <TableCell>{bet.potentialWinnings.toFixed(2)}</TableCell>
+                  <TableCell className="hidden md:table-cell">{bet.potentialWinnings.toFixed(2)}</TableCell>
                   <TableCell>
                     <Badge
                       variant={getStatusBadgeVariant(bet.status)}
@@ -132,8 +132,8 @@ export default function BetHistoryTab() {
                       {bet.status}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-xs">{bet.betTime}</TableCell>
-                  <TableCell className="text-xs">{bet.resolvedTime || 'N/A'}</TableCell>
+                  <TableCell className="text-xs hidden lg:table-cell">{bet.betTime}</TableCell>
+                  <TableCell className="text-xs hidden lg:table-cell">{bet.resolvedTime || 'N/A'}</TableCell>
                 </TableRow>
               )) : (
                 <TableRow>
@@ -149,6 +149,3 @@ export default function BetHistoryTab() {
     </Card>
   );
 }
-
-
-    

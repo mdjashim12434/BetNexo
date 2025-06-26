@@ -117,27 +117,27 @@ export default function UserManagementTab() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[100px] px-3 py-3.5 text-left text-sm font-semibold text-foreground">User ID</TableHead>
                 <TableHead className="px-3 py-3.5 text-left text-sm font-semibold text-foreground">Name</TableHead>
-                <TableHead className="px-3 py-3.5 text-left text-sm font-semibold text-foreground">Contact</TableHead>
-                <TableHead className="px-3 py-3.5 text-left text-sm font-semibold text-foreground">Role</TableHead>
+                <TableHead className="px-3 py-3.5 text-left text-sm font-semibold text-foreground hidden md:table-cell">Contact</TableHead>
+                <TableHead className="px-3 py-3.5 text-left text-sm font-semibold text-foreground hidden lg:table-cell">Role</TableHead>
                 <TableHead className="px-3 py-3.5 text-left text-sm font-semibold text-foreground">Status</TableHead>
-                <TableHead className="px-3 py-3.5 text-left text-sm font-semibold text-foreground">KYC Verified</TableHead>
-                <TableHead className="px-3 py-3.5 text-left text-sm font-semibold text-foreground">Balance</TableHead>
-                <TableHead className="px-3 py-3.5 text-left text-sm font-semibold text-foreground">Last Login</TableHead>
+                <TableHead className="px-3 py-3.5 text-left text-sm font-semibold text-foreground hidden sm:table-cell">KYC</TableHead>
+                <TableHead className="px-3 py-3.5 text-left text-sm font-semibold text-foreground hidden lg:table-cell">Balance</TableHead>
                 <TableHead className="relative py-3.5 pl-3 pr-4 sm:pr-6 text-right text-sm font-semibold text-foreground">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody className="divide-y divide-border bg-card">
               {filteredUsers.length > 0 ? filteredUsers.map((user) => (
                 <TableRow key={user.id} className="hover:bg-muted/50 transition-colors">
-                  <TableCell className="whitespace-nowrap px-3 py-4 text-xs font-medium text-foreground">{user.id}</TableCell>
-                  <TableCell className="whitespace-nowrap px-3 py-4 text-sm text-foreground">{user.name || 'N/A'}</TableCell>
-                  <TableCell className="px-3 py-4 text-xs text-muted-foreground">
+                  <TableCell className="whitespace-nowrap px-3 py-4 text-sm text-foreground">
+                    <div>{user.name || 'N/A'}</div>
+                    <div className="text-xs text-muted-foreground md:hidden">{user.email}</div>
+                  </TableCell>
+                  <TableCell className="px-3 py-4 text-xs text-muted-foreground hidden md:table-cell">
                     {user.email && <div className="flex items-center gap-1.5 mb-0.5"><Mail className="h-3.5 w-3.5"/> {user.email}</div>}
                     {user.phone && <div className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5"/> {user.phone}</div>}
                   </TableCell>
-                  <TableCell className="whitespace-nowrap px-3 py-4 text-sm">
+                  <TableCell className="whitespace-nowrap px-3 py-4 text-sm hidden lg:table-cell">
                     <Badge 
                       variant={getRoleBadgeVariant(user.role)}
                       className={cn("capitalize font-medium", {
@@ -161,15 +161,14 @@ export default function UserManagementTab() {
                       {user.status.replace('_', ' ')}
                     </Badge>
                   </TableCell>
-                  <TableCell className="whitespace-nowrap px-3 py-4 text-sm">
+                  <TableCell className="whitespace-nowrap px-3 py-4 text-sm hidden sm:table-cell">
                     {user.isVerified ? (
                       <Badge variant="default" className="bg-green-500/20 text-green-700 border-green-500/30 dark:text-green-400 dark:border-green-700/50 flex items-center gap-1 font-medium"><ShieldCheck className="h-3.5 w-3.5"/>Yes</Badge>
                     ) : (
                       <Badge variant="outline" className="border-yellow-500/30 text-yellow-700 dark:text-yellow-500 flex items-center gap-1 font-medium"><ShieldCheck className="h-3.5 w-3.5"/>No</Badge>
                     )}
                   </TableCell>
-                  <TableCell className="whitespace-nowrap px-3 py-4 text-sm text-foreground">{user.currency} {user.balance?.toFixed(2) || '0.00'}</TableCell>
-                  <TableCell className="whitespace-nowrap px-3 py-4 text-xs text-muted-foreground">{user.lastLogin || 'N/A'}</TableCell>
+                  <TableCell className="whitespace-nowrap px-3 py-4 text-sm text-foreground hidden lg:table-cell">{user.currency} {user.balance?.toFixed(2) || '0.00'}</TableCell>
                   <TableCell className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -221,5 +220,3 @@ export default function UserManagementTab() {
     </Card>
   );
 }
-
-    

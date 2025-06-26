@@ -98,12 +98,14 @@ export default async function SportCategoryPage({ params }: SportCategoryPagePro
 
   return (
     <AppLayout>
-      <SportsCategoryClientContent
-        initialMatches={matchesForCategory}
-        categorySlug={categorySlug}
-        categoryName={categoryName}
-        error={fetchError}
-      />
+      <div className="container py-6">
+        <SportsCategoryClientContent
+          initialMatches={matchesForCategory}
+          categorySlug={categorySlug}
+          categoryName={categoryName}
+          error={fetchError}
+        />
+      </div>
     </AppLayout>
   );
 }

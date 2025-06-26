@@ -2,7 +2,7 @@
 'use client';
 
 import AppLayout from "@/components/AppLayout";
-import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarInset, SidebarFooter } from "@/components/ui/sidebar";
+import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarInset, SidebarFooter, SidebarTrigger } from "@/components/ui/sidebar";
 import { LayoutDashboard, Users, DollarSign, History, Briefcase, ShieldAlert, ListChecks, CreditCard, LogOut } from "lucide-react";
 import UserManagementTab from "@/components/admin/UserManagementTab";
 import BalanceControlTab from "@/components/admin/BalanceControlTab";
@@ -81,6 +81,7 @@ export default function AdminPage() {
 
   // If all checks pass, render the admin dashboard
   const ActiveComponent = navItems.find(item => item.id === activeSection)?.component || DashboardTab;
+  const activeSectionLabel = navItems.find(item => item.id === activeSection)?.label || 'Dashboard';
 
   return (
     <AppLayout>
@@ -128,6 +129,12 @@ export default function AdminPage() {
             </SidebarFooter>
           </Sidebar>
           <SidebarInset className="flex-1 bg-background">
+            <header className="md:hidden flex items-center justify-between p-2 sm:p-4 border-b sticky top-16 bg-background/95 z-10">
+              <div className="flex items-center gap-2">
+                <SidebarTrigger />
+                <h2 className="font-headline text-lg font-semibold">{activeSectionLabel}</h2>
+              </div>
+            </header>
             <div className="p-4 md:p-6 lg:p-8">
               {ActiveComponent === DashboardTab ? (
                 <DashboardTab setActiveSection={setActiveSection} />

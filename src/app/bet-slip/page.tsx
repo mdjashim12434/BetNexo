@@ -147,86 +147,88 @@ export default function BetHistoryPage() {
 
   return (
     <AppLayout>
-      <div className="space-y-8">
-        <Card className="shadow-xl">
-          <CardHeader className="flex flex-row justify-between items-center">
-            <div>
-              <CardTitle className="font-headline text-2xl flex items-center">
-                <Ticket className="mr-2 h-6 w-6 text-primary" /> Your Bet History
-              </CardTitle>
-              <CardDescription>Review your past and pending bets.</CardDescription>
-            </div>
-            <Button variant="outline" size="icon" onClick={fetchBetHistory} disabled={isLoading} aria-label="Refresh bet history">
-              <RefreshCw className={cn("h-4 w-4", { "animate-spin": isLoading })} />
-            </Button>
-          </CardHeader>
-          <CardContent>
-            {isLoading && bets.length === 0 ? (
-              <div className="text-center py-10 text-muted-foreground">Loading your bets...</div>
-            ) : !isLoading && bets.length === 0 ? (
-              <div className="min-h-[200px] flex flex-col items-center justify-center border-2 border-dashed border-border rounded-lg p-8">
-                <Info className="h-16 w-16 text-muted-foreground mb-4" />
-                <p className="text-muted-foreground text-center">You haven't placed any bets yet.</p>
-                <p className="text-muted-foreground text-center text-sm">Explore matches and place some bets!</p>
+      <div className="container py-6">
+        <div className="space-y-8">
+          <Card className="shadow-xl">
+            <CardHeader className="flex flex-row justify-between items-center">
+              <div>
+                <CardTitle className="font-headline text-2xl flex items-center">
+                  <Ticket className="mr-2 h-6 w-6 text-primary" /> Your Bet History
+                </CardTitle>
+                <CardDescription>Review your past and pending bets.</CardDescription>
               </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Match</TableHead>
-                      <TableHead>Bet On</TableHead>
-                      <TableHead>Stake</TableHead>
-                      <TableHead>Odds</TableHead>
-                      <TableHead>Return</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Date Placed</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {bets.map((bet) => (
-                      <TableRow key={bet.id}>
-                        <TableCell>
-                          <div>{bet.matchHomeTeam} vs {bet.matchAwayTeam}</div>
-                          <div className="text-xs text-muted-foreground">{bet.matchSportTitle}</div>
-                        </TableCell>
-                        <TableCell>{getBetOutcomeText(bet)}</TableCell>
-                        <TableCell>{currency} {bet.betAmount.toFixed(2)}</TableCell>
-                        <TableCell>{bet.oddsAtBetTime.toFixed(2)}</TableCell>
-                        <TableCell>
-                          {bet.status === 'won' ? (
-                            <span className="text-green-500 flex items-center">
-                              <TrendingUp className="mr-1 h-4 w-4" />{currency} {bet.potentialWinnings.toFixed(2)}
-                            </span>
-                          ) : bet.status === 'lost' || bet.status === 'cancelled' ? (
-                            <span className="text-red-500 flex items-center">
-                              <TrendingDown className="mr-1 h-4 w-4" />{currency} 0.00
-                            </span>
-                          ) : (
-                            `${currency} ${bet.potentialWinnings.toFixed(2)}`
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={getStatusBadgeVariant(bet.status)}
-                            className={cn("capitalize text-xs flex items-center gap-1", {
-                              'bg-green-500/20 text-green-700 border-green-500/30 dark:text-green-400 dark:border-green-700/50': bet.status === 'won',
-                              'bg-yellow-500/20 text-yellow-700 border-yellow-500/30 dark:text-yellow-400 dark:border-yellow-700/50': bet.status === 'pending',
-                            })}
-                          >
-                            {getStatusIcon(bet.status)}
-                            {bet.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-xs">{formatDate(bet.betTimestamp)}</TableCell>
+              <Button variant="outline" size="icon" onClick={fetchBetHistory} disabled={isLoading} aria-label="Refresh bet history">
+                <RefreshCw className={cn("h-4 w-4", { "animate-spin": isLoading })} />
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {isLoading && bets.length === 0 ? (
+                <div className="text-center py-10 text-muted-foreground">Loading your bets...</div>
+              ) : !isLoading && bets.length === 0 ? (
+                <div className="min-h-[200px] flex flex-col items-center justify-center border-2 border-dashed border-border rounded-lg p-8">
+                  <Info className="h-16 w-16 text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground text-center">You haven't placed any bets yet.</p>
+                  <p className="text-muted-foreground text-center text-sm">Explore matches and place some bets!</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Match</TableHead>
+                        <TableHead>Bet On</TableHead>
+                        <TableHead>Stake</TableHead>
+                        <TableHead>Odds</TableHead>
+                        <TableHead>Return</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Date Placed</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                    </TableHeader>
+                    <TableBody>
+                      {bets.map((bet) => (
+                        <TableRow key={bet.id}>
+                          <TableCell>
+                            <div>{bet.matchHomeTeam} vs {bet.matchAwayTeam}</div>
+                            <div className="text-xs text-muted-foreground">{bet.matchSportTitle}</div>
+                          </TableCell>
+                          <TableCell>{getBetOutcomeText(bet)}</TableCell>
+                          <TableCell>{currency} {bet.betAmount.toFixed(2)}</TableCell>
+                          <TableCell>{bet.oddsAtBetTime.toFixed(2)}</TableCell>
+                          <TableCell>
+                            {bet.status === 'won' ? (
+                              <span className="text-green-500 flex items-center">
+                                <TrendingUp className="mr-1 h-4 w-4" />{currency} {bet.potentialWinnings.toFixed(2)}
+                              </span>
+                            ) : bet.status === 'lost' || bet.status === 'cancelled' ? (
+                              <span className="text-red-500 flex items-center">
+                                <TrendingDown className="mr-1 h-4 w-4" />{currency} 0.00
+                              </span>
+                            ) : (
+                              `${currency} ${bet.potentialWinnings.toFixed(2)}`
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={getStatusBadgeVariant(bet.status)}
+                              className={cn("capitalize text-xs flex items-center gap-1", {
+                                'bg-green-500/20 text-green-700 border-green-500/30 dark:text-green-400 dark:border-green-700/50': bet.status === 'won',
+                                'bg-yellow-500/20 text-yellow-700 border-yellow-500/30 dark:text-yellow-400 dark:border-yellow-700/50': bet.status === 'pending',
+                              })}
+                            >
+                              {getStatusIcon(bet.status)}
+                              {bet.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-xs">{formatDate(bet.betTimestamp)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </AppLayout>
   );

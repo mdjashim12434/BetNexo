@@ -33,7 +33,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     <div className="flex min-h-screen flex-col">
       {/* Removed props from Header as it now uses useAuth directly */}
       <Header /> 
-      <main className="flex-grow container py-6">
+      <main className="flex-grow">
         {children}
       </main>
     </div>

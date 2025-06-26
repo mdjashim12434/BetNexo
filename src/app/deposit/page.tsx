@@ -178,12 +178,14 @@ export default function DepositPage() {
   if (loadingAuth || (user && loadingMethods)) {
     return (
         <AppLayout>
+          <div className="container py-6">
             <div className="max-w-2xl mx-auto space-y-4">
                 <Skeleton className="h-10 w-1/2 mx-auto" />
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {[1,2,3].map(i => <Skeleton key={i} className="h-32 w-full" />)}
                 </div>
             </div>
+          </div>
         </AppLayout>
     );
   }
@@ -195,99 +197,101 @@ export default function DepositPage() {
 
   return (
     <AppLayout>
-      <div className="max-w-2xl mx-auto">
-        {selectedMethod ? (
-          <Card className="shadow-xl">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <Button variant="ghost" size="sm" onClick={() => setSelectedMethod(null)} className="text-sm">
-                  <ArrowLeft className="mr-2 h-4 w-4" /> Back
-                </Button>
-                <CardTitle className="font-headline text-xl text-center flex-grow">
-                  Deposit with {selectedMethod.name}
-                </CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <Card className="bg-muted/50 p-4">
-                <CardDescription className="text-sm text-foreground mb-2">
-                  Please send <strong className="text-primary">{amount ? `${currency} ${amount}`: 'your desired amount'}</strong> to the following {selectedMethod.companyAccountType} account:
-                </CardDescription>
-                <div className="space-y-1">
-                  <p className="font-mono text-lg bg-background p-2 rounded text-center">{selectedMethod.companyAccountNumber}</p>
-                  <p className="text-xs text-muted-foreground text-center">Account Type: {selectedMethod.companyAccountType.charAt(0).toUpperCase() + selectedMethod.companyAccountType.slice(1)}</p>
-                  {selectedMethod.minAmount > 0 && <p className="text-xs text-muted-foreground">Min Amount: {selectedMethod.minAmount} {currency}</p>}
-                  {selectedMethod.maxAmount > 0 && <p className="text-xs text-muted-foreground">Max Amount: {selectedMethod.maxAmount} {currency}</p>}
+      <div className="container py-6">
+        <div className="max-w-2xl mx-auto">
+          {selectedMethod ? (
+            <Card className="shadow-xl">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <Button variant="ghost" size="sm" onClick={() => setSelectedMethod(null)} className="text-sm">
+                    <ArrowLeft className="mr-2 h-4 w-4" /> Back
+                  </Button>
+                  <CardTitle className="font-headline text-xl text-center flex-grow">
+                    Deposit with {selectedMethod.name}
+                  </CardTitle>
                 </div>
-                <p className="text-xs text-muted-foreground mt-3 flex items-start">
-                  <Info className="h-3 w-3 mr-1.5 mt-0.5 shrink-0"/>
-                  After sending the money, fill in the details below and submit your request.
-                </p>
-              </Card>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <Card className="bg-muted/50 p-4">
+                  <CardDescription className="text-sm text-foreground mb-2">
+                    Please send <strong className="text-primary">{amount ? `${currency} ${amount}`: 'your desired amount'}</strong> to the following {selectedMethod.companyAccountType} account:
+                  </CardDescription>
+                  <div className="space-y-1">
+                    <p className="font-mono text-lg bg-background p-2 rounded text-center">{selectedMethod.companyAccountNumber}</p>
+                    <p className="text-xs text-muted-foreground text-center">Account Type: {selectedMethod.companyAccountType.charAt(0).toUpperCase() + selectedMethod.companyAccountType.slice(1)}</p>
+                    {selectedMethod.minAmount > 0 && <p className="text-xs text-muted-foreground">Min Amount: {selectedMethod.minAmount} {currency}</p>}
+                    {selectedMethod.maxAmount > 0 && <p className="text-xs text-muted-foreground">Max Amount: {selectedMethod.maxAmount} {currency}</p>}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-3 flex items-start">
+                    <Info className="h-3 w-3 mr-1.5 mt-0.5 shrink-0"/>
+                    After sending the money, fill in the details below and submit your request.
+                  </p>
+                </Card>
 
-              <form onSubmit={handleDepositRequest} className="space-y-4">
-                <div>
-                  <label htmlFor="amount" className="block text-sm font-medium text-foreground mb-1">
-                    Amount Sent ({currency})
-                  </label>
-                  <Input
-                    id="amount"
-                    type="number"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    placeholder={`Enter amount (Min: ${selectedMethod.minAmount}, Max: ${selectedMethod.maxAmount > 0 ? selectedMethod.maxAmount : 'N/A'})`}
-                    min={selectedMethod.minAmount > 0 ? selectedMethod.minAmount.toString() : "0.01"}
-                    max={selectedMethod.maxAmount > 0 ? selectedMethod.maxAmount.toString() : undefined}
-                    step="0.01"
-                    required
-                    className="text-lg"
-                    disabled={isSubmitting}
-                  />
-                </div>
-                 <div>
-                  <label htmlFor="userSendingAccountNumber" className="block text-sm font-medium text-foreground mb-1">
-                    Your Sending Account Number (e.g., your Bkash number)
-                  </label>
-                  <Input
-                    id="userSendingAccountNumber"
-                    type="text"
-                    value={userSendingAccountNumber}
-                    onChange={(e) => setUserSendingAccountNumber(e.target.value)}
-                    placeholder="Enter your account number used for sending"
-                    required
-                    className="text-lg"
-                    disabled={isSubmitting}
-                  />
-                </div>
-                <div>
-                  <label htmlFor="paymentTransactionId" className="block text-sm font-medium text-foreground mb-1">
-                    Payment Transaction ID (TrxID)
-                  </label>
-                  <Input
-                    id="paymentTransactionId"
-                    type="text"
-                    value={paymentTransactionId}
-                    onChange={(e) => setPaymentTransactionId(e.target.value)}
-                    placeholder="Enter the TrxID from your payment"
-                    required
-                    className="text-lg"
-                    disabled={isSubmitting}
-                  />
-                </div>
-                <Button type="submit" className="w-full font-semibold text-lg py-3" disabled={isSubmitting}>
-                  {isSubmitting ? 'Submitting Request...' : 'Submit Deposit Request'}
-                </Button>
-              </form>
-              <p className="mt-4 text-xs text-muted-foreground text-center">
-                Your deposit request will be reviewed by an admin. Please ensure all details are correct.
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-           availableMethods.length > 0 ?
-            <PaymentMethodSelector methods={availableMethods} onSelectMethod={handleMethodSelect} actionType="Deposit" />
-           : <p className="text-center text-muted-foreground py-10">No deposit methods are currently available. Please check back later.</p>
-        )}
+                <form onSubmit={handleDepositRequest} className="space-y-4">
+                  <div>
+                    <label htmlFor="amount" className="block text-sm font-medium text-foreground mb-1">
+                      Amount Sent ({currency})
+                    </label>
+                    <Input
+                      id="amount"
+                      type="number"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      placeholder={`Enter amount (Min: ${selectedMethod.minAmount}, Max: ${selectedMethod.maxAmount > 0 ? selectedMethod.maxAmount : 'N/A'})`}
+                      min={selectedMethod.minAmount > 0 ? selectedMethod.minAmount.toString() : "0.01"}
+                      max={selectedMethod.maxAmount > 0 ? selectedMethod.maxAmount.toString() : undefined}
+                      step="0.01"
+                      required
+                      className="text-lg"
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="userSendingAccountNumber" className="block text-sm font-medium text-foreground mb-1">
+                      Your Sending Account Number (e.g., your Bkash number)
+                    </label>
+                    <Input
+                      id="userSendingAccountNumber"
+                      type="text"
+                      value={userSendingAccountNumber}
+                      onChange={(e) => setUserSendingAccountNumber(e.target.value)}
+                      placeholder="Enter your account number used for sending"
+                      required
+                      className="text-lg"
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="paymentTransactionId" className="block text-sm font-medium text-foreground mb-1">
+                      Payment Transaction ID (TrxID)
+                    </label>
+                    <Input
+                      id="paymentTransactionId"
+                      type="text"
+                      value={paymentTransactionId}
+                      onChange={(e) => setPaymentTransactionId(e.target.value)}
+                      placeholder="Enter the TrxID from your payment"
+                      required
+                      className="text-lg"
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                  <Button type="submit" className="w-full font-semibold text-lg py-3" disabled={isSubmitting}>
+                    {isSubmitting ? 'Submitting Request...' : 'Submit Deposit Request'}
+                  </Button>
+                </form>
+                <p className="mt-4 text-xs text-muted-foreground text-center">
+                  Your deposit request will be reviewed by an admin. Please ensure all details are correct.
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            availableMethods.length > 0 ?
+              <PaymentMethodSelector methods={availableMethods} onSelectMethod={handleMethodSelect} actionType="Deposit" />
+            : <p className="text-center text-muted-foreground py-10">No deposit methods are currently available. Please check back later.</p>
+          )}
+        </div>
       </div>
     </AppLayout>
   );

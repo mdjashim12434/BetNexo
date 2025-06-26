@@ -176,12 +176,14 @@ export default function WithdrawPage() {
   if (loadingAuth || (user && loadingMethods)) {
     return (
         <AppLayout>
+          <div className="container py-6">
             <div className="max-w-2xl mx-auto space-y-4">
                 <Skeleton className="h-10 w-1/2 mx-auto" />
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {[1,2,3].map(i => <Skeleton key={i} className="h-32 w-full" />)}
                 </div>
             </div>
+          </div>
         </AppLayout>
     );
   }
@@ -195,89 +197,91 @@ export default function WithdrawPage() {
   
   return (
     <AppLayout>
-      <div className="max-w-2xl mx-auto">
-        {selectedMethod ? (
-          <Card className="shadow-xl">
-             <CardHeader>
-               <div className="flex items-center justify-between">
-                  <Button variant="ghost" size="sm" onClick={() => setSelectedMethod(null)} className="text-sm">
-                    <ArrowLeft className="mr-2 h-4 w-4" /> Back
-                  </Button>
-                  <CardTitle className="font-headline text-xl text-center flex-grow">
-                    Withdraw via {selectedMethod.name}
-                  </CardTitle>
-                </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <Card className="bg-muted/50 p-4">
-                  <CardDescription className="text-sm text-foreground mb-2">
-                    You are requesting withdrawal via <strong>{selectedMethod.name}</strong>.
-                  </CardDescription>
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground">Platform Account: {selectedMethod.companyAccountNumber} ({selectedMethod.companyAccountType})</p>
-                    {selectedMethod.minAmount > 0 && <p className="text-xs text-muted-foreground">Min Amount: {selectedMethod.minAmount} {currency}</p>}
-                    {selectedMethod.maxAmount > 0 && <p className="text-xs text-muted-foreground">Max Amount: {selectedMethod.maxAmount} {currency}</p>}
+      <div className="container py-6">
+        <div className="max-w-2xl mx-auto">
+          {selectedMethod ? (
+            <Card className="shadow-xl">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                    <Button variant="ghost" size="sm" onClick={() => setSelectedMethod(null)} className="text-sm">
+                      <ArrowLeft className="mr-2 h-4 w-4" /> Back
+                    </Button>
+                    <CardTitle className="font-headline text-xl text-center flex-grow">
+                      Withdraw via {selectedMethod.name}
+                    </CardTitle>
                   </div>
-              </Card>
-              
-              <form onSubmit={handleWithdrawalRequest} className="space-y-4">
-                <p className="text-sm text-muted-foreground">Available Balance: <span className="font-semibold text-foreground">{currency} {balance.toFixed(2)}</span></p>
-                <div>
-                  <label htmlFor="amount" className="block text-sm font-medium text-foreground mb-1">
-                    Amount to Withdraw ({currency})
-                  </label>
-                  <Input
-                    id="amount"
-                    type="number"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    placeholder={`Enter amount (Min: ${selectedMethod.minAmount}, Max: ${selectedMethod.maxAmount > 0 ? selectedMethod.maxAmount : 'N/A'})`}
-                    min={selectedMethod.minAmount > 0 ? selectedMethod.minAmount.toString() : "0.01"}
-                    max={selectedMethod.maxAmount > 0 ? selectedMethod.maxAmount.toString() : undefined}
-                    step="0.01"
-                    required
-                    className="text-lg"
-                    disabled={isSubmitting}
-                  />
-                </div>
-                 <div>
-                  <label htmlFor="userReceivingAccountDetails" className="block text-sm font-medium text-foreground mb-1">
-                    Your Receiving Account Details (e.g., Bkash/Nagad Number, Bank A/C)
-                  </label>
-                  <Input
-                    id="userReceivingAccountDetails"
-                    type="text"
-                    value={userReceivingAccountDetails}
-                    onChange={(e) => setUserReceivingAccountDetails(e.target.value)}
-                    placeholder="Enter your account details for receiving funds"
-                    required
-                    className="text-lg"
-                    disabled={isSubmitting}
-                  />
-                </div>
-                <Button 
-                    type="submit" 
-                    className="w-full font-semibold text-lg py-3" 
-                    disabled={isSubmitting || withdrawalAmount <=0 || withdrawalAmount > balance || (selectedMethod.minAmount > 0 && withdrawalAmount < selectedMethod.minAmount) || (selectedMethod.maxAmount > 0 && withdrawalAmount > selectedMethod.maxAmount)}
-                >
-                  {isSubmitting ? 'Submitting Request...' : 'Submit Withdrawal Request'}
-                </Button>
-                 {withdrawalAmount > 0 && (
-                    (withdrawalAmount > balance && <p className="text-xs text-destructive text-center">Withdrawal amount exceeds your available balance.</p>) ||
-                    (selectedMethod.minAmount > 0 && withdrawalAmount < selectedMethod.minAmount && <p className="text-xs text-destructive text-center">Amount is less than minimum.</p>) ||
-                    (selectedMethod.maxAmount > 0 && withdrawalAmount > selectedMethod.maxAmount && <p className="text-xs text-destructive text-center">Amount is more than maximum.</p>)
-                 )}
-              </form>
-               <p className="mt-4 text-xs text-muted-foreground text-center">
-                Withdrawals are typically processed within 24 hours after admin approval. Ensure your account details are correct.
-               </p>
-            </CardContent>
-          </Card>
-        ) : (
-           availableMethods.length > 0 ?
-            <PaymentMethodSelector methods={availableMethods} onSelectMethod={handleMethodSelect} actionType="Withdraw" />
-           : <p className="text-center text-muted-foreground py-10">No withdrawal methods are currently available. Please check back later.</p>
-        )}
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <Card className="bg-muted/50 p-4">
+                    <CardDescription className="text-sm text-foreground mb-2">
+                      You are requesting withdrawal via <strong>{selectedMethod.name}</strong>.
+                    </CardDescription>
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground">Platform Account: {selectedMethod.companyAccountNumber} ({selectedMethod.companyAccountType})</p>
+                      {selectedMethod.minAmount > 0 && <p className="text-xs text-muted-foreground">Min Amount: {selectedMethod.minAmount} {currency}</p>}
+                      {selectedMethod.maxAmount > 0 && <p className="text-xs text-muted-foreground">Max Amount: {selectedMethod.maxAmount} {currency}</p>}
+                    </div>
+                </Card>
+                
+                <form onSubmit={handleWithdrawalRequest} className="space-y-4">
+                  <p className="text-sm text-muted-foreground">Available Balance: <span className="font-semibold text-foreground">{currency} {balance.toFixed(2)}</span></p>
+                  <div>
+                    <label htmlFor="amount" className="block text-sm font-medium text-foreground mb-1">
+                      Amount to Withdraw ({currency})
+                    </label>
+                    <Input
+                      id="amount"
+                      type="number"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      placeholder={`Enter amount (Min: ${selectedMethod.minAmount}, Max: ${selectedMethod.maxAmount > 0 ? selectedMethod.maxAmount : 'N/A'})`}
+                      min={selectedMethod.minAmount > 0 ? selectedMethod.minAmount.toString() : "0.01"}
+                      max={selectedMethod.maxAmount > 0 ? selectedMethod.maxAmount.toString() : undefined}
+                      step="0.01"
+                      required
+                      className="text-lg"
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="userReceivingAccountDetails" className="block text-sm font-medium text-foreground mb-1">
+                      Your Receiving Account Details (e.g., Bkash/Nagad Number, Bank A/C)
+                    </label>
+                    <Input
+                      id="userReceivingAccountDetails"
+                      type="text"
+                      value={userReceivingAccountDetails}
+                      onChange={(e) => setUserReceivingAccountDetails(e.target.value)}
+                      placeholder="Enter your account details for receiving funds"
+                      required
+                      className="text-lg"
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                  <Button 
+                      type="submit" 
+                      className="w-full font-semibold text-lg py-3" 
+                      disabled={isSubmitting || withdrawalAmount <=0 || withdrawalAmount > balance || (selectedMethod.minAmount > 0 && withdrawalAmount < selectedMethod.minAmount) || (selectedMethod.maxAmount > 0 && withdrawalAmount > selectedMethod.maxAmount)}
+                  >
+                    {isSubmitting ? 'Submitting Request...' : 'Submit Withdrawal Request'}
+                  </Button>
+                  {withdrawalAmount > 0 && (
+                      (withdrawalAmount > balance && <p className="text-xs text-destructive text-center">Withdrawal amount exceeds your available balance.</p>) ||
+                      (selectedMethod.minAmount > 0 && withdrawalAmount < selectedMethod.minAmount && <p className="text-xs text-destructive text-center">Amount is less than minimum.</p>) ||
+                      (selectedMethod.maxAmount > 0 && withdrawalAmount > selectedMethod.maxAmount && <p className="text-xs text-destructive text-center">Amount is more than maximum.</p>)
+                  )}
+                </form>
+                <p className="mt-4 text-xs text-muted-foreground text-center">
+                  Withdrawals are typically processed within 24 hours after admin approval. Ensure your account details are correct.
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            availableMethods.length > 0 ?
+              <PaymentMethodSelector methods={availableMethods} onSelectMethod={handleMethodSelect} actionType="Withdraw" />
+            : <p className="text-center text-muted-foreground py-10">No withdrawal methods are currently available. Please check back later.</p>
+          )}
+        </div>
       </div>
     </AppLayout>
   );

@@ -38,37 +38,39 @@ export default function CasinoPage() {
 
   return (
     <AppLayout>
-      <div className="space-y-8">
-        <div className="text-center">
-            <h1 className="font-headline text-4xl font-bold text-primary">Casino Royale</h1>
-            <p className="text-xl text-muted-foreground mt-2">Experience the Thrill of Our Top Casino Games!</p>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {casinoGames.map(game => (
-            <Card key={game.id} className="flex flex-col overflow-hidden hover:shadow-primary/30 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
-              <CardHeader className="p-0">
-                <div className="relative h-48 w-full">
-                  <Image 
-                    src={`https://placehold.co/600x400.png?text=${game.name.replace(' ', '+')}`} 
-                    alt={game.name} 
-                    fill
-                    className="object-cover" 
-                    data-ai-hint={game.imageHint}
-                  />
-                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
-                   <game.icon className="absolute top-4 right-4 h-8 w-8 text-white/80" />
-                </div>
-              </CardHeader>
-              <CardContent className="flex-grow p-6 flex flex-col justify-between">
-                <div>
-                  <CardTitle className="font-headline text-xl mb-2">{game.name}</CardTitle>
-                  <p className="text-sm text-muted-foreground mb-4">{game.description}</p>
-                </div>
-                <Button className="w-full mt-auto bg-accent text-accent-foreground hover:bg-accent/90">Play {game.name}</Button>
-              </CardContent>
-            </Card>
-          ))}
+      <div className="container py-6">
+        <div className="space-y-8">
+          <div className="text-center">
+              <h1 className="font-headline text-4xl font-bold text-primary">Casino Royale</h1>
+              <p className="text-xl text-muted-foreground mt-2">Experience the Thrill of Our Top Casino Games!</p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {casinoGames.map(game => (
+              <Card key={game.id} className="flex flex-col overflow-hidden hover:shadow-primary/30 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+                <CardHeader className="p-0">
+                  <div className="relative h-48 w-full">
+                    <Image 
+                      src={`https://placehold.co/600x400.png?text=${game.name.replace(' ', '+')}`} 
+                      alt={game.name} 
+                      fill
+                      className="object-cover" 
+                      data-ai-hint={game.imageHint}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
+                    <game.icon className="absolute top-4 right-4 h-8 w-8 text-white/80" />
+                  </div>
+                </CardHeader>
+                <CardContent className="flex-grow p-6 flex flex-col justify-between">
+                  <div>
+                    <CardTitle className="font-headline text-xl mb-2">{game.name}</CardTitle>
+                    <p className="text-sm text-muted-foreground mb-4">{game.description}</p>
+                  </div>
+                  <Button className="w-full mt-auto bg-accent text-accent-foreground hover:bg-accent/90">Play {game.name}</Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
       </div>
     </AppLayout>

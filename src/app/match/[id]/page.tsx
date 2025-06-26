@@ -52,9 +52,11 @@ export default function MatchDetailPage() {
   if (loading) {
     return (
       <AppLayout>
-        <div className="space-y-6">
-          <Skeleton className="h-10 w-32" /> {/* Back button skeleton */}
-          <Skeleton className="h-96 w-full" /> {/* Main card skeleton */}
+        <div className="container py-6">
+          <div className="space-y-6">
+            <Skeleton className="h-10 w-32" /> {/* Back button skeleton */}
+            <Skeleton className="h-96 w-full" /> {/* Main card skeleton */}
+          </div>
         </div>
       </AppLayout>
     );
@@ -63,10 +65,12 @@ export default function MatchDetailPage() {
   if (error) {
     return (
       <AppLayout>
-        <div className="text-center p-10">
-          <h1 className="text-2xl font-bold mb-4 text-destructive">Error Loading Match</h1>
-          <p className="text-muted-foreground whitespace-pre-wrap">{error}</p>
-          <p className="text-muted-foreground mt-2">This could be due to an invalid link or an API issue.</p>
+        <div className="container py-6">
+          <div className="text-center p-10">
+            <h1 className="text-2xl font-bold mb-4 text-destructive">Error Loading Match</h1>
+            <p className="text-muted-foreground whitespace-pre-wrap">{error}</p>
+            <p className="text-muted-foreground mt-2">This could be due to an invalid link or an API issue.</p>
+          </div>
         </div>
       </AppLayout>
     );
@@ -75,9 +79,11 @@ export default function MatchDetailPage() {
   if (!match) {
      return (
       <AppLayout>
-        <div className="text-center p-10">
-          <h1 className="text-2xl font-bold mb-4">Match Not Found</h1>
-          <p className="text-muted-foreground">Could not find details for match ID: {matchId}.</p>
+        <div className="container py-6">
+          <div className="text-center p-10">
+            <h1 className="text-2xl font-bold mb-4">Match Not Found</h1>
+            <p className="text-muted-foreground">Could not find details for match ID: {matchId}.</p>
+          </div>
         </div>
       </AppLayout>
     );
@@ -85,7 +91,9 @@ export default function MatchDetailPage() {
 
   return (
     <AppLayout>
-      <MatchDetailClientContent initialMatch={match} />
+      <div className="container py-6">
+        <MatchDetailClientContent initialMatch={match} />
+      </div>
     </AppLayout>
   );
 }

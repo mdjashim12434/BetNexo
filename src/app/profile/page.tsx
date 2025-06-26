@@ -56,47 +56,49 @@ export default function ProfilePage() {
 
   return (
     <AppLayout>
-      <div className="max-w-2xl mx-auto space-y-8">
-        <Card className="shadow-xl">
-          <CardHeader className="items-center text-center">
-            <Avatar className="h-24 w-24 border-4 border-primary">
-              <AvatarImage src={user.avatarUrl || `https://placehold.co/100x100.png?text=${user.name ? user.name.charAt(0).toUpperCase() : 'U'}`} alt={user.name || 'User'} data-ai-hint="user avatar" />
-              <AvatarFallback className="text-4xl">{user.name ? user.name.charAt(0).toUpperCase() : 'U'}</AvatarFallback>
-            </Avatar>
-            <div className="pt-4">
-              <CardTitle className="font-headline text-3xl">{user.name || 'User Profile'}</CardTitle>
-              <CardDescription className="flex items-center justify-center gap-2 mt-1">
-                <ShieldCheck className={`h-4 w-4 ${user.emailVerified ? 'text-green-500' : 'text-yellow-500'}`} />
-                {user.emailVerified ? 'Email Verified' : 'Email Not Verified'}
-              </CardDescription>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <Separator />
-            <div className="space-y-4 text-sm">
-                <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground flex items-center"><Hash className="h-5 w-5 mr-3 text-primary" /> User ID</span>
-                    <span className="font-mono text-foreground">{user.customUserId || 'N/A'}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground flex items-center"><Fingerprint className="h-5 w-5 mr-3 text-primary" /> Firebase UID</span>
-                    <span className="font-mono text-xs text-foreground">{user.id}</span>
-                </div>
-                 <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground flex items-center"><Mail className="h-5 w-5 mr-3 text-primary" /> Email</span>
-                    <span className="font-medium text-foreground">{user.email || 'N/A'}</span>
-                </div>
-                 <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground flex items-center"><Calendar className="h-5 w-5 mr-3 text-primary" /> Joined On</span>
-                    <span className="font-medium text-foreground">{formatDate(user.createdAt)}</span>
-                </div>
-            </div>
-            <Separator />
-            <Button variant="destructive" onClick={handleLogout} className="w-full">
-              <LogOut className="mr-2 h-4 w-4" /> Logout
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="container py-6">
+        <div className="max-w-2xl mx-auto space-y-8">
+          <Card className="shadow-xl">
+            <CardHeader className="items-center text-center">
+              <Avatar className="h-24 w-24 border-4 border-primary">
+                <AvatarImage src={user.avatarUrl || `https://placehold.co/100x100.png?text=${user.name ? user.name.charAt(0).toUpperCase() : 'U'}`} alt={user.name || 'User'} data-ai-hint="user avatar" />
+                <AvatarFallback className="text-4xl">{user.name ? user.name.charAt(0).toUpperCase() : 'U'}</AvatarFallback>
+              </Avatar>
+              <div className="pt-4">
+                <CardTitle className="font-headline text-3xl">{user.name || 'User Profile'}</CardTitle>
+                <CardDescription className="flex items-center justify-center gap-2 mt-1">
+                  <ShieldCheck className={`h-4 w-4 ${user.emailVerified ? 'text-green-500' : 'text-yellow-500'}`} />
+                  {user.emailVerified ? 'Email Verified' : 'Email Not Verified'}
+                </CardDescription>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <Separator />
+              <div className="space-y-4 text-sm">
+                  <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground flex items-center"><Hash className="h-5 w-5 mr-3 text-primary" /> User ID</span>
+                      <span className="font-mono text-foreground">{user.customUserId || 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground flex items-center"><Fingerprint className="h-5 w-5 mr-3 text-primary" /> Firebase UID</span>
+                      <span className="font-mono text-xs text-foreground">{user.id}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground flex items-center"><Mail className="h-5 w-5 mr-3 text-primary" /> Email</span>
+                      <span className="font-medium text-foreground">{user.email || 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground flex items-center"><Calendar className="h-5 w-5 mr-3 text-primary" /> Joined On</span>
+                      <span className="font-medium text-foreground">{formatDate(user.createdAt)}</span>
+                  </div>
+              </div>
+              <Separator />
+              <Button variant="destructive" onClick={handleLogout} className="w-full">
+                <LogOut className="mr-2 h-4 w-4" /> Logout
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </AppLayout>
   );
