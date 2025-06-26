@@ -1,3 +1,4 @@
+
 'use client';
 
 import AppLayout from '@/components/AppLayout';
@@ -13,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import LiveScoresDisplay from '@/components/sports/LiveScoresDisplay';
+import FootballLiveScoresDisplay from '@/components/sports/FootballLiveScoresDisplay';
 
 interface SportCategoryButton {
   name: string;
@@ -79,6 +81,11 @@ export default function HomePage() {
 
         <section>
           {/* Live Football Scores Display Section */}
+          <FootballLiveScoresDisplay />
+        </section>
+
+        <section>
+          {/* Live Cricket Scores Display Section */}
           <LiveScoresDisplay />
         </section>
 

@@ -10,7 +10,11 @@ import type {
     CricketRun,
     SportmonksCricketFixturesResponse,
     SportmonksCricketFixture,
-    SportmonksSingleCricketFixtureResponse
+    SportmonksSingleCricketFixtureResponse,
+    SportmonksFootballLiveResponse,
+    SportmonksFootballLiveScore,
+    ProcessedFootballLiveScore,
+    FootballScore
 } from '@/types/sportmonks';
 
 // Helper to generate user-friendly error messages based on HTTP status
@@ -38,7 +42,7 @@ const handleApiResponse = async (response: Response) => {
 
 // --- Cricket Processing ---
 
-const processLiveScoresApiResponse = (data: any): ProcessedLiveScore[] => {
+const processCricketLiveScoresApiResponse = (data: any): ProcessedLiveScore[] => {
     if (!Array.isArray(data)) return [];
     return data.map((match: SportmonksCricketLiveScore) => {
         const localTeamRun = match.runs.find(r => r.team_id === match.localteam_id);
@@ -123,17 +127,63 @@ const processFootballFixtureData = (fixtures: SportmonksOddsFixture[]): Processe
     });
 };
 
+
+const processFootballLiveScoresApiResponse = (data: SportmonksFootballLiveScore[]): ProcessedFootballLiveScore[] => {
+    if (!Array.isArray(data)) return [];
+
+    return data.map(match => {
+        const homeTeam = match.participants.find(p => p.meta.location === 'home');
+        const awayTeam = match.participants.find(p => p.meta.location === 'away');
+
+        const getScore = (participantId: number): number => {
+            const score = match.scores.find(s => s.participant_id === participantId && s.type_id === 16); // type_id 16 is 'current' score
+            return score?.score.goals ?? 0;
+        };
+
+        const latestEvent = match.events.sort((a, b) => b.id - a.id)[0];
+
+        return {
+            id: match.id,
+            name: match.name,
+            homeTeam: {
+                name: homeTeam?.name ?? 'Home',
+                score: homeTeam ? getScore(homeTeam.id) : 0,
+            },
+            awayTeam: {
+                name: awayTeam?.name ?? 'Away',
+                score: awayTeam ? getScore(awayTeam.id) : 0,
+            },
+            leagueName: match.league.name,
+            minute: match.periods?.find(p => p.has_timer)?.minutes,
+            status: match.state.name,
+            latestEvent: latestEvent ? `${latestEvent.minute}' - ${latestEvent.type.name}` : "Match started"
+        };
+    });
+};
+
+
 // --- Public Fetching Functions ---
 
 export async function fetchLiveScores(): Promise<ProcessedLiveScore[]> {
     try {
         const response = await fetch('/api/live-scores');
         const responseData: SportmonksCricketResponse = await handleApiResponse(response);
-        return processLiveScoresApiResponse(responseData.data);
+        return processCricketLiveScoresApiResponse(responseData.data);
     } catch (error) {
         console.error('Error in fetchLiveScores service:', error);
         throw error;
     }
+}
+
+export async function fetchFootballLiveScores(): Promise<ProcessedFootballLiveScore[]> {
+  try {
+    const response = await fetch('/api/football/live-scores');
+    const responseData: SportmonksFootballLiveResponse = await handleApiResponse(response);
+    return processFootballLiveScoresApiResponse(responseData.data);
+  } catch (error) {
+    console.error('Error in fetchFootballLiveScores service:', error);
+    throw error;
+  }
 }
 
 export async function fetchFootballFixturesByRound(roundId: number): Promise<ProcessedFixture[]> {
