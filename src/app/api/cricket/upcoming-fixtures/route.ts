@@ -29,11 +29,9 @@ export async function GET(request: NextRequest) {
 
   // Includes for upcoming fixtures. participants = teams, league for league info, odds for betting.
   const includes = "participants,league,odds";
-  // Filter for a popular bookmaker (id: 2 for Bet365) and main market (id: 1 for Match Winner)
-  const markets = "1";
-  const bookmakers = "2";
 
-  const url = `${SPORTMONKS_CRICKET_API_URL}/fixtures/between/${startDate}/${endDate}?api_token=${apiKey}&include=${includes}&markets=${markets}&bookmakers=${bookmakers}`;
+  // Removed markets and bookmakers filters to simplify the API call and avoid potential errors.
+  const url = `${SPORTMONKS_CRICKET_API_URL}/fixtures/between/${startDate}/${endDate}?api_token=${apiKey}&include=${includes}`;
 
   try {
     const apiResponse = await fetch(url, {
