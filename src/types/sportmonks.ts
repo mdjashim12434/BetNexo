@@ -173,6 +173,7 @@ export interface ProcessedLiveScore {
     startTime: string;
     status: string;
     note: string;
+    latestEvent?: string;
 }
 
 // Processed type for homepage live football scores

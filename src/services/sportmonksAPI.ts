@@ -50,6 +50,9 @@ const processCricketLiveScoresApiResponse = (data: SportmonksCricketV3Fixture[])
         const visitorTeamRun = match.runs?.find(r => r.participant_id === awayTeam?.id);
         const formatScore = (run?: CricketRun) => run ? `${run.score}/${run.wickets} (${run.overs})` : "Yet to bat";
         
+        // Using match.note as the most reliable source for a human-readable live update summary.
+        const latestEventString = match.note;
+        
         return {
             id: match.id,
             name: match.name || `${homeTeam?.name || 'Team 1'} vs ${awayTeam?.name || 'Team 2'}`,
@@ -60,6 +63,7 @@ const processCricketLiveScoresApiResponse = (data: SportmonksCricketV3Fixture[])
             startTime: match.starting_at,
             status: match.state.name,
             note: match.note,
+            latestEvent: latestEventString,
         };
     });
 };

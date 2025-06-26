@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
@@ -100,7 +101,12 @@ export default function LiveScoresDisplay() {
                     <span className="truncate pr-2">{match.awayTeam.name}</span>
                     <span className="font-bold text-primary">{match.awayTeam.score}</span>
                 </div>
-                {match.note && <p className="text-xs text-center pt-2 text-accent font-medium">{match.note}</p>}
+                {(match.latestEvent || match.note) && (
+                    <p className="text-xs text-center pt-2 text-accent font-medium flex items-center justify-center gap-1.5">
+                        <CricketIcon className="h-3 w-3" />
+                        {match.latestEvent || match.note}
+                    </p>
+                )}
               </div>
             </Card>
           ))}
