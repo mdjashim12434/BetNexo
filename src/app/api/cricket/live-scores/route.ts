@@ -4,6 +4,9 @@ import { NextResponse, type NextRequest } from 'next/server';
 const SPORTMONKS_CRICKET_API_URL = "https://api.sportmonks.com/v3/cricket";
 const apiKey = process.env.SPORTMONKS_API_KEY;
 
+// Leagues included in the user's plan
+const cricketLeagueIds = [7, 11, 5, 29, 32, 225, 9, 216, 237, 186, 231, 264, 13, 19, 47, 138, 141, 189, 83, 294, 168, 204, 180, 183, 222, 228, 1, 106, 276, 255, 288, 234, 317, 314, 282, 249, 6, 8, 252, 320, 150, 243, 10, 270, 100, 171, 177, 22, 23, 3, 12, 16, 17, 35, 258, 261, 2, 4, 18, 41, 86, 201, 14, 15];
+
 export async function GET(request: NextRequest) {
   if (!apiKey) {
     console.error("SPORTMONKS_API_KEY is not set in environment variables.");
@@ -11,11 +14,11 @@ export async function GET(request: NextRequest) {
   }
 
   // Using fixtures endpoint with INPLAY state filter. 'state' is the correct filter key for V3.
-  // 'state' is a root object on the fixture, not a separate relation, so it should not be in the 'include' string.
-  // The correct includes for cricket are participants, league, and runs.
   const includes = "participants,league,runs";
   const stateFilter = "INPLAY"; // Use 'INPLAY' for live matches as per Sportmonks V3 docs
-  const url = `${SPORTMONKS_CRICKET_API_URL}/fixtures?filter[state]=${stateFilter}&api_token=${apiKey}&include=${includes}`;
+  const leagueIdsParam = `&leagues=${cricketLeagueIds.join(',')}`;
+
+  const url = `${SPORTMONKS_CRICKET_API_URL}/fixtures?filter[state]=${stateFilter}&api_token=${apiKey}&include=${includes}${leagueIdsParam}`;
 
   try {
     const apiResponse = await fetch(url, {
