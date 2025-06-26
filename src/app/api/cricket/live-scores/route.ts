@@ -12,6 +12,7 @@ export async function GET(request: NextRequest) {
   }
 
   // Using v2.0 livescores endpoint. Includes are for team, league, and run details.
+  // The 'leagues' parameter is NOT supported on this V2 endpoint, so it has been removed.
   const includes = "localteam,visitorteam,league,runs";
   const url = `${SPORTMONKS_CRICKET_API_URL}/livescores?api_token=${apiKey}&include=${includes}`;
 
