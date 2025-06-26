@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from "@/hooks/use-toast";
 import Link from 'next/link';
 
-const REFRESH_INTERVAL_MS = 15000; // 15 seconds
+const REFRESH_INTERVAL_MS = 60000; // 60 seconds
 
 export default function FootballLiveScoresDisplay() {
   const [matches, setMatches] = useState<ProcessedFootballLiveScore[]>([]);
@@ -91,8 +91,7 @@ export default function FootballLiveScoresDisplay() {
         <div className="space-y-3">
           {matches.map((match) => (
             <Link key={match.id} href={`/match/${match.id}?sport=football`} legacyBehavior passHref>
-              <a className="block">
-                <Card className="overflow-hidden bg-background border border-border/50 p-3 sm:p-4 hover:border-primary/50 transition-all cursor-pointer">
+              <a className="block p-3 sm:p-4 transition-all cursor-pointer bg-background border border-border/50 hover:border-primary/50 rounded-lg">
                 <div className="flex justify-between items-center mb-2">
                     <p className="text-xs text-muted-foreground truncate">{match.leagueName}</p>
                     <div className="flex items-center gap-2">
@@ -109,12 +108,11 @@ export default function FootballLiveScoresDisplay() {
                     <span className="font-bold text-primary">{match.awayTeam.score}</span>
                 </div>
                 {match.latestEvent && (
-                  <p className="text-xs text-center pt-2 text-accent font-medium flex items-center justify-center gap-1.5">
+                  <p className="text-xs text-center pt-2 text-accent-foreground font-medium flex items-center justify-center gap-1.5">
                     <Goal className="h-3 w-3" />
                     {match.latestEvent}
                   </p>
                 )}
-                </Card>
               </a>
             </Link>
           ))}
