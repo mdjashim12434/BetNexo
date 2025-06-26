@@ -12,10 +12,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'API key is not configured on the server.' }, { status: 500 });
   }
 
-  // Use the dedicated live fixtures endpoint from Cricket V3 API.
+  // Use the dedicated /livescores endpoint from Cricket V3 API.
   // Includes are essential for getting team names, league info, and scores.
   const includes = "localteam,visitorteam,league,runs";
-  const url = `${SPORTMONKS_API_BASE_URL}/fixtures/live?api_token=${apiKey}&include=${includes}`;
+  const url = `${SPORTMONKS_API_BASE_URL}/livescores?api_token=${apiKey}&include=${includes}`;
 
   try {
     const apiResponse = await fetch(url, {
