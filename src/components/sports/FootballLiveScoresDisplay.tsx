@@ -2,12 +2,11 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { fetchFootballLiveScores } from '@/services/sportmonksAPI';
-import type { ProcessedFootballLiveScore } from '@/types/sportmonks';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { AlertTriangle, Loader2, RefreshCw, Info, Goal } from 'lucide-react';
+import { fetchFootballLiveScores, fetchUpcomingFootballFixtures } from '@/services/sportmonksAPI';
+import type { ProcessedFootballLiveScore, ProcessedFixture } from '@/types/sportmonks';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { AlertTriangle, Loader2, Info, Goal, Calendar } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useToast } from "@/hooks/use-toast";
 import Link from 'next/link';
@@ -15,45 +14,61 @@ import Link from 'next/link';
 const REFRESH_INTERVAL_MS = 60000; // 60 seconds
 
 export default function FootballLiveScoresDisplay() {
-  const [matches, setMatches] = useState<ProcessedFootballLiveScore[]>([]);
+  const [liveMatches, setLiveMatches] = useState<ProcessedFootballLiveScore[]>([]);
+  const [upcomingFixtures, setUpcomingFixtures] = useState<ProcessedFixture[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const loadScores = useCallback(async (isManualRefresh: boolean = false) => {
-    setLoading(true);
-    if (isManualRefresh) {
-      setError(null);
+  const loadData = useCallback(async (isManualRefresh: boolean = false) => {
+    if (!isManualRefresh) {
+        setLoading(true);
     }
-    
+    setError(null);
+
     try {
-      const fetchedMatches = await fetchFootballLiveScores();
-      setMatches(fetchedMatches);
-      if (isManualRefresh) {
-        toast({ title: "Live Scores Updated", description: "Football live scores have been refreshed." });
-      }
+        const fetchedLiveMatches = await fetchFootballLiveScores();
+        if (fetchedLiveMatches.length > 0) {
+            setLiveMatches(fetchedLiveMatches);
+            setUpcomingFixtures([]); // Clear upcoming if live are found
+        } else {
+            setLiveMatches([]); // Clear live matches
+            const fetchedUpcoming = await fetchUpcomingFootballFixtures();
+            // Sort by starting time and take the top 5
+            const sortedUpcoming = fetchedUpcoming
+                .sort((a, b) => new Date(a.startingAt).getTime() - new Date(b.startingAt).getTime())
+                .slice(0, 5);
+            setUpcomingFixtures(sortedUpcoming);
+        }
+
+        if (isManualRefresh) {
+            toast({ title: "Scores Updated", description: "Match data has been refreshed." });
+        }
     } catch (err: any) {
-      const errorMessage = err.message || 'An unknown error occurred while fetching football live scores.';
-      setError(errorMessage);
-      if (isManualRefresh) {
-        toast({ title: "Refresh Failed", description: errorMessage, variant: "destructive", duration: 10000 });
-      }
+        const errorMessage = err.message || 'An unknown error occurred while fetching matches.';
+        setError(errorMessage);
+        if (isManualRefresh) {
+            toast({ title: "Refresh Failed", description: errorMessage, variant: "destructive", duration: 10000 });
+        }
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
   }, [toast]);
 
   useEffect(() => {
-    loadScores(); // Initial fetch
-    const intervalId = setInterval(() => loadScores(), REFRESH_INTERVAL_MS);
+    loadData(); // Initial fetch
+    const intervalId = setInterval(() => loadData(), REFRESH_INTERVAL_MS);
     return () => clearInterval(intervalId);
-  }, [loadScores]);
+  }, [loadData]);
 
-  if (loading && matches.length === 0) {
+  const hasLiveMatches = liveMatches.length > 0;
+  const hasUpcomingMatches = upcomingFixtures.length > 0;
+  
+  if (loading && !hasLiveMatches && !hasUpcomingMatches) {
     return (
       <div className="flex flex-col items-center justify-center py-10 my-4 text-muted-foreground bg-card rounded-lg shadow-lg min-h-[200px]">
         <Loader2 className="mr-2 h-8 w-8 animate-spin text-primary" />
-        <p className="mt-2 text-lg">Loading Live Football Scores...</p>
+        <p className="mt-2 text-lg">Loading Matches...</p>
       </div>
     );
   }
@@ -63,8 +78,11 @@ export default function FootballLiveScoresDisplay() {
       <CardHeader className="flex flex-row justify-between items-center pb-4 border-b border-border/60">
         <div>
           <CardTitle className="font-headline text-xl md:text-2xl flex items-center text-primary">
-            <Goal className="mr-2 h-5 w-5 md:h-6 md:w-6 text-blue-500" />
-            Live Football Scores
+            {hasLiveMatches ? (
+              <><Goal className="mr-2 h-5 w-5 md:h-6 md:w-6 text-blue-500" /> Live Football Scores</>
+            ) : (
+              <><Calendar className="mr-2 h-5 w-5 md:h-6 md:w-6 text-blue-500" /> Upcoming Football</>
+            )}
           </CardTitle>
         </div>
       </CardHeader>
@@ -75,16 +93,18 @@ export default function FootballLiveScoresDisplay() {
             <p>{error}</p>
           </div>
         )}
-        {matches.length === 0 && !loading && !error && (
+
+        {!hasLiveMatches && !hasUpcomingMatches && !loading && !error && (
           <div className="text-center py-10 text-muted-foreground min-h-[150px] flex flex-col items-center justify-center">
             <Info className="h-10 w-10 mb-3 text-primary/50" />
-            <p className="font-semibold">No live football matches found at the moment.</p>
+            <p className="font-semibold">No live or upcoming matches found at the moment.</p>
             <p className="text-sm">Please check back later.</p>
           </div>
         )}
+
         <div className="space-y-3">
-          {matches.map((match) => (
-            <Link key={match.id} href={`/match/${match.id}?sport=football`} legacyBehavior passHref>
+          {hasLiveMatches && liveMatches.map((match) => (
+            <Link key={`live-${match.id}`} href={`/match/${match.id}?sport=football`} legacyBehavior passHref>
               <a className="block p-3 sm:p-4 transition-all cursor-pointer bg-background border border-border/50 hover:border-primary/50 rounded-lg">
                 <div className="flex justify-between items-center mb-2">
                     <p className="text-xs text-muted-foreground truncate">{match.leagueName}</p>
@@ -107,6 +127,25 @@ export default function FootballLiveScoresDisplay() {
                     {match.latestEvent}
                   </p>
                 )}
+              </a>
+            </Link>
+          ))}
+
+          {hasUpcomingMatches && upcomingFixtures.map((match) => (
+             <Link key={`upcoming-${match.id}`} href={`/match/${match.id}?sport=football`} legacyBehavior passHref>
+              <a className="block p-3 sm:p-4 transition-all cursor-pointer bg-background border border-border/50 hover:border-primary/50 rounded-lg">
+                <div className="flex justify-between items-center mb-2">
+                    <p className="text-xs text-muted-foreground truncate">{match.league.name}</p>
+                    <Badge variant="secondary" className="text-blue-500 border-blue-500/30">
+                        {new Date(match.startingAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}, {new Date(match.startingAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </Badge>
+                </div>
+                <div className="flex items-center text-md font-semibold">
+                    <span className="truncate">{match.homeTeam.name}</span>
+                </div>
+                <div className="flex items-center text-md font-semibold mt-1">
+                    <span className="truncate">{match.awayTeam.name}</span>
+                </div>
               </a>
             </Link>
           ))}
