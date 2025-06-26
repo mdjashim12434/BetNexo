@@ -1,6 +1,5 @@
 
 
-
 // --- Common Types ---
 export interface SportmonksOdd {
     id: number;
@@ -50,6 +49,7 @@ export interface SportmonksVenue {
 export interface SportmonksReferee {
     id: number;
     fullname: string;
+    type?: { name: string; }; // For Cricket officials
 }
 
 export interface SportmonksOfficial {
@@ -59,7 +59,7 @@ export interface SportmonksOfficial {
 }
 
 
-// --- Types for Cricket API v2.0 ---
+// --- Types for Cricket API v2.0 (Still used for Live/Upcoming Lists) ---
 export interface SportmonksCricketTeam {
     id: number;
     name: string;
@@ -105,7 +105,7 @@ export interface SportmonksSingleCricketV2FixtureResponse {
 }
 
 
-// --- Types for Football API v3 ---
+// --- Types for API V3 (Football & Cricket Details) ---
 
 export interface SportmonksComment {
     id: number;
@@ -116,27 +116,31 @@ export interface SportmonksComment {
     is_goal: boolean;
 }
 
-export interface SportmonksOddsFixture {
+export interface SportmonksV3Fixture {
     id: number;
     name: string;
     starting_at: string;
     league_id: number;
     state: SportmonksState;
     participants: SportmonksParticipant[];
-    odds: SportmonksOdd[];
+    odds?: SportmonksOdd[];
     league?: CricketLeague;
     comments?: SportmonksComment[];
     venue?: SportmonksVenue;
-    referee?: SportmonksReferee;
+    referee?: SportmonksReferee; // Football V3
+    officials?: { data: SportmonksReferee[] }; // Cricket V3
+    runs?: any[]; // Cricket V3 runs
 }
 
-export interface SportmonksFootballFixturesResponse {
-    data: SportmonksOddsFixture[];
+export interface SportmonksV3FixturesResponse {
+    data: SportmonksV3Fixture[];
 }
 
-export interface SportmonksSingleFixtureResponse {
-    data: SportmonksOddsFixture;
+export interface SportmonksSingleV3FixtureResponse {
+    data: SportmonksV3Fixture;
 }
+
+// --- Types for Football Live Scores (V3) ---
 
 export interface FootballScore {
     id: number;

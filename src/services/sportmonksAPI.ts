@@ -1,10 +1,10 @@
 
 import type { 
     ProcessedLiveScore, 
-    SportmonksOddsFixture, 
-    SportmonksFootballFixturesResponse,
+    SportmonksV3Fixture,
+    SportmonksV3FixturesResponse,
     ProcessedFixture, 
-    SportmonksSingleFixtureResponse, 
+    SportmonksSingleV3FixtureResponse,
     CricketRun,
     SportmonksFootballLiveResponse,
     SportmonksFootballLiveScore,
@@ -29,6 +29,7 @@ const handleApiResponse = async (response: Response) => {
         case 400: userFriendlyMessage = `Bad Request: The server could not understand the request. Details: ${apiMessage}`; break;
         case 401: userFriendlyMessage = `Authentication Failed: The API key is likely invalid or missing.`; break;
         case 403: userFriendlyMessage = `Forbidden: Your current API plan does not allow access to this data.`; break;
+        case 404: userFriendlyMessage = `Not Found: The requested match or endpoint could not be found. Details: ${apiMessage}`; break;
         case 422: userFriendlyMessage = `Unprocessable Entity: The request was well-formed but could not be processed. Details: ${apiMessage}`; break;
         case 429: userFriendlyMessage = `Too Many Requests: The hourly API limit has been reached.`; break;
         case 500: userFriendlyMessage = `Internal Server Error: The API provider encountered an error.`; break;
@@ -39,7 +40,7 @@ const handleApiResponse = async (response: Response) => {
 };
 
 
-// --- Cricket Processing (V2) ---
+// --- Cricket Processing (V2 - For Live/Upcoming which are still on V2) ---
 
 // Helper to convert V2 status string to a V3-like State object for UI consistency
 const mapV2StatusToState = (status: string, live: boolean): SportmonksState => {
@@ -119,9 +120,9 @@ const processCricketV2LiveScoresApiResponse = (data: SportmonksCricketV2Fixture[
     });
 };
 
-// --- Football Processing (V3) ---
+// --- Football & V3 Cricket Processing (V3) ---
 
-const processFootballFixtureData = (fixtures: SportmonksOddsFixture[]): ProcessedFixture[] => {
+const processV3FixtureData = (fixtures: SportmonksV3Fixture[], sportKey: 'football' | 'cricket'): ProcessedFixture[] => {
     return fixtures.map(fixture => {
         const homeTeam = fixture.participants?.find(p => p.meta.location === 'home');
         const awayTeam = fixture.participants?.find(p => p.meta.location === 'away');
@@ -149,9 +150,18 @@ const processFootballFixtureData = (fixtures: SportmonksOddsFixture[]): Processe
         const bttsYesOdd = bttsOdds.find(o => o.original_label === 'Yes');
         const bttsNoOdd = bttsOdds.find(o => o.original_label === 'No');
 
+        // Handle different official/referee structures
+        let mainOfficialName: string | undefined;
+        if (fixture.referee) { // Football V3
+            mainOfficialName = fixture.referee.fullname;
+        } else if (fixture.officials?.data) { // Cricket V3
+             const umpire = fixture.officials.data.find(o => o.type.name === 'Umpire');
+             if (umpire) mainOfficialName = umpire.fullname;
+        }
+
         return {
             id: fixture.id,
-            sportKey: 'football',
+            sportKey: sportKey,
             name: fixture.name,
             startingAt: fixture.starting_at,
             state: fixture.state,
@@ -173,8 +183,8 @@ const processFootballFixtureData = (fixtures: SportmonksOddsFixture[]): Processe
                 }
             },
             comments: comments,
-            venue: fixture.venue ? { name: fixture.venue.name, city: fixture.venue.city_name } : undefined,
-            referee: fixture.referee ? { name: fixture.referee.fullname } : undefined,
+            venue: fixture.venue ? { name: fixture.venue.name, city: fixture.venue.city_name || fixture.venue.city || '' } : undefined,
+            referee: mainOfficialName ? { name: mainOfficialName } : undefined,
         };
     });
 };
@@ -293,8 +303,8 @@ export async function fetchLiveCricketFixtures(): Promise<ProcessedFixture[]> {
 export async function fetchUpcomingFootballFixtures(): Promise<ProcessedFixture[]> {
     try {
         const response = await fetch('/api/football/upcoming-fixtures');
-        const rawData: SportmonksFootballFixturesResponse = await handleApiResponse(response);
-        return processFootballFixtureData(rawData.data);
+        const rawData: SportmonksV3FixturesResponse = await handleApiResponse(response);
+        return processV3FixtureData(rawData.data, 'football');
     } catch (error) {
         console.error('Error in fetchUpcomingFootballFixtures service:', error);
         throw error;
@@ -312,10 +322,10 @@ export async function fetchUpcomingCricketFixtures(): Promise<ProcessedFixture[]
     }
 }
 
-async function fetchFootballFixtureById(fixtureId: number): Promise<SportmonksOddsFixture> {
+async function fetchFootballFixtureById(fixtureId: number): Promise<SportmonksV3Fixture> {
     try {
         const response = await fetch(`/api/football/fixtures?fixtureId=${fixtureId}`);
-        const fixtureResponse: SportmonksSingleFixtureResponse = await handleApiResponse(response);
+        const fixtureResponse: SportmonksSingleV3FixtureResponse = await handleApiResponse(response);
         return fixtureResponse.data;
     } catch (error) {
         console.error('Error in fetchFootballFixtureById service:', error);
@@ -323,13 +333,13 @@ async function fetchFootballFixtureById(fixtureId: number): Promise<SportmonksOd
     }
 }
 
-async function fetchCricketFixtureById(fixtureId: number): Promise<SportmonksCricketV2Fixture> {
+async function fetchCricketFixtureById(fixtureId: number): Promise<SportmonksV3Fixture> {
     try {
         const response = await fetch(`/api/cricket/fixtures?fixtureId=${fixtureId}`);
-        const fixtureResponse: SportmonksSingleCricketV2FixtureResponse = await handleApiResponse(response);
+        const fixtureResponse: SportmonksSingleV3FixtureResponse = await handleApiResponse(response);
         return fixtureResponse.data;
     } catch (error) {
-        console.error('Error in fetchCricketFixtureById (V2) service:', error);
+        console.error('Error in fetchCricketFixtureById (V3) service:', error);
         throw error;
     }
 }
@@ -338,10 +348,10 @@ export async function fetchFixtureDetails(fixtureId: number, sport: 'football' |
     try {
         if (sport === 'football') {
             const rawFixture = await fetchFootballFixtureById(fixtureId);
-            return processFootballFixtureData([rawFixture])[0];
+            return processV3FixtureData([rawFixture], 'football')[0];
         } else if (sport === 'cricket') {
             const rawFixture = await fetchCricketFixtureById(fixtureId);
-            return processCricketV2FixtureData([rawFixture])[0];
+            return processV3FixtureData([rawFixture], 'cricket')[0];
         }
         throw new Error(`Unsupported sport type for fetchFixtureDetails: ${sport}`);
     } catch (error) {
