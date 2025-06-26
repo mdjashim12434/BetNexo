@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     
     try {
         const response = await fetch(url, {
-            next: { revalidate: 60 * 15 } // Cache for 15 minutes
+            cache: 'no-store' // Disable cache to ensure fresh data
         });
 
         if (!response.ok) {
