@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -227,8 +226,8 @@ export default function TransactionsLogTab() {
                     <TableHead>User</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Amount</TableHead>
-                    <TableHead>Method</TableHead>
-                    <TableHead>Requested At</TableHead>
+                    <TableHead className="hidden sm:table-cell">Method</TableHead>
+                    <TableHead className="hidden lg:table-cell">Requested At</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-center">Details</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -239,7 +238,7 @@ export default function TransactionsLogTab() {
                     <TableRow key={txn.id} className="hover:bg-muted/50">
                       <TableCell>
                         <div>{txn.userName}</div>
-                        <div className="text-xs text-muted-foreground">{txn.userId}</div>
+                        <div className="text-xs text-muted-foreground hidden sm:block">{txn.userId}</div>
                       </TableCell>
                       <TableCell>
                         <Badge
@@ -253,8 +252,8 @@ export default function TransactionsLogTab() {
                         </Badge>
                       </TableCell>
                       <TableCell>{txn.amount.toFixed(2)} {txn.currency}</TableCell>
-                      <TableCell>{txn.method}</TableCell>
-                      <TableCell className="text-xs">{formatDate(txn.requestedAt)}</TableCell>
+                      <TableCell className="hidden sm:table-cell">{txn.method}</TableCell>
+                      <TableCell className="text-xs hidden lg:table-cell">{formatDate(txn.requestedAt)}</TableCell>
                       <TableCell>
                         <Badge
                           variant={getStatusBadgeVariant(txn.status)}

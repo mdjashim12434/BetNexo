@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -276,9 +275,9 @@ export default function PaymentMethodsManagementTab() {
                   <TableRow>
                     <TableHead>Logo</TableHead>
                     <TableHead>Name</TableHead>
-                    <TableHead>Payment Number</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Limits (Min/Max)</TableHead>
+                    <TableHead className="hidden sm:table-cell">Payment Number</TableHead>
+                    <TableHead className="hidden md:table-cell">Type</TableHead>
+                    <TableHead className="hidden lg:table-cell">Limits (Min/Max)</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -302,10 +301,13 @@ export default function PaymentMethodsManagementTab() {
                           }}
                         />
                       </TableCell>
-                      <TableCell>{method.name}</TableCell>
-                      <TableCell>{method.companyAccountNumber}</TableCell>
-                      <TableCell className="capitalize">{method.companyAccountType}</TableCell>
-                      <TableCell>{method.minAmount} / {method.maxAmount || 'N/A'}</TableCell>
+                      <TableCell>
+                        <div>{method.name}</div>
+                        <div className="text-xs text-muted-foreground sm:hidden">{method.companyAccountNumber}</div>
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell">{method.companyAccountNumber}</TableCell>
+                      <TableCell className="capitalize hidden md:table-cell">{method.companyAccountType}</TableCell>
+                      <TableCell className="hidden lg:table-cell">{method.minAmount} / {method.maxAmount || 'N/A'}</TableCell>
                       <TableCell>
                         <Button variant="ghost" size="sm" onClick={() => handleToggleEnable(method)} className={cn("h-auto px-2 py-1 text-xs", method.enabled ? "text-green-600 hover:text-green-700" : "text-red-600 hover:text-red-700")}>
                           {method.enabled ? <Eye className="mr-1 h-3.5 w-3.5" /> : <EyeOff className="mr-1 h-3.5 w-3.5" />}
