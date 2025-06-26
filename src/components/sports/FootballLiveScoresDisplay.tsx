@@ -23,11 +23,12 @@ export default function FootballLiveScoresDisplay() {
   const { toast } = useToast();
 
   const loadScores = useCallback(async (isManualRefresh: boolean = false) => {
-    if (loading && !isManualRefresh) return; // Prevent multiple simultaneous fetches
-    
-    if (!isManualRefresh) {
-      setLoading(true);
+    // For subsequent refreshes (manual or interval), we don't want the main loader, just the button spinner.
+    // The main `loading` state is for the initial load only.
+    if (!loading) {
+        setLoading(true); // Trigger refresh spinner on subsequent loads
     }
+    
     setError(null);
     try {
       const fetchedMatches = await fetchFootballLiveScores();
@@ -45,10 +46,10 @@ export default function FootballLiveScoresDisplay() {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [toast, loading]);
 
   useEffect(() => {
-    loadScores();
+    loadScores(); // Initial fetch
     const intervalId = setInterval(() => loadScores(), REFRESH_INTERVAL_MS);
     return () => clearInterval(intervalId);
   }, [loadScores]);
@@ -84,7 +85,7 @@ export default function FootballLiveScoresDisplay() {
           </CardDescription>
         </div>
          <Button onClick={() => loadScores(true)} variant="ghost" size="icon" className="text-muted-foreground hover:text-primary" disabled={loading}>
-          <RefreshCw className={cn("h-5 w-5", { "animate-spin": loading && matches.length > 0 })} />
+          <RefreshCw className={cn("h-5 w-5", { "animate-spin": loading })} />
           <span className="sr-only">Refresh Scores</span>
         </Button>
       </CardHeader>
