@@ -27,8 +27,8 @@ export async function GET(request: NextRequest) {
   const startDate = formatDate(today);
   const endDate = formatDate(futureDate);
 
-  // Includes for upcoming fixtures. localteam/visitorteam, league for info, odds for betting.
-  const includes = "localteam,visitorteam,league,odds";
+  // Includes for upcoming fixtures. localteam/visitorteam, league for info. Removed odds.
+  const includes = "localteam,visitorteam,league";
   
   // For v2.0, date range is a filter parameter
   const dateFilter = `&filter[starts_between]=${startDate},${endDate}`;
