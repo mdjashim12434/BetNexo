@@ -90,7 +90,8 @@ export default function FootballLiveScoresDisplay() {
         )}
         <div className="space-y-3">
           {matches.map((match) => (
-            <Link key={match.id} href={`/match/${match.id}?sport=football`} passHref>
+            <Link key={match.id} href={`/match/${match.id}?sport=football`} legacyBehavior passHref>
+              <a className="block">
                 <Card className="overflow-hidden bg-background border border-border/50 p-3 sm:p-4 hover:border-primary/50 transition-all cursor-pointer">
                 <div className="flex justify-between items-center mb-2">
                     <p className="text-xs text-muted-foreground truncate">{match.leagueName}</p>
@@ -114,6 +115,7 @@ export default function FootballLiveScoresDisplay() {
                   </p>
                 )}
                 </Card>
+              </a>
             </Link>
           ))}
         </div>

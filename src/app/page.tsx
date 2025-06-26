@@ -111,20 +111,22 @@ export default function HomePage() {
         <ScrollArea className="w-full whitespace-nowrap">
            <div className="flex gap-3 px-1 py-1">
               {promoBanners.map(banner => (
-                <Link href={banner.href} key={banner.title}>
-                  <Card className="w-64 h-32 overflow-hidden relative group">
-                    <Image 
-                      src={`https://placehold.co/400x200.png`} 
-                      alt={banner.title} 
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-300"
-                      data-ai-hint={banner.imageHint}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                    <CardContent className="absolute bottom-0 left-0 p-3">
-                      <h3 className="text-white font-bold text-sm">{banner.title}</h3>
-                    </CardContent>
-                  </Card>
+                <Link href={banner.href} key={banner.title} legacyBehavior passHref>
+                  <a className="block">
+                    <Card className="w-64 h-32 overflow-hidden relative group">
+                      <Image 
+                        src={`https://placehold.co/400x200.png`} 
+                        alt={banner.title} 
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+                        data-ai-hint={banner.imageHint}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                      <CardContent className="absolute bottom-0 left-0 p-3">
+                        <h3 className="text-white font-bold text-sm">{banner.title}</h3>
+                      </CardContent>
+                    </Card>
+                  </a>
                 </Link>
               ))}
            </div>
