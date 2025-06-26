@@ -29,10 +29,17 @@ export async function GET(request: NextRequest) {
 
     // Includes for upcoming fixtures. participants = teams, league for league info.
     const includes = "participants;league.country;state;odds";
-    const marketFilter = "markets:1"; // Filter for H2H odds only to optimize the call
+    
+    // Filter for H2H odds only to optimize the call
+    const marketFilter = "markets:1"; 
+
+    // Filter for leagues included in the user's plan
+    const footballLeagueIds = [1107, 1502, 1658, 636, 1088, 1085, 1583, 1356, 181, 211, 1128, 208, 1798, 648, 651, 654, 1631, 1682, 229, 983, 989];
+    const leagueIdsFilter = `leagueIds:${footballLeagueIds.join(',')}`;
 
     // The MatchCard only displays H2H odds, so filtering here reduces payload size.
-    const url = `${SPORTMONKS_FOOTBALL_API_URL}/fixtures/between/${startDate}/${endDate}?api_token=${apiKey}&include=${includes}&filters=${marketFilter}`;
+    const combinedFilters = `${marketFilter};${leagueIdsFilter}`;
+    const url = `${SPORTMONKS_FOOTBALL_API_URL}/fixtures/between/${startDate}/${endDate}?api_token=${apiKey}&include=${includes}&filters=${combinedFilters}`;
     
     try {
         const response = await fetch(url, {

@@ -15,7 +15,12 @@ export async function GET(request: NextRequest) {
 
   // Recommended includes for comprehensive live score data, including player details for events
   const includes = "participants;scores;periods;events.type;events.participant;league.country;state";
-  const url = `${SPORTMONKS_API_BASE_URL}?api_token=${apiKey}&include=${includes}`;
+  
+  // Filter for leagues included in the user's plan
+  const footballLeagueIds = [1107, 1502, 1658, 636, 1088, 1085, 1583, 1356, 181, 211, 1128, 208, 1798, 648, 651, 654, 1631, 1682, 229, 983, 989];
+  const leagueIdsParam = `&leagues=${footballLeagueIds.join(',')}`;
+
+  const url = `${SPORTMONKS_API_BASE_URL}?api_token=${apiKey}&include=${includes}${leagueIdsParam}`;
 
   try {
     const apiResponse = await fetch(url, {
