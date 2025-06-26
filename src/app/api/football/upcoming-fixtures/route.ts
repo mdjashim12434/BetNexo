@@ -4,19 +4,36 @@ import { NextResponse, type NextRequest } from 'next/server';
 const SPORTMONKS_FOOTBALL_API_URL = 'https://api.sportmonks.com/v3/football';
 const apiKey = process.env.SPORTMONKS_API_KEY;
 
-// This route handles fetching upcoming fixtures
+// Helper to format date to YYYY-MM-DD
+const formatDate = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+// This route handles fetching upcoming fixtures for a specific date range
 export async function GET(request: NextRequest) {
     if (!apiKey) {
         console.error("SPORTMONKS_API_KEY is not set in environment variables.");
         return NextResponse.json({ error: 'API key is not configured on the server.' }, { status: 500 });
     }
+    
+    // Define the date range for upcoming fixtures (e.g., today to 7 days from now)
+    const today = new Date();
+    const futureDate = new Date();
+    futureDate.setDate(today.getDate() + 7); // Fetch matches for the next 7 days
+    
+    const startDate = formatDate(today);
+    const endDate = formatDate(futureDate);
 
-    // Includes for upcoming fixtures. We get participants, league, state, and basic odds.
+    // Includes for upcoming fixtures. participants = teams, league for league info.
     const includes = "participants;league.country;state;odds";
     // Filter for a popular bookmaker (id: 2 for Bet365) and main market (id: 1 for 3-Way Result) to get odds data
     const filters = "bookmakers:2;markets:1"; 
 
-    const url = `${SPORTMONKS_FOOTBALL_API_URL}/fixtures/upcoming?api_token=${apiKey}&include=${includes}&filters=${filters}`;
+    // Using the /fixtures/between/{START_DATE}/{END_DATE} endpoint as requested by user's intent
+    const url = `${SPORTMONKS_FOOTBALL_API_URL}/fixtures/between/${startDate}/${endDate}?api_token=${apiKey}&include=${includes}&filters=${filters}`;
     
     try {
         const response = await fetch(url, {
