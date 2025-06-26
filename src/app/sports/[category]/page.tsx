@@ -12,8 +12,8 @@ import SportsCategoryClientContent from '@/components/sports/SportsCategoryClien
 const validCategories = ['live', 'cricket', 'football', 'upcoming', 'all-sports'];
 const categoryMapping: { [key: string]: string } = {
   live: 'Live Matches',
-  cricket: 'Cricket Matches',
-  football: 'Football Matches',
+  cricket: 'Cricket',
+  football: 'Football',
   upcoming: 'Upcoming Matches',
   'all-sports': 'All Sports',
 };
@@ -35,46 +35,62 @@ export default async function SportCategoryPage({ params }: SportCategoryPagePro
 
   let matchesForCategory: ProcessedFixture[] = [];
   let fetchError: string | null = null;
+  const errorMessages: string[] = [];
+
+  const handleFetchError = (sport: string, type: string, e: any) => {
+    const message = e.message || `Unknown error fetching ${type} ${sport} fixtures.`;
+    console.error(`Failed to fetch ${type} ${sport} fixtures:`, message);
+    errorMessages.push(`Could not load ${type} ${sport} matches.`);
+    return []; // Return empty array on failure to not break Promise.all
+  };
 
   try {
     if (categorySlug === 'live') {
       const [footballMatches, cricketMatches] = await Promise.all([
-        fetchLiveFootballFixtures().catch((e) => {
-          console.error('Failed to fetch live football fixtures:', e.message);
-          return []; // Return empty array on failure to not break Promise.all
-        }),
-        fetchLiveCricketFixtures().catch((e) => {
-          console.error('Failed to fetch live cricket fixtures:', e.message);
-          return []; // Return empty array on failure
-        }),
+        fetchLiveFootballFixtures().catch((e) => handleFetchError('football', 'live', e)),
+        fetchLiveCricketFixtures().catch((e) => handleFetchError('cricket', 'live', e)),
       ]);
       matchesForCategory = [...footballMatches, ...cricketMatches];
     } else if (categorySlug === 'football') {
-      matchesForCategory = await fetchUpcomingFootballFixtures();
+      const [liveMatches, upcomingMatches] = await Promise.all([
+        fetchLiveFootballFixtures().catch((e) => handleFetchError('football', 'live', e)),
+        fetchUpcomingFootballFixtures().catch((e) => handleFetchError('football', 'upcoming', e)),
+      ]);
+      matchesForCategory = [...liveMatches, ...upcomingMatches];
     } else if (categorySlug === 'cricket') {
-      matchesForCategory = await fetchUpcomingCricketFixtures();
+      const [liveMatches, upcomingMatches] = await Promise.all([
+        fetchLiveCricketFixtures().catch((e) => handleFetchError('cricket', 'live', e)),
+        fetchUpcomingCricketFixtures().catch((e) => handleFetchError('cricket', 'upcoming', e)),
+      ]);
+      matchesForCategory = [...liveMatches, ...upcomingMatches];
     } else if (categorySlug === 'upcoming' || categorySlug === 'all-sports') {
       const [footballMatches, cricketMatches] = await Promise.all([
-        fetchUpcomingFootballFixtures().catch((e) => {
-          console.error('Failed to fetch upcoming football fixtures:', e.message);
-          return [];
-        }),
-        fetchUpcomingCricketFixtures().catch((e) => {
-          console.error('Failed to fetch upcoming cricket fixtures:', e.message);
-          return [];
-        }),
+        fetchUpcomingFootballFixtures().catch((e) => handleFetchError('football', 'upcoming', e)),
+        fetchUpcomingCricketFixtures().catch((e) => handleFetchError('cricket', 'upcoming', e)),
       ]);
       matchesForCategory = [...footballMatches, ...cricketMatches];
     }
   } catch (error: any) {
-    console.error(`Failed to fetch fixtures for ${categorySlug}:`, error);
-    fetchError =
-      error.message ||
-      `An unknown error occurred while fetching matches for ${categorySlug}.`;
+    console.error(`A top-level error occurred while fetching fixtures for ${categorySlug}:`, error);
+    fetchError = error.message || `An unknown error occurred while fetching matches for ${categorySlug}.`;
   }
 
-  // Pass all fetched matches for client-side filtering if needed
-  const allMatchesForFiltering = matchesForCategory;
+  // Combine any individual fetch errors into one message
+  if (errorMessages.length > 0) {
+    fetchError = (fetchError ? fetchError + '\n' : '') + errorMessages.join('\n');
+  }
+
+  // Sort matches to show live ones first
+  matchesForCategory.sort((a, b) => {
+    const aIsLive = a.state?.state === 'INPLAY' || a.state?.state === 'Live';
+    const bIsLive = b.state?.state === 'INPLAY' || b.state?.state === 'Live';
+
+    if (aIsLive && !bIsLive) return -1; // a comes first
+    if (!aIsLive && bIsLive) return 1;  // b comes first
+
+    // If both are live or both are not, sort by start time (soonest first)
+    return new Date(a.startingAt).getTime() - new Date(b.startingAt).getTime();
+  });
 
   return (
     <AppLayout>
@@ -82,7 +98,6 @@ export default async function SportCategoryPage({ params }: SportCategoryPagePro
         initialMatches={matchesForCategory}
         categorySlug={categorySlug}
         categoryName={categoryName}
-        allMatchesForFiltering={allMatchesForFiltering}
         error={fetchError}
       />
     </AppLayout>
