@@ -50,7 +50,13 @@ export default function SportsCategoryClientContent({
   const { toast } = useToast();
 
   const showTabs = categorySlug === 'football' || categorySlug === 'cricket';
-  const [activeTab, setActiveTab] = useState('all');
+  
+  const liveCount = useMemo(() => initialMatches.filter(m => m.state?.state === 'INPLAY' || m.state?.state === 'Live').length, [initialMatches]);
+  const upcomingCount = useMemo(() => initialMatches.filter(m => m.state?.state !== 'INPLAY' && m.state?.state !== 'Live' && m.state?.state !== 'Finished' && m.state?.state !== 'FT').length, [initialMatches]);
+
+  const [activeTab, setActiveTab] = useState(
+    showTabs && liveCount > 0 ? 'live' : 'all'
+  );
 
   // Fetch leagues if on the all-sports page
   useEffect(() => {
@@ -93,9 +99,6 @@ export default function SportsCategoryClientContent({
       league.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [leagues, searchTerm]);
-
-  const liveCount = useMemo(() => initialMatches.filter(m => m.state?.state === 'INPLAY' || m.state?.state === 'Live').length, [initialMatches]);
-  const upcomingCount = useMemo(() => initialMatches.filter(m => m.state?.state !== 'INPLAY' && m.state?.state !== 'Live' && m.state?.state !== 'Finished' && m.state?.state !== 'FT').length, [initialMatches]);
 
   const filteredMatches = useMemo(() => {
     let matches = initialMatches;
