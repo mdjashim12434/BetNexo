@@ -6,33 +6,57 @@ import BottomNav from '@/components/navigation/BottomNav';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { Flame, ListChecks, CalendarClock, LucideIcon } from 'lucide-react';
+import { Star, Swords, Gamepad2, Dice5, Zap, Dribbble, Goal, CheckSquare, Tablet, Circle, Disc, Image as ImageIcon } from 'lucide-react';
 import { CricketIcon } from '@/components/icons/CricketIcon';
-import { Goal } from 'lucide-react'; 
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import LiveScoresDisplay from '@/components/sports/LiveScoresDisplay';
 import FootballLiveScoresDisplay from '@/components/sports/FootballLiveScoresDisplay';
+import Image from 'next/image';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { cn } from '@/lib/utils';
 
-interface SportCategoryButton {
-  name: string;
-  href: string;
-  icon: LucideIcon | React.ElementType; 
-  borderColorClass?: string;
-}
+// --- Top Navigation Data ---
+const topNavItems = [
+  { name: 'Top', href: '#', icon: Star },
+  { name: 'Sports', href: '/sports/all-sports', icon: Swords },
+  { name: 'Esports', href: '#', icon: Gamepad2 },
+  { name: 'Casino', href: '/casino', icon: Dice5 },
+  { name: 'Fast Games', href: '#', icon: Zap },
+];
 
-const sportCategoryButtons: SportCategoryButton[] = [
-  { name: 'Live', href: '/sports/live', icon: Flame, borderColorClass: 'hover:border-red-500' },
-  { name: 'Cricket', href: '/sports/cricket', icon: CricketIcon, borderColorClass: 'hover:border-green-500' },
-  { name: 'Football', href: '/sports/football', icon: Goal, borderColorClass: 'hover:border-blue-500' },
-  { name: 'Upcoming', href: '/sports/upcoming', icon: CalendarClock, borderColorClass: 'hover:border-yellow-500' },
-  { name: 'All Sports', href: '/sports/all-sports', icon: ListChecks, borderColorClass: 'hover:border-gray-500' },
+// --- Sports Grid Data ---
+const sportsGridItems = [
+  { name: 'All', href: '/sports/all-sports', icon: CheckSquare },
+  { name: 'Cricket', href: '/sports/cricket', icon: CricketIcon },
+  { name: 'Football', href: '/sports/football', icon: Goal },
+  { name: 'Basketball', href: '#', icon: Dribbble },
+  { name: 'Table Tennis', href: '#', icon: Tablet },
+  { name: 'Tennis', href: '#', icon: Circle },
+  { name: 'Ice Hockey', href: '#', icon: Disc },
+];
+
+// --- Promotional Banners Data ---
+const promoBanners = [
+  { title: "WINtality Blast", imageHint: "cricket player celebrating", href: "#" },
+  { title: "Grand Slam - Grand Win", imageHint: "tennis players action", href: "#" },
+  { title: "Sure Bet", imageHint: "cricket ball fire", href: "#" },
+  { title: "Deposit Bonus", imageHint: "money coins gold", href: "/deposit" },
+];
+
+// --- Casino Quick Links Data ---
+const casinoLinks = [
+  { name: "All Games", imageHint: "dice pattern", href: "/casino" },
+  { name: "Western slot", imageHint: "cowboy slot machine", href: "/casino" },
+  { name: "21", imageHint: "blackjack cards", href: "/casino" },
+  { name: "Under and Over 7", imageHint: "dice seven", href: "/casino" },
+  { name: "Midgard Zombies", imageHint: "zombie cartoon", href: "/casino" },
 ];
 
 export default function HomePage() {
-  const { user, loadingAuth } = useAuth(); 
+  const { user, loadingAuth } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -41,52 +65,105 @@ export default function HomePage() {
     }
   }, [user, loadingAuth, router]);
 
-  if (loadingAuth) {
-    return <AppLayout><div className="flex items-center justify-center min-h-screen"><div className="text-center p-10">Loading session...</div></div></AppLayout>;
+  if (loadingAuth || !user) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center min-h-[calc(100vh-theme(spacing.32))]">
+          <div className="text-center p-10">Loading...</div>
+        </div>
+      </AppLayout>
+    );
   }
 
-  if (!user) {
-    return <AppLayout><div className="flex items-center justify-center min-h-screen"><div className="text-center p-10">Redirecting to login...</div></div></AppLayout>;
-  }
-  
   return (
     <AppLayout>
-      <div className="space-y-6 pb-16">
+      <div className="space-y-4 md:space-y-6 pb-24">
         
-        <section>
-          <ScrollArea className="w-full whitespace-nowrap rounded-md pb-2.5">
-            <div className="flex space-x-3 p-1">
-              {sportCategoryButtons.map((category) => (
-                <Link href={category.href} key={category.name} legacyBehavior>
-                  <a className={`flex flex-col items-center justify-center p-3 border-2 border-transparent rounded-lg bg-card hover:shadow-md transition-all w-24 h-24 text-center ${category.borderColorClass}`}>
-                    <category.icon className="h-7 w-7 mb-1.5 text-primary" />
-                    <span className="text-xs font-medium text-foreground truncate">{category.name}</span>
+        {/* Top Navigation */}
+        <ScrollArea className="w-full whitespace-nowrap -mt-4">
+          <div className="flex justify-between items-center p-2 gap-4">
+            {topNavItems.map((item, index) => (
+              <Link href={item.href} key={item.name} legacyBehavior>
+                <a className={cn("flex flex-col items-center justify-center gap-1.5 pb-2 text-muted-foreground hover:text-primary transition-colors", index === 0 ? "text-primary border-b-2 border-primary" : "")}>
+                  <item.icon className="h-6 w-6" />
+                  <span className="text-xs font-medium tracking-tight">{item.name}</span>
+                </a>
+              </Link>
+            ))}
+          </div>
+          <ScrollBar orientation="horizontal" className="hidden"/>
+        </ScrollArea>
+        
+        {/* Sports Grid */}
+        <ScrollArea className="w-full whitespace-nowrap">
+          <div className="flex gap-3 px-1 py-1">
+            {sportsGridItems.map(sport => (
+               <Link href={sport.href} key={sport.name} legacyBehavior>
+                  <a className="flex flex-col items-center justify-center w-20 h-20 bg-card rounded-lg shadow-sm hover:shadow-md transition-shadow gap-1.5 p-2">
+                    <div className="w-8 h-8 flex items-center justify-center bg-primary/20 rounded-full">
+                       <sport.icon className="h-5 w-5 text-primary" />
+                    </div>
+                    <span className="text-xs font-medium text-foreground truncate">{sport.name}</span>
                   </a>
+              </Link>
+            ))}
+          </div>
+           <ScrollBar orientation="horizontal" className="hidden"/>
+        </ScrollArea>
+
+        {/* Promotional Banners */}
+        <ScrollArea className="w-full whitespace-nowrap">
+           <div className="flex gap-3 px-1 py-1">
+              {promoBanners.map(banner => (
+                <Link href={banner.href} key={banner.title}>
+                  <Card className="w-64 h-32 overflow-hidden relative group">
+                    <Image 
+                      src={`https://placehold.co/400x200.png`} 
+                      alt={banner.title} 
+                      layout="fill"
+                      objectFit="cover"
+                      className="group-hover:scale-105 transition-transform duration-300"
+                      data-ai-hint={banner.imageHint}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                    <CardContent className="absolute bottom-0 left-0 p-3">
+                      <h3 className="text-white font-bold text-sm">{banner.title}</h3>
+                    </CardContent>
+                  </Card>
                 </Link>
               ))}
-            </div>
-            <ScrollBar orientation="horizontal" />
-          </ScrollArea>
-        </section>
-        
-        <Link href="/casino">
-          <Card className="bg-gradient-to-r from-purple-600 to-indigo-600 text-primary-foreground shadow-xl hover:opacity-90 transition-opacity cursor-pointer">
-            <CardContent className="p-6 text-center">
-              <h2 className="font-headline text-2xl font-bold">Visit Our Casino!</h2>
-              <p className="mt-1 text-sm">Spin the reels and win big prizes!</p>
-              <Button variant="secondary" className="mt-3 bg-background/20 hover:bg-background/30">Play Now</Button>
-            </CardContent>
-          </Card>
-        </Link>
+           </div>
+           <ScrollBar orientation="horizontal" className="hidden"/>
+        </ScrollArea>
 
+         {/* Casino Quick Links */}
+        <ScrollArea className="w-full whitespace-nowrap">
+           <div className="flex gap-4 px-1 py-1">
+             {casinoLinks.map(link => (
+                <Link href={link.href} key={link.name} legacyBehavior>
+                    <a className="flex flex-col items-center justify-center gap-2 w-20 text-center">
+                        <Avatar className="h-16 w-16 border-2 border-primary/20">
+                            <AvatarImage src={`https://placehold.co/128x128.png`} data-ai-hint={link.imageHint}/>
+                            <AvatarFallback><ImageIcon /></AvatarFallback>
+                        </Avatar>
+                        <span className="text-xs font-medium text-muted-foreground truncate w-full">{link.name}</span>
+                    </a>
+                </Link>
+             ))}
+           </div>
+           <ScrollBar orientation="horizontal" className="hidden"/>
+        </ScrollArea>
+
+        {/* Live Matches Section */}
         <section>
-          {/* Live Football Scores Display Section */}
+          <div className="mb-2 flex justify-between items-center">
+             <h2 className="font-headline text-xl font-bold text-foreground">Top LIVE <Button variant="ghost" size="sm" className="ml-1 text-primary">Sport</Button></h2>
+             <Button variant="link" asChild><Link href="/sports/live">All</Link></Button>
+          </div>
           <FootballLiveScoresDisplay />
-        </section>
-
-        <section>
-          {/* Live Cricket Scores Display Section */}
-          <LiveScoresDisplay />
+          <div className="mt-4">
+             <LiveScoresDisplay />
+          </div>
         </section>
 
       </div>

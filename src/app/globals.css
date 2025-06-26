@@ -4,79 +4,48 @@
 
 @layer base {
   :root {
-    --background: 215 39% 17%; /* #1e293b Dark Blue */
-    --foreground: 215 28% 90%; /* #e2e8f0 Light Slate */
-
-    --muted: 215 28% 27%; /* Slightly lighter than background for muted elements */
-    --muted-foreground: 215 20% 55%; /* Lighter text for muted foreground */
-
-    --popover: 216 25% 22%; /* Similar to card */
-    --popover-foreground: 215 28% 90%; /* Same as main foreground */
-
-    --card: 216 25% 22%; /* #293548 Darker Card */
-    --card-foreground: 215 28% 90%; /* Light Slate */
-
-    --border: 215 25% 30%; /* #3b4a61 Subtle Border */
-    --input: 215 25% 30%; /* Same as border */
-
-    --primary: 217 90% 61%; /* #4287f5 Saturated Blue */
-    --primary-foreground: 0 0% 100%; /* White text on primary */
-
-    --secondary: 215 28% 27%; /* A slightly lighter blue-gray for secondary elements */
-    --secondary-foreground: 0 0% 100%; /* White text on secondary */
-
-    --accent: 40 100% 67%; /* #ffc857 Yellow */
-    --accent-foreground: 215 39% 17%; /* Dark blue/black text on accent */
-
-    --destructive: 0 72% 51%; /* Standard destructive red */
-    --destructive-foreground: 0 0% 100%; /* White text */
-
-    --ring: 217 90% 61%; /* Saturated Blue for focus rings */
-
+    --background: 220 13% 95%; /* #f0f2f5 - Light Gray */
+    --foreground: 220 10% 10%; /* #1c1e21 - Dark Gray */
+    --card: 0 0% 100%; /* #ffffff - White */
+    --card-foreground: 220 10% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 10% 10%;
+    --primary: 45 96% 58%; /* #fbc02d - Gold/Yellow */
+    --primary-foreground: 220 10% 10%;
+    --secondary: 220 13% 91%; /* #e9ebee */
+    --secondary-foreground: 220 10% 10%;
+    --muted: 220 13% 91%;
+    --muted-foreground: 220 4% 42%; /* #65676b - Medium Gray */
+    --accent: 220 13% 96%;
+    --accent-foreground: 220 10% 10%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 10% 88%; /* #dddee2 - Light Border */
+    --input: 220 10% 88%;
+    --ring: 45 96% 58%;
     --radius: 0.5rem;
-
-    /* Sidebar specific colors, can be adjusted if sidebar is heavily used */
-    --sidebar-background: 215 39% 15%; /* Slightly darker than main background */
-    --sidebar-foreground: 215 28% 85%;
-    --sidebar-primary: 217 90% 61%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 40 100% 67%;
-    --sidebar-accent-foreground: 215 39% 17%;
-    --sidebar-border: 215 25% 25%;
-    --sidebar-ring: 217 90% 61%;
   }
 
-  /* Remove .dark specific overrides if the app is primarily dark by default */
-  /* If a toggleable dark mode is not required, these can be removed or merged into :root */
   .dark {
-    --background: 215 39% 17%;
-    --foreground: 215 28% 90%;
-    --muted: 215 28% 27%;
-    --muted-foreground: 215 20% 55%;
-    --popover: 216 25% 22%;
-    --popover-foreground: 215 28% 90%;
-    --card: 216 25% 22%;
-    --card-foreground: 215 28% 90%;
-    --border: 215 25% 30%;
-    --input: 215 25% 30%;
-    --primary: 217 90% 61%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 215 28% 27%;
-    --secondary-foreground: 0 0% 100%;
-    --accent: 40 100% 67%;
-    --accent-foreground: 215 39% 17%;
-    --destructive: 0 72% 51%;
+    --background: 220 13% 10%;
+    --foreground: 220 13% 95%;
+    --card: 220 13% 15%;
+    --card-foreground: 220 13% 95%;
+    --popover: 220 13% 15%;
+    --popover-foreground: 220 13% 95%;
+    --primary: 45 96% 58%;
+    --primary-foreground: 220 10% 10%;
+    --secondary: 220 13% 20%;
+    --secondary-foreground: 220 13% 95%;
+    --muted: 220 13% 20%;
+    --muted-foreground: 220 4% 62%;
+    --accent: 220 13% 25%;
+    --accent-foreground: 220 13% 95%;
+    --destructive: 0 63% 31%;
     --destructive-foreground: 0 0% 100%;
-    --ring: 217 90% 61%;
-
-    --sidebar-background: 215 39% 15%;
-    --sidebar-foreground: 215 28% 85%;
-    --sidebar-primary: 217 90% 61%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 40 100% 67%;
-    --sidebar-accent-foreground: 215 39% 17%;
-    --sidebar-border: 215 25% 25%;
-    --sidebar-ring: 217 90% 61%;
+    --border: 220 13% 25%;
+    --input: 220 13% 25%;
+    --ring: 45 96% 58%;
   }
 }
 
@@ -86,6 +55,5 @@
   }
   body {
     @apply bg-background text-foreground;
-    /* Removed font-family: Arial, Helvetica, sans-serif; as it will be handled by Tailwind config */
   }
 }
