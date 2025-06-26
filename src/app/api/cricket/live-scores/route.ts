@@ -10,8 +10,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'API key is not configured on the server.' }, { status: 500 });
   }
 
-  // Using fixtures endpoint with LIVE status filter to get more detailed data like events.
-  const includes = "participants,league,runs,state,events,scores";
+  // Using fixtures endpoint with LIVE status filter. 
+  // 'events' and 'scores' are not valid includes for cricket fixtures and cause a bad request.
+  // Correct includes for cricket are participants, league, runs, state.
+  const includes = "participants,league,runs,state";
   const statusFilter = "LIVE";
   const url = `${SPORTMONKS_CRICKET_API_URL}/fixtures?filter[status]=${statusFilter}&api_token=${apiKey}&include=${includes}`;
 
