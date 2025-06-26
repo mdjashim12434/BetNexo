@@ -2,8 +2,8 @@
 'use client';
 
 import AppLayout from "@/components/AppLayout";
-import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarInset } from "@/components/ui/sidebar"; // Removed SidebarFooter
-import { LayoutDashboard, Users, DollarSign, History, Briefcase, ShieldAlert, ListChecks, CreditCard } from "lucide-react"; // Removed LogOut
+import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarInset, SidebarFooter } from "@/components/ui/sidebar";
+import { LayoutDashboard, Users, DollarSign, History, Briefcase, ShieldAlert, ListChecks, CreditCard, LogOut } from "lucide-react";
 import UserManagementTab from "@/components/admin/UserManagementTab";
 import BalanceControlTab from "@/components/admin/BalanceControlTab";
 import AgentManagementTab from "@/components/admin/AgentManagementTab";
@@ -15,7 +15,7 @@ import PaymentMethodsManagementTab from "@/components/admin/PaymentMethodsManage
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-// Removed useToast as it's no longer used for logout here
+import { useToast } from "@/hooks/use-toast";
 
 interface NavItem {
   id: string;
@@ -35,9 +35,9 @@ const navItems: NavItem[] = [
 ];
 
 export default function AdminPage() {
-  const { user, loadingAuth } = useAuth(); // Removed logout from here
+  const { user, loadingAuth, logout } = useAuth();
   const router = useRouter();
-  // Removed toast hook
+  const { toast } = useToast();
   const [activeSection, setActiveSection] = useState<string>('dashboard');
 
   useEffect(() => {
@@ -56,6 +56,12 @@ export default function AdminPage() {
       // The email verification check is now handled by the AuthContext.
     }
   }, [user, loadingAuth, router]);
+  
+  const handleLogout = () => {
+    logout();
+    toast({ title: "Logged Out", description: "You have been logged out successfully." });
+    router.push('/login');
+  };
 
 
   // Show loading screen while auth state is being determined or role is being fetched
@@ -106,7 +112,20 @@ export default function AdminPage() {
                 ))}
               </SidebarMenu>
             </SidebarContent>
-            {/* SidebarFooter with logout button removed */}
+            <SidebarFooter className="p-2 mt-auto border-t border-border/60">
+               <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      onClick={handleLogout}
+                      tooltip={{ children: "Logout", side: "right", align: "center" }}
+                      className="justify-start"
+                    >
+                      <LogOut className="h-5 w-5" />
+                      <span>Logout</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+            </SidebarFooter>
           </Sidebar>
           <SidebarInset className="flex-1 bg-background">
             <div className="p-4 md:p-6 lg:p-8">
