@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const apiResponse = await fetch(url, {
-      next: { revalidate: 10 } // Cache for 10 seconds for live data
+      cache: 'no-store' // Always fetch fresh data
     });
 
     if (!apiResponse.ok) {
@@ -42,5 +42,3 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'An internal server error occurred.' }, { status: 500 });
   }
 }
-
-export const dynamic = 'force-dynamic';

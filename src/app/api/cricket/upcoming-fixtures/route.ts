@@ -57,5 +57,3 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'An internal server error occurred while contacting the proxy API.' }, { status: 500 });
   }
 }
-
-export const dynamic = 'force-dynamic';
