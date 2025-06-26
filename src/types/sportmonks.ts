@@ -93,6 +93,11 @@ export interface SportmonksV3Fixture {
     referee?: SportmonksReferee; // Football V3
     officials?: { data: SportmonksReferee[] }; // Cricket V3
     runs?: SportmonksV3Run[]; // Cricket V3 runs
+    scores?: FootballScore[];
+    events?: FootballEvent[];
+    statistics?: any[];
+    sidelined?: any;
+    weatherReport?: any;
 }
 
 export interface SportmonksV3FixturesResponse {
