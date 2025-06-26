@@ -5,7 +5,7 @@ import BottomNav from '@/components/navigation/BottomNav';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { Star, Swords, Gamepad2, Dice5, Zap, Dribbble, Goal, CheckSquare, Tablet, Circle, Disc, Image as ImageIcon, Monitor, Smartphone, Store } from 'lucide-react';
+import { Star, Swords, Gamepad2, Dice5, Zap, Dribbble, Goal, CheckSquare, Tablet, Circle, Disc, Image as ImageIcon } from 'lucide-react';
 import { CricketIcon } from '@/components/icons/CricketIcon';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
@@ -148,41 +148,8 @@ export default function HomePage() {
            <ScrollBar orientation="horizontal" className="hidden"/>
         </ScrollArea>
         
-        {/* Omni-channel Section */}
-        <section className="space-y-4 pt-4">
-            <div className="text-center">
-                <h2 className="font-headline text-2xl font-bold text-foreground">Omni-channel</h2>
-                <p className="text-muted-foreground">Desktop / Mobile / Betshop</p>
-            </div>
-            <Card>
-                <CardContent className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
-                    <div className="flex flex-col items-center gap-2">
-                        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-                            <Monitor className="h-8 w-8 text-primary" />
-                        </div>
-                        <h3 className="text-lg font-semibold">Desktop</h3>
-                        <p className="text-sm text-muted-foreground">Enjoy the full experience on your computer.</p>
-                    </div>
-                    <div className="flex flex-col items-center gap-2">
-                        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-                            <Smartphone className="h-8 w-8 text-primary" />
-                        </div>
-                        <h3 className="text-lg font-semibold">Mobile</h3>
-                        <p className="text-sm text-muted-foreground">Bet on the go with our mobile-friendly site.</p>
-                    </div>
-                    <div className="flex flex-col items-center gap-2">
-                        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-                            <Store className="h-8 w-8 text-primary" />
-                        </div>
-                        <h3 className="text-lg font-semibold">Betshop</h3>
-                        <p className="text-sm text-muted-foreground">Visit our physical locations for a personal touch.</p>
-                    </div>
-                </CardContent>
-            </Card>
-        </section>
-
         {/* Live Matches Section */}
-        <section>
+        <section className="pt-4">
           <div className="mb-2 flex justify-between items-center">
              <h2 className="font-headline text-xl font-bold text-foreground">Top LIVE <Button variant="ghost" size="sm" className="ml-1 text-primary">Sport</Button></h2>
              <Button variant="link" asChild><Link href="/sports/live">All</Link></Button>
