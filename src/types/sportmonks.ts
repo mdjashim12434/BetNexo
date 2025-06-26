@@ -1,6 +1,5 @@
 
 
-
 // --- Common Types ---
 export interface SportmonksOdd {
     id: number;
@@ -151,6 +150,7 @@ export interface SportmonksFootballLiveScore {
     scores: FootballScore[];
     periods: FootballPeriod[] | null;
     events: FootballEvent[];
+    round?: any; // To support the new include parameter
 }
 
 export interface SportmonksFootballLiveResponse {

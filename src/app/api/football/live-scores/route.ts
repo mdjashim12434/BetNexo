@@ -16,8 +16,8 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const leagueId = searchParams.get('leagueId');
 
-  // Reduced includes to fetch essential live score data, avoiding potentially premium data like events.
-  const includes = "participants;scores;periods;league.country;state";
+  // Includes 'events' and 'round' as requested for more detailed live data.
+  const includes = "participants;scores;periods;events;league.country;round";
   
   let url = `${SPORTMONKS_API_BASE_URL}?api_token=${apiKey}&include=${includes}`;
 
