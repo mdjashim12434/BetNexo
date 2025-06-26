@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowRight, Calendar, Clock } from "lucide-react";
 import type { FC } from 'react';
 import type { ProcessedFixture } from '@/types/sportmonks';
+import { format } from "date-fns";
 
 interface MatchCardProps {
   match: ProcessedFixture;
@@ -24,7 +25,7 @@ const MatchCard: FC<MatchCardProps> = ({ match }) => {
       <CardContent>
         <div className="flex items-center text-sm text-muted-foreground mb-3">
           {isUpcoming ? <Calendar className="h-4 w-4 mr-2" /> : <Clock className="h-4 w-4 mr-2" />}
-          <span>{new Date(match.startingAt).toLocaleString()}</span>
+          <span>{format(new Date(match.startingAt), 'MMM d, h:mm a')}</span>
           {isLive && (
             <span className="ml-auto bg-red-600 text-white px-2 py-0.5 text-xs font-bold rounded animate-pulse">LIVE</span>
           )}

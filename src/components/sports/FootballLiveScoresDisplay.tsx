@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useToast } from "@/hooks/use-toast";
 import Link from 'next/link';
+import { format } from 'date-fns';
 
 const REFRESH_INTERVAL_MS = 60000; // 60 seconds
 
@@ -145,7 +146,7 @@ export default function FootballLiveScoresDisplay() {
                 <div className="flex justify-between items-center mb-2">
                     <p className="text-xs text-muted-foreground truncate">{match.league.name}</p>
                     <Badge variant="secondary" className="text-blue-500 border-blue-500/30">
-                        {new Date(match.startingAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}, {new Date(match.startingAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {format(new Date(match.startingAt), 'MMM d, h:mm a')}
                     </Badge>
                 </div>
                 <div className="flex items-center text-md font-semibold">
