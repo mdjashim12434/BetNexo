@@ -2,16 +2,16 @@
 'use client';
 
 import Link from 'next/link';
-import { Flame, Star, Ticket, History, Menu as MenuIcon } from 'lucide-react';
+import { Flame, Radio, Ticket, History, Menu as MenuIcon } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 
 const navItems = [
   { href: '/', label: 'Popular', icon: Flame },
-  { href: '/favorites', label: 'Favorites', icon: Star },
+  { href: '/live', label: 'Live', icon: Radio },
   { href: '/bet-slip', label: 'Bet slip', icon: Ticket, isCenter: true },
-  { href: '/history', label: 'History', icon: History },
+  { href: '/bet-slip', label: 'History', icon: History },
   { href: '/profile', label: 'Menu', icon: MenuIcon },
 ];
 
