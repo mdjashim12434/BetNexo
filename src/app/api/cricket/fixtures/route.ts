@@ -18,8 +18,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'A fixtureId must be provided to get match details.' }, { status: 400 });
   }
 
-  // Fetch a single fixture with details. 'odds' is included for betting purposes.
-  const includes = "participants,league,runs,odds"; 
+  // Fetch a single fixture with details. 'odds', 'venue', and 'officials' included for more detail.
+  const includes = "participants,league,runs,odds,venue,officials"; 
   const url = `${SPORTMONKS_CRICKET_API_URL}/fixtures/${fixtureId}?api_token=${apiKey}&include=${includes}`;
 
   try {

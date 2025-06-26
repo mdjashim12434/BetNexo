@@ -20,11 +20,9 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'A fixtureId must be provided to get match details.' }, { status: 400 });
     }
 
-    // Simplified includes to be more robust. 'odds' will fetch all available odds for the default bookmaker.
-    const includes = "odds;participants;league.country;comments";
+    // Includes for comprehensive details: odds, participants, league, comments, venue, referee.
+    const includes = "odds;participants;league.country;comments;venue;referee";
 
-    // Removed specific markets and bookmakers filters to prevent API errors due to plan limitations.
-    // The API will return available odds from the default bookmaker.
     const url = `${SPORTMONKS_FOOTBALL_API_URL}/fixtures/${fixtureId}?api_token=${apiKey}&include=${includes}`;
     
     try {

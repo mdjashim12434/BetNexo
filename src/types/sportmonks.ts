@@ -38,6 +38,24 @@ export interface CricketLeague {
     country?: { id: number; name: string; }; // This is present in Football league, optional in Cricket
 }
 
+export interface SportmonksVenue {
+    id: number;
+    name: string;
+    city_name: string;
+    country_name: string;
+}
+
+export interface SportmonksReferee {
+    id: number;
+    fullname: string;
+}
+
+export interface SportmonksOfficial {
+    id: number;
+    fullname: string;
+    type: { name: string; };
+}
+
 
 // --- Types for Cricket API v3 ---
 
@@ -66,6 +84,8 @@ export interface SportmonksCricketV3Fixture {
     odds?: SportmonksOdd[];
     scores?: FootballScore[];
     events?: FootballEvent[];
+    venue?: SportmonksVenue;
+    officials?: SportmonksOfficial[];
 }
 
 export interface SportmonksCricketV3FixturesResponse {
@@ -98,6 +118,8 @@ export interface SportmonksOddsFixture {
     odds: SportmonksOdd[];
     league?: CricketLeague;
     comments?: SportmonksComment[];
+    venue?: SportmonksVenue;
+    referee?: SportmonksReferee;
 }
 
 export interface SportmonksFootballFixturesResponse {
@@ -233,4 +255,6 @@ export interface ProcessedFixture {
         };
     };
     comments?: ProcessedComment[];
+    venue?: { name: string; city: string; };
+    referee?: { name: string; };
 }

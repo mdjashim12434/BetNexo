@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, BarChart2, Info, TrendingUp, Goal, BookText, ShieldQuestion } from 'lucide-react';
+import { ArrowLeft, BarChart2, Info, TrendingUp, Goal, BookText, ShieldQuestion, MapPin, Whistle } from 'lucide-react';
 import Image from 'next/image';
 import type { ProcessedFixture } from '@/types/sportmonks';
 import { useAuth } from '@/contexts/AuthContext';
@@ -343,7 +343,33 @@ export default function MatchDetailClientContent({ initialMatch }: MatchDetailCl
               <Card>
                 <CardHeader><CardTitle className="font-headline flex items-center"><Info className="mr-2 h-5 w-5" />Match Information</CardTitle></CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground">Information about venue, referees, and conditions.</p>
+                   <div className="space-y-4 text-sm">
+                      <div>
+                        <h4 className="font-semibold text-muted-foreground">League</h4>
+                        <p>{match.league.name}{match.league.countryName !== 'N/A' && ` - ${match.league.countryName}`}</p>
+                      </div>
+                      {match.venue && (
+                        <div className="flex items-start">
+                          <MapPin className="h-4 w-4 mr-2 mt-1 text-muted-foreground"/>
+                          <div>
+                            <h4 className="font-semibold text-muted-foreground">Venue</h4>
+                            <p>{match.venue.name}, {match.venue.city}</p>
+                          </div>
+                        </div>
+                      )}
+                      {match.referee && (
+                        <div className="flex items-start">
+                           <Whistle className="h-4 w-4 mr-2 mt-1 text-muted-foreground"/>
+                           <div>
+                            <h4 className="font-semibold text-muted-foreground">{match.sportKey === 'cricket' ? 'Umpire' : 'Referee'}</h4>
+                            <p>{match.referee.name}</p>
+                           </div>
+                        </div>
+                      )}
+                      {!match.venue && !match.referee && (
+                        <p className="text-muted-foreground">Detailed match information is not available.</p>
+                      )}
+                    </div>
                 </CardContent>
               </Card>
             </TabsContent>

@@ -78,6 +78,8 @@ const processCricketFixtureData = (fixtures: SportmonksCricketV3Fixture[]): Proc
         const h2hOdds = fixture.odds?.filter(o => o.market_id === 1) || [];
         const homeOdd = h2hOdds.find(o => o.original_label === '1');
         const awayOdd = h2hOdds.find(o => o.original_label === '2');
+        
+        const mainReferee = fixture.officials?.find(o => o.type.name === 'Umpire' || o.type.name === 'Referee');
 
         return {
             id: fixture.id,
@@ -96,6 +98,8 @@ const processCricketFixtureData = (fixtures: SportmonksCricketV3Fixture[]): Proc
                 home: homeOdd ? parseFloat(homeOdd.value) : undefined,
                 away: awayOdd ? parseFloat(awayOdd.value) : undefined,
             },
+            venue: fixture.venue ? { name: fixture.venue.name, city: fixture.venue.city_name } : undefined,
+            referee: mainReferee ? { name: mainReferee.fullname } : undefined,
             comments: [],
         };
     });
@@ -160,6 +164,8 @@ const processFootballFixtureData = (fixtures: SportmonksOddsFixture[]): Processe
                 }
             },
             comments: comments,
+            venue: fixture.venue ? { name: fixture.venue.name, city: fixture.venue.city_name } : undefined,
+            referee: fixture.referee ? { name: fixture.referee.fullname } : undefined,
         };
     });
 };
