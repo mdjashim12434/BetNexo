@@ -49,6 +49,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const userDocSnap = await getDoc(userDocRef);
       if (userDocSnap.exists()) {
         const firestoreData = userDocSnap.data();
+
+        // If user exists but doesn't have a customUserId, generate and save one.
+        if (!firestoreData.customUserId) {
+          const newCustomUserId = Math.floor(100000000 + Math.random() * 900000000);
+          console.log(`AuthContext: User ${uid} is missing customUserId. Generating and saving new ID: ${newCustomUserId}`);
+          await updateDoc(userDocRef, { customUserId: newCustomUserId });
+          firestoreData.customUserId = newCustomUserId; // Update local data to avoid re-fetch
+        }
+        
         const ensuredRole = firestoreData.role || 'User'; // Default to 'User'
         
         console.log(`AuthContext: UID ${uid} - Firestore role found: '${firestoreData.role}', Final role set: '${ensuredRole}'`);
