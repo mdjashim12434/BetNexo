@@ -6,7 +6,7 @@ const SPORTMONKS_FOOTBALL_API_URL = 'https://api.sportmonks.com/v3/football';
 // API key is loaded from environment variables for security.
 const apiKey = process.env.SPORTMONKS_API_KEY;
 
-// This route handles fetching fixtures by either round ID or fixture ID
+// This route handles fetching fixtures by fixture ID
 export async function GET(request: NextRequest) {
     if (!apiKey) {
         console.error("SPORTMONKS_API_KEY is not set in environment variables.");
@@ -20,13 +20,12 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'A fixtureId must be provided to get match details.' }, { status: 400 });
     }
 
-    // Includes for a single fixture: odds (with market/bookmaker), participants, league, and commentary
-    const includes = "odds.market;odds.bookmaker;participants;league.country;comments";
-    // Filters for main odds markets (1=3-Way, 10=Over/Under, 12=BTTS) and a popular bookmaker (2=Bet365)
-    const markets = "1,10,12";
-    const bookmakers = "2";
+    // Simplified includes to be more robust. 'odds' will fetch all available odds for the default bookmaker.
+    const includes = "odds;participants;league.country;comments";
 
-    const url = `${SPORTMONKS_FOOTBALL_API_URL}/fixtures/${fixtureId}?api_token=${apiKey}&include=${includes}&markets=${markets}&bookmakers=${bookmakers}`;
+    // Removed specific markets and bookmakers filters to prevent API errors due to plan limitations.
+    // The API will return available odds from the default bookmaker.
+    const url = `${SPORTMONKS_FOOTBALL_API_URL}/fixtures/${fixtureId}?api_token=${apiKey}&include=${includes}`;
     
     try {
         const response = await fetch(url, {
