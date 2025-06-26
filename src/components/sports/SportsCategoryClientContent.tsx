@@ -56,9 +56,7 @@ export default function SportsCategoryClientContent({
   const liveCount = useMemo(() => initialMatches.filter(m => m.state?.state === 'INPLAY' || m.state?.state === 'Live').length, [initialMatches]);
   const upcomingCount = useMemo(() => initialMatches.filter(m => m.state?.state !== 'INPLAY' && m.state?.state !== 'Live' && m.state?.state !== 'Finished' && m.state?.state !== 'FT').length, [initialMatches]);
 
-  const [activeTab, setActiveTab] = useState(
-    showTabs && liveCount > 0 ? 'live' : 'all'
-  );
+  const [activeTab, setActiveTab] = useState('all');
 
   const leagueId = searchParams.get('leagueId');
   const displayTitle = useMemo(() => {
