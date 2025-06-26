@@ -13,12 +13,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'API key is not configured on the server.' }, { status: 500 });
   }
 
-  // Using fixtures endpoint with INPLAY state filter. 'state' is the correct filter key for V3.
+  // Using fixtures endpoint with INPLAY state filter. 'states' and 'leagueIds' are the correct filter keys for V3.
   const includes = "participants,league,runs";
   const stateFilter = "INPLAY"; // Use 'INPLAY' for live matches as per Sportmonks V3 docs
-  const leagueIdsParam = `&leagues=${cricketLeagueIds.join(',')}`;
-
-  const url = `${SPORTMONKS_CRICKET_API_URL}/fixtures?filter[state]=${stateFilter}&api_token=${apiKey}&include=${includes}${leagueIdsParam}`;
+  
+  // Combine all filters into a single string, separated by semicolons
+  const filters = `states:${stateFilter};leagueIds:${cricketLeagueIds.join(',')}`;
+  
+  const url = `${SPORTMONKS_CRICKET_API_URL}/fixtures?api_token=${apiKey}&include=${includes}&filters=${filters}`;
 
   try {
     const apiResponse = await fetch(url, {
