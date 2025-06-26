@@ -1,4 +1,5 @@
 
+
 // --- Common Types ---
 export interface SportmonksOdd {
     id: number;
@@ -17,96 +18,62 @@ export interface SportmonksOdd {
 
 export interface SportmonksState {
     id: number;
-    state: 'NS' | 'INPLAY' | 'HT' | 'FT' | 'ET' | 'PEN_LIVE' | 'AET' | 'BREAK' | 'POSTP' | 'CANCL' | 'ABAN' | 'SUSP' | 'AWARDED' | 'DELETED' | 'TBA' | 'WO' | 'AU' | 'Finished' | 'Live'; // Common states, added Finished/Live for cricket compatibility
+    state: 'NS' | 'INPLAY' | 'HT' | 'FT' | 'ET' | 'PEN_LIVE' | 'AET' | 'BREAK' | 'POSTP' | 'CANCL' | 'ABAN' | 'SUSP' | 'AWARDED' | 'DELETED' | 'TBA' | 'WO' | 'AU' | 'Finished' | 'Live' | '1st Innings' | '2nd Innings' | 'Innings Break'; // Common states, added more cricket states
     name: string;
     short_name: string;
     developer_name: string;
 }
 
-export interface CricketTeam {
+export interface SportmonksParticipant {
     id: number;
     name: string;
-    code: string;
     image_path: string;
+    meta: { location: 'home' | 'away'; };
 }
 
 export interface CricketLeague {
     id: number;
     name: string;
     code: string;
-    country?: { id: number; name: string; };
+    country?: { id: number; name: string; }; // This is present in Football league, optional in Cricket
 }
 
 
-// --- Types for Cricket API v2.0 ---
+// --- Types for Cricket API v3 ---
 
 export interface CricketRun {
     fixture_id: number;
-    team_id: number;
+    participant_id: number; // Changed from team_id
     inning: number;
     score: number;
     wickets: number;
     overs: number;
 }
 
-export interface SportmonksCricketLiveScore {
-    id: number;
-    league_id: number;
-    season_id: number;
-    stage_id: number;
-    round: string;
-    localteam_id: number;
-    visitorteam_id: number;
-    starting_at: string;
-    status: string;
-    note: string;
-    runs: CricketRun[];
-    localteam: CricketTeam;
-    visitorteam: CricketTeam;
-    league: CricketLeague;
-}
-
-export interface SportmonksCricketResponse {
-    data: SportmonksCricketLiveScore[];
-}
-
-// Simplified structure for our live score component, adapted for Cricket
-export interface ProcessedLiveScore {
+export interface SportmonksCricketV3Fixture {
     id: number;
     name: string;
-    homeTeam: { name: string; score: string }; // Score as "runs/wickets (overs)"
-    awayTeam: { name: string; score: string };
-    leagueName: string;
-    countryName: string;
-    startTime: string;
-    status: string;
-    note: string;
-}
-
-export interface SportmonksCricketFixture {
-    id: number;
     league_id: number;
     season_id: number;
     stage_id: number;
     round: string;
-    localteam_id: number;
-    visitorteam_id: number;
     starting_at: string;
-    status: 'NS' | 'Live' | 'Finished' | 'Aban.' | 'Postp.' | 'Cancelled';
+    state: SportmonksState;
     note: string;
-    localteam: CricketTeam;
-    visitorteam: CricketTeam;
+    participants: SportmonksParticipant[];
     league?: CricketLeague;
     runs?: CricketRun[];
-    odds?: { data: SportmonksOdd[] };
+    odds?: SportmonksOdd[];
+    scores?: FootballScore[];
+    events?: FootballEvent[];
 }
 
-export interface SportmonksCricketFixturesResponse {
-    data: SportmonksCricketFixture[];
+export interface SportmonksCricketV3FixturesResponse {
+    data: SportmonksCricketV3Fixture[];
 }
 
-export interface SportmonksSingleCricketFixtureResponse {
-    data: SportmonksCricketFixture;
+export interface SportmonksSingleCricketV3FixtureResponse {
+    data: SportmonksCricketV3Fixture;
 }
 
 
@@ -119,13 +86,6 @@ export interface SportmonksComment {
     minute: number;
     extra_minute: number | null;
     is_goal: boolean;
-}
-
-export interface SportmonksParticipant {
-    id: number;
-    name: string;
-    image_path: string;
-    meta: { location: 'home' | 'away'; };
 }
 
 export interface SportmonksOddsFixture {
@@ -142,16 +102,6 @@ export interface SportmonksOddsFixture {
 
 export interface SportmonksFootballFixturesResponse {
     data: SportmonksOddsFixture[];
-}
-
-export interface SportmonksRoundResponse {
-    data: {
-        id: number;
-        name: string;
-        league_id: number;
-        fixtures: SportmonksOddsFixture[];
-        league: CricketLeague;
-    }
 }
 
 export interface SportmonksSingleFixtureResponse {
@@ -209,6 +159,23 @@ export interface SportmonksFootballLiveResponse {
     data: SportmonksFootballLiveScore[];
 }
 
+
+// --- PROCESSED TYPES FOR UI COMPONENTS ---
+
+// Processed type for homepage live cricket scores
+export interface ProcessedLiveScore {
+    id: number;
+    name: string;
+    homeTeam: { name: string; score: string }; // Score as "runs/wickets (overs)"
+    awayTeam: { name: string; score: string };
+    leagueName: string;
+    countryName: string;
+    startTime: string;
+    status: string;
+    note: string;
+}
+
+// Processed type for homepage live football scores
 export interface ProcessedFootballLiveScore {
     id: number;
     name: string;
@@ -220,9 +187,6 @@ export interface ProcessedFootballLiveScore {
     latestEvent?: string;
 }
 
-
-// --- GENERIC PROCESSED TYPES FOR UI COMPONENTS ---
-
 export interface ProcessedComment {
     id: number;
     comment: string;
@@ -231,6 +195,7 @@ export interface ProcessedComment {
     is_goal: boolean;
 }
 
+// Generic processed type for match cards and match detail pages
 export interface ProcessedFixture {
     id: number;
     sportKey: 'football' | 'cricket';

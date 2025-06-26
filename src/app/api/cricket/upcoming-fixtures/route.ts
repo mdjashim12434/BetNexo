@@ -1,11 +1,17 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
 
-// Cricket API v2.0 endpoint
-const SPORTMONKS_CRICKET_API_URL = "https://cricket.sportmonks.com/api/v2.0";
-
-// API key is loaded from environment variables for security.
+// Cricket API v3 endpoint
+const SPORTMONKS_CRICKET_API_URL = "https://api.sportmonks.com/v3/cricket";
 const apiKey = process.env.SPORTMONKS_API_KEY;
+
+// Helper to format date to YYYY-MM-DD
+const formatDate = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
 export async function GET(request: NextRequest) {
   if (!apiKey) {
@@ -13,10 +19,21 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'API key is not configured on the server.' }, { status: 500 });
   }
 
-  // Fetch upcoming fixtures. Essential 'includes' are added to ensure data consistency.
-  // 'status=NS' filters for "Not Started" matches.
-  const includes = "localteam,visitorteam,league,odds";
-  const url = `${SPORTMONKS_CRICKET_API_URL}/fixtures?api_token=${apiKey}&sort=starting_at&filter[status]=NS&include=${includes}`;
+  // Define the date range for upcoming fixtures (e.g., today to 7 days from now)
+  const today = new Date();
+  const futureDate = new Date();
+  futureDate.setDate(today.getDate() + 7);
+    
+  const startDate = formatDate(today);
+  const endDate = formatDate(futureDate);
+
+  // Includes for upcoming fixtures. participants = teams, league for league info, odds for betting.
+  const includes = "participants,league,odds";
+  // Filter for a popular bookmaker (id: 2 for Bet365) and main market (id: 1 for Match Winner)
+  const markets = "1";
+  const bookmakers = "2";
+
+  const url = `${SPORTMONKS_CRICKET_API_URL}/fixtures/between/${startDate}/${endDate}?api_token=${apiKey}&include=${includes}&markets=${markets}&bookmakers=${bookmakers}`;
 
   try {
     const apiResponse = await fetch(url, {
@@ -25,7 +42,7 @@ export async function GET(request: NextRequest) {
 
     if (!apiResponse.ok) {
         const errorData = await apiResponse.json().catch(() => ({}));
-        console.error("Error from Sportmonks Cricket API (upcoming):", apiResponse.status, errorData);
+        console.error("Error from Sportmonks Cricket API (upcoming v3):", apiResponse.status, errorData);
         const message = errorData.message || `Failed to fetch upcoming cricket data. Status: ${apiResponse.status}`;
         return NextResponse.json({ error: message }, { status: apiResponse.status });
     }
@@ -34,7 +51,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(data);
 
   } catch (error: any) {
-    console.error("Error proxying request to Sportmonks Cricket API (upcoming):", error);
+    console.error("Error proxying request to Sportmonks Cricket API (upcoming v3):", error);
     return NextResponse.json({ error: 'An internal server error occurred while contacting the proxy API.' }, { status: 500 });
   }
 }

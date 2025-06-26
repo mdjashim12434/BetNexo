@@ -1,9 +1,7 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
 
-// This should be the V3 endpoint for all of Sportmonks now.
-const SPORTMONKS_API_BASE_URL = "https://api.sportmonks.com/v3/cricket";
-
+const SPORTMONKS_CRICKET_API_URL = "https://api.sportmonks.com/v3/cricket";
 const apiKey = process.env.SPORTMONKS_API_KEY;
 
 export async function GET(request: NextRequest) {
@@ -12,19 +10,18 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'API key is not configured on the server.' }, { status: 500 });
   }
 
-  // Use the dedicated /livescores endpoint from Cricket V3 API.
-  // Includes are essential for getting team names, league info, and scores.
-  const includes = "localteam,visitorteam,league,runs";
-  const url = `${SPORTMONKS_API_BASE_URL}/livescores?api_token=${apiKey}&include=${includes}`;
+  // Use /fixtures with status=LIVE as requested to get full fixture details for live games
+  const includes = "participants,league,runs,scores,events";
+  const url = `${SPORTMONKS_CRICKET_API_URL}/fixtures?api_token=${apiKey}&filter[status]=Live&include=${includes}`;
 
   try {
     const apiResponse = await fetch(url, {
-      next: { revalidate: 30 } // Cache for 30 seconds for live data
+      next: { revalidate: 15 } // Cache for 15 seconds for live data
     });
 
     if (!apiResponse.ok) {
       const errorData = await apiResponse.json().catch(() => ({}));
-      console.error("Error from Sportmonks Cricket Live API (V3):", apiResponse.status, errorData);
+      console.error("Error from Sportmonks Cricket Live API (V3 fixtures):", apiResponse.status, errorData);
       let errorMessage = `Failed to fetch live cricket scores. Status: ${apiResponse.status}`;
       if (errorData && errorData.message) {
         errorMessage += ` - Message: ${errorData.message}`;
@@ -36,7 +33,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(data);
 
   } catch (error: any) {
-    console.error("Error fetching from Sportmonks Cricket Live API (V3) via proxy:", error);
+    console.error("Error fetching from Sportmonks Cricket Live API (V3 fixtures) via proxy:", error);
     return NextResponse.json({ error: 'An internal server error occurred.' }, { status: 500 });
   }
 }
