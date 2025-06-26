@@ -99,6 +99,17 @@ const processV3FixtureData = (fixtures: SportmonksV3Fixture[], sportKey: 'footba
         const bttsOdds = fixture.odds?.filter(o => o.market_id === 12) || [];
         const bttsYesOdd = bttsOdds.find(o => o.original_label === 'Yes');
         const bttsNoOdd = bttsOdds.find(o => o.original_label === 'No');
+        
+        // Draw No Bet (Market ID: 8)
+        const dnbOdds = fixture.odds?.filter(o => o.market_id === 8) || [];
+        const dnbHomeOdd = dnbOdds.find(o => o.original_label === '1');
+        const dnbAwayOdd = dnbOdds.find(o => o.original_label === '2');
+
+        // Double Chance (Market ID: 9)
+        const dcOdds = fixture.odds?.filter(o => o.market_id === 9) || [];
+        const dc1XOdd = dcOdds.find(o => o.original_label === '1X');
+        const dcX2Odd = dcOdds.find(o => o.original_label === 'X2');
+        const dc12Odd = dcOdds.find(o => o.original_label === '12');
 
         // Handle different official/referee structures
         let mainOfficialName: string | undefined;
@@ -130,6 +141,15 @@ const processV3FixtureData = (fixtures: SportmonksV3Fixture[], sportKey: 'footba
                 btts: {
                     yes: bttsYesOdd ? parseFloat(bttsYesOdd.value) : undefined,
                     no: bttsNoOdd ? parseFloat(bttsNoOdd.value) : undefined,
+                },
+                dnb: {
+                    home: dnbHomeOdd ? parseFloat(dnbHomeOdd.value) : undefined,
+                    away: dnbAwayOdd ? parseFloat(dnbAwayOdd.value) : undefined,
+                },
+                dc: {
+                    homeOrDraw: dc1XOdd ? parseFloat(dc1XOdd.value) : undefined,
+                    awayOrDraw: dcX2Odd ? parseFloat(dcX2Odd.value) : undefined,
+                    homeOrAway: dc12Odd ? parseFloat(dc12Odd.value) : undefined,
                 }
             },
             comments: comments,

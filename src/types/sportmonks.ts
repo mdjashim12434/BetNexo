@@ -1,5 +1,6 @@
 
 
+
 // --- Common Types ---
 export interface SportmonksOdd {
     id: number;
@@ -227,6 +228,15 @@ export interface ProcessedFixture {
         btts?: {
             yes?: number;
             no?: number;
+        };
+        dnb?: {
+            home?: number;
+            away?: number;
+        };
+        dc?: {
+            homeOrDraw?: number;
+            awayOrDraw?: number;
+            homeOrAway?: number;
         };
     };
     comments?: ProcessedComment[];

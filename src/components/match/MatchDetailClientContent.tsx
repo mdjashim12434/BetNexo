@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -19,7 +20,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 type BetOutcome =
   | 'teamA' | 'draw' | 'teamB' // H2H
   | 'over' | 'under' // Totals
-  | 'bttsYes' | 'bttsNo'; // BTTS
+  | 'bttsYes' | 'bttsNo' // BTTS
+  | 'dnbHome' | 'dnbAway' // DNB
+  | 'dc1X' | 'dcX2' | 'dc12'; // DC
 
 interface SelectedBetInfo {
   outcome: BetOutcome;
@@ -65,6 +68,11 @@ export default function MatchDetailClientContent({ initialMatch }: MatchDetailCl
         case 'under': odds = match.odds.overUnder?.under || 0; break;
         case 'bttsYes': odds = match.odds.btts?.yes || 0; break;
         case 'bttsNo': odds = match.odds.btts?.no || 0; break;
+        case 'dnbHome': odds = match.odds.dnb?.home || 0; break;
+        case 'dnbAway': odds = match.odds.dnb?.away || 0; break;
+        case 'dc1X': odds = match.odds.dc?.homeOrDraw || 0; break;
+        case 'dcX2': odds = match.odds.dc?.awayOrDraw || 0; break;
+        case 'dc12': odds = match.odds.dc?.homeOrAway || 0; break;
       }
 
       if (!isNaN(amount) && amount > 0 && odds > 0) {
@@ -115,6 +123,11 @@ export default function MatchDetailClientContent({ initialMatch }: MatchDetailCl
       case 'under': oddsAtBetTime = match.odds.overUnder?.under || 0; break;
       case 'bttsYes': oddsAtBetTime = match.odds.btts?.yes || 0; break;
       case 'bttsNo': oddsAtBetTime = match.odds.btts?.no || 0; break;
+      case 'dnbHome': oddsAtBetTime = match.odds.dnb?.home || 0; break;
+      case 'dnbAway': oddsAtBetTime = match.odds.dnb?.away || 0; break;
+      case 'dc1X': oddsAtBetTime = match.odds.dc?.homeOrDraw || 0; break;
+      case 'dcX2': oddsAtBetTime = match.odds.dc?.awayOrDraw || 0; break;
+      case 'dc12': oddsAtBetTime = match.odds.dc?.homeOrAway || 0; break;
     }
 
     if (oddsAtBetTime <= 0) {
@@ -197,12 +210,17 @@ export default function MatchDetailClientContent({ initialMatch }: MatchDetailCl
       case 'under': return `Under ${match.odds.overUnder?.point}`;
       case 'bttsYes': return 'Both Teams to Score: Yes';
       case 'bttsNo': return 'Both Teams to Score: No';
+      case 'dnbHome': return `DNB: ${match.homeTeam.name}`;
+      case 'dnbAway': return `DNB: ${match.awayTeam.name}`;
+      case 'dc1X': return `DC: ${match.homeTeam.name} or Draw`;
+      case 'dcX2': return `DC: ${match.awayTeam.name} or Draw`;
+      case 'dc12': return `DC: ${match.homeTeam.name} or ${match.awayTeam.name}`;
       default: return 'N/A';
     }
   };
   
   const isLive = match.state?.state === 'INPLAY' || match.state?.state === 'Live';
-  const hasAnyFootballOdds = match.sportKey === 'football' && (match.odds.home || (match.odds.overUnder && match.odds.overUnder.over) || (match.odds.btts && match.odds.btts.yes));
+  const hasAnyFootballOdds = match.sportKey === 'football' && (match.odds.home || (match.odds.overUnder && match.odds.overUnder.over) || (match.odds.btts && match.odds.btts.yes) || (match.odds.dnb && match.odds.dnb.home) || (match.odds.dc && match.odds.dc.homeOrDraw));
   const hasAnyCricketOdds = match.sportKey === 'cricket' && (match.odds.home || match.odds.away);
 
   return (
@@ -269,6 +287,30 @@ export default function MatchDetailClientContent({ initialMatch }: MatchDetailCl
                         </div>
                     </div>
                   )}
+                  
+                  {/* DNB Odds */}
+                  {match.odds.dnb && (
+                     <div className="space-y-2">
+                        <p className="text-sm font-medium text-muted-foreground">Draw No Bet:</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-stretch">
+                            {getOutcomeButton('dnbHome', match.homeTeam.name, match.odds.dnb?.home)}
+                            {getOutcomeButton('dnbAway', match.awayTeam.name, match.odds.dnb?.away)}
+                        </div>
+                    </div>
+                  )}
+
+                   {/* DC Odds */}
+                  {match.odds.dc && (
+                     <div className="space-y-2">
+                        <p className="text-sm font-medium text-muted-foreground">Double Chance:</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-stretch">
+                            {getOutcomeButton('dc1X', `${match.homeTeam.name} or Draw`, match.odds.dc?.homeOrDraw)}
+                            {getOutcomeButton('dcX2', `${match.awayTeam.name} or Draw`, match.odds.dc?.awayOrDraw)}
+                             {getOutcomeButton('dc12', `${match.homeTeam.name} or ${match.awayTeam.name}`, match.odds.dc?.homeOrAway)}
+                        </div>
+                    </div>
+                  )}
+
 
                    {/* No Odds Available */}
                    {!hasAnyFootballOdds && !hasAnyCricketOdds && !isFinished && (
