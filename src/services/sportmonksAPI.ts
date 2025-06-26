@@ -11,6 +11,9 @@ import type {
     SportmonksState
 } from '@/types/sportmonks';
 
+// Define the base URL for API calls. For production, this should come from an environment variable.
+const API_BASE_URL = 'http://localhost:9002';
+
 // Helper to generate user-friendly error messages based on HTTP status
 const handleApiResponse = async (response: Response) => {
     if (response.ok) {
@@ -62,7 +65,7 @@ const processCricketV3LiveScoresApiResponse = (data: SportmonksV3Fixture[]): Pro
             awayTeam: { name: awayTeam?.name || 'Team 2', score: formatScore(awayTeam?.id) },
             leagueName: match.league?.name ?? 'N/A',
             countryName: match.league?.country?.name || 'N/A',
-            startTime: match.starting_at + ' UTC',
+            startTime: match.starting_at, // Keep as UTC string
             status: match.state.name,
             note: match.state.name, // v3 doesn't have a simple 'note' field like v2
             latestEvent: match.state.name,
@@ -125,7 +128,7 @@ const processV3FixtureData = (fixtures: SportmonksV3Fixture[], sportKey: 'footba
             id: fixture.id,
             sportKey: sportKey,
             name: fixture.name,
-            startingAt: fixture.starting_at + ' UTC',
+            startingAt: fixture.starting_at, // Keep as UTC string
             state: fixture.state,
             league: { id: fixture.league_id, name: fixture.league?.name || 'N/A', countryName: fixture.league?.country?.name || 'N/A' },
             homeTeam: { id: homeTeam?.id || 0, name: homeTeam?.name || 'Home', image_path: homeTeam?.image_path },
@@ -213,7 +216,7 @@ const processLiveFootballFixtures = (fixtures: SportmonksFootballLiveScore[]): P
             id: fixture.id,
             sportKey: 'football',
             name: fixture.name,
-            startingAt: fixture.starting_at + ' UTC',
+            startingAt: fixture.starting_at, // Keep as UTC string
             state: fixture.state,
             league: { id: fixture.league?.id || 0, name: fixture.league?.name || 'N/A', countryName: fixture.league?.country?.name || 'N/A' },
             homeTeam: { id: homeTeam?.id || 0, name: homeTeam?.name || 'Home', image_path: homeTeam?.image_path },
@@ -229,7 +232,7 @@ const processLiveFootballFixtures = (fixtures: SportmonksFootballLiveScore[]): P
 
 export async function fetchFootballLiveScores(): Promise<ProcessedFootballLiveScore[]> {
   try {
-    const response = await fetch('/api/football/live-scores');
+    const response = await fetch(`${API_BASE_URL}/api/football/live-scores`);
     const responseData: SportmonksFootballLiveResponse = await handleApiResponse(response);
     return processFootballLiveScoresApiResponse(responseData?.data || []);
   } catch (error) {
@@ -241,7 +244,7 @@ export async function fetchFootballLiveScores(): Promise<ProcessedFootballLiveSc
 export async function fetchLiveFootballFixtures(leagueId?: number): Promise<ProcessedFixture[]> {
   try {
     const url = leagueId ? `/api/football/live-scores?leagueId=${leagueId}` : '/api/football/live-scores';
-    const response = await fetch(url);
+    const response = await fetch(`${API_BASE_URL}${url}`);
     const responseData: SportmonksFootballLiveResponse = await handleApiResponse(response);
     return processLiveFootballFixtures(responseData?.data || []);
   } catch (error) {
@@ -255,7 +258,7 @@ export async function fetchLiveCricketFixtures(leagueId?: number): Promise<Proce
   // The UI layer is now responsible for not calling it or handling the error.
   try {
     const url = leagueId ? `/api/cricket/live-scores?leagueId=${leagueId}` : '/api/cricket/live-scores';
-    const response = await fetch(url);
+    const response = await fetch(`${API_BASE_URL}${url}`);
     const responseData: SportmonksV3FixturesResponse = await handleApiResponse(response);
     return processV3FixtureData(responseData?.data || [], 'cricket');
   } catch (error) {
@@ -267,7 +270,7 @@ export async function fetchLiveCricketFixtures(leagueId?: number): Promise<Proce
 export async function fetchUpcomingFootballFixtures(leagueId?: number): Promise<ProcessedFixture[]> {
     try {
         const url = leagueId ? `/api/football/upcoming-fixtures?leagueId=${leagueId}` : '/api/football/upcoming-fixtures';
-        const response = await fetch(url);
+        const response = await fetch(`${API_BASE_URL}${url}`);
         const rawData: SportmonksV3FixturesResponse = await handleApiResponse(response);
         return processV3FixtureData(rawData?.data || [], 'football');
     } catch (error) {
@@ -279,7 +282,7 @@ export async function fetchUpcomingFootballFixtures(leagueId?: number): Promise<
 export async function fetchUpcomingCricketFixtures(leagueId?: number): Promise<ProcessedFixture[]> {
     try {
         const url = leagueId ? `/api/cricket/upcoming-fixtures?leagueId=${leagueId}` : '/api/cricket/upcoming-fixtures';
-        const response = await fetch(url);
+        const response = await fetch(`${API_BASE_URL}${url}`);
         const rawData: SportmonksV3FixturesResponse = await handleApiResponse(response);
         return processV3FixtureData(rawData?.data || [], 'cricket');
     } catch (error) {
@@ -290,7 +293,7 @@ export async function fetchUpcomingCricketFixtures(leagueId?: number): Promise<P
 
 async function fetchFootballFixtureById(fixtureId: number): Promise<SportmonksV3Fixture> {
     try {
-        const response = await fetch(`/api/football/fixtures?fixtureId=${fixtureId}`);
+        const response = await fetch(`${API_BASE_URL}/api/football/fixtures?fixtureId=${fixtureId}`);
         const fixtureResponse: SportmonksSingleV3FixtureResponse = await handleApiResponse(response);
         return fixtureResponse.data;
     } catch (error) {
@@ -301,7 +304,7 @@ async function fetchFootballFixtureById(fixtureId: number): Promise<SportmonksV3
 
 async function fetchCricketFixtureById(fixtureId: number): Promise<SportmonksV3Fixture> {
     try {
-        const response = await fetch(`/api/cricket/fixtures?fixtureId=${fixtureId}`);
+        const response = await fetch(`${API_BASE_URL}/api/cricket/fixtures?fixtureId=${fixtureId}`);
         const fixtureResponse: SportmonksSingleV3FixtureResponse = await handleApiResponse(response);
         return fixtureResponse.data;
     } catch (error) {
