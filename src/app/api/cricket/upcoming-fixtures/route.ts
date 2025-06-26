@@ -1,8 +1,8 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
 
-// Cricket API v2.0 endpoint
-const SPORTMONKS_CRICKET_API_URL = "https://cricket.sportmonks.com/api/v2.0";
+// Cricket API v3 endpoint
+const SPORTMONKS_CRICKET_API_URL = "https://api.sportmonks.com/v3/cricket";
 const apiKey = process.env.SPORTMONKS_API_KEY;
 
 // Helper to format date to YYYY-MM-DD
@@ -27,15 +27,10 @@ export async function GET(request: NextRequest) {
   const startDate = formatDate(today);
   const endDate = formatDate(futureDate);
 
-  // Includes for upcoming fixtures. localteam/visitorteam, league for info. Added odds.
-  const includes = "localteam,visitorteam,league,odds";
+  // Includes for upcoming fixtures using V3 format
+  const includes = "participants;league.country;state;odds";
   
-  // For v2.0, date range is a filter parameter
-  const dateFilter = `&filter[starts_between]=${startDate},${endDate}`;
-
-  // NOTE: Removed specific league filtering to make the query more robust for a "Worldwide Plan".
-  // The V2 API is less flexible with combined filters.
-  const url = `${SPORTMONKS_CRICKET_API_URL}/fixtures?api_token=${apiKey}&include=${includes}${dateFilter}&sort=starting_at`;
+  const url = `${SPORTMONKS_CRICKET_API_URL}/fixtures/between/${startDate}/${endDate}?api_token=${apiKey}&include=${includes}&sort=starting_at`;
 
   try {
     const apiResponse = await fetch(url, {
@@ -44,7 +39,7 @@ export async function GET(request: NextRequest) {
 
     if (!apiResponse.ok) {
         const errorData = await apiResponse.json().catch(() => ({}));
-        console.error("Error from Sportmonks Cricket API (upcoming v2.0):", apiResponse.status, errorData);
+        console.error("Error from Sportmonks Cricket API (upcoming v3):", apiResponse.status, errorData);
         const message = errorData.message || `Failed to fetch upcoming cricket data. Status: ${apiResponse.status}`;
         return NextResponse.json({ error: message }, { status: apiResponse.status });
     }
@@ -53,7 +48,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(data);
 
   } catch (error: any) {
-    console.error("Error proxying request to Sportmonks Cricket API (upcoming v2.0):", error);
+    console.error("Error proxying request to Sportmonks Cricket API (upcoming v3):", error);
     return NextResponse.json({ error: 'An internal server error occurred while contacting the proxy API.' }, { status: 500 });
   }
 }

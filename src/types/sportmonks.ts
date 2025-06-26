@@ -58,53 +58,6 @@ export interface SportmonksOfficial {
     type: { name: string; };
 }
 
-
-// --- Types for Cricket API v2.0 (Still used for Live/Upcoming Lists) ---
-export interface SportmonksCricketTeam {
-    id: number;
-    name: string;
-    code: string;
-    image_path: string;
-}
-
-export interface CricketRun {
-    fixture_id: number;
-    participant_id: number; // For V2, this is team_id
-    inning: number;
-    score: number;
-    wickets: number;
-    overs: number;
-}
-
-export interface SportmonksCricketV2Fixture {
-    id: number;
-    league_id: number;
-    starting_at: string;
-    status: string;
-    note: string;
-    live: boolean;
-    
-    localteam_id: number;
-    visitorteam_id: number;
-    localteam: SportmonksCricketTeam;
-    visitorteam: SportmonksCricketTeam;
-    
-    league?: CricketLeague;
-    runs?: CricketRun[];
-    odds?: SportmonksOdd[];
-    venue?: SportmonksVenue;
-    officials?: SportmonksOfficial[];
-}
-
-export interface SportmonksCricketV2FixturesResponse {
-    data: SportmonksCricketV2Fixture[];
-}
-
-export interface SportmonksSingleCricketV2FixtureResponse {
-    data: SportmonksCricketV2Fixture;
-}
-
-
 // --- Types for API V3 (Football & Cricket Details) ---
 
 export interface SportmonksComment {
@@ -114,6 +67,16 @@ export interface SportmonksComment {
     minute: number;
     extra_minute: number | null;
     is_goal: boolean;
+}
+
+export interface SportmonksV3Run {
+    id: number;
+    fixture_id: number;
+    participant_id: number;
+    inning: number;
+    score: number;
+    wickets: number;
+    overs: number;
 }
 
 export interface SportmonksV3Fixture {
@@ -129,7 +92,7 @@ export interface SportmonksV3Fixture {
     venue?: SportmonksVenue;
     referee?: SportmonksReferee; // Football V3
     officials?: { data: SportmonksReferee[] }; // Cricket V3
-    runs?: any[]; // Cricket V3 runs
+    runs?: SportmonksV3Run[]; // Cricket V3 runs
 }
 
 export interface SportmonksV3FixturesResponse {
