@@ -11,9 +11,9 @@ export async function GET(request: NextRequest) {
   }
 
   // Use /fixtures with status=LIVE as requested to get full fixture details for live games.
-  // Corrected includes for Cricket V3 API. 'scores' and 'events' are not valid includes for cricket fixtures.
+  // The status filter is case-sensitive and requires "LIVE".
   const includes = "participants,league,runs";
-  const url = `${SPORTMONKS_CRICKET_API_URL}/fixtures?api_token=${apiKey}&filter[status]=Live&include=${includes}`;
+  const url = `${SPORTMONKS_CRICKET_API_URL}/fixtures?api_token=${apiKey}&filter[status]=LIVE&include=${includes}`;
 
   try {
     const apiResponse = await fetch(url, {
