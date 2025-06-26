@@ -67,10 +67,6 @@ export default function FootballLiveScoresDisplay() {
             Live Football Scores
           </CardTitle>
         </div>
-         <Button onClick={() => loadScores(true)} variant="ghost" size="icon" className="text-muted-foreground hover:text-primary" disabled={loading}>
-          <RefreshCw className={cn("h-5 w-5", { "animate-spin": loading })} />
-          <span className="sr-only">Refresh Scores</span>
-        </Button>
       </CardHeader>
       <CardContent className="pt-4 px-2 sm:px-4">
          {error && (
