@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
@@ -7,7 +6,6 @@ import type { ProcessedLiveScore } from '@/types/sportmonks';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { AlertTriangle, Loader2, RefreshCw, Info } from 'lucide-react';
 import { CricketIcon } from '@/components/icons/CricketIcon';
-import { formatDistanceToNowStrict, isValid } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -19,7 +17,6 @@ export default function LiveScoresDisplay() {
   const [matches, setMatches] = useState<ProcessedLiveScore[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const { toast } = useToast();
 
   const loadScores = useCallback(async (isManualRefresh: boolean = false) => {
@@ -30,7 +27,6 @@ export default function LiveScoresDisplay() {
     try {
       const fetchedMatches = await fetchLiveScores();
       setMatches(fetchedMatches);
-      setLastUpdated(new Date());
       if (isManualRefresh) {
         toast({ title: "Live Scores Updated", description: "Cricket live scores have been refreshed." });
       }
@@ -60,15 +56,6 @@ export default function LiveScoresDisplay() {
     );
   }
 
-  const renderTimeSinceUpdate = () => {
-    if (!lastUpdated || !isValid(lastUpdated)) return null;
-    return (
-      <span className="text-xs text-muted-foreground">
-        (Updated {formatDistanceToNowStrict(lastUpdated, { addSuffix: true })})
-      </span>
-    );
-  };
-
   return (
     <Card className="my-6 shadow-xl bg-card border border-border/60">
       <CardHeader className="flex flex-row justify-between items-center pb-4 border-b border-border/60">
@@ -77,9 +64,6 @@ export default function LiveScoresDisplay() {
             <CricketIcon className="mr-2 h-5 w-5 md:h-6 md:w-6 text-green-500" />
             Live Cricket Scores
           </CardTitle>
-          <CardDescription className="text-xs md:text-sm mt-1">
-            Scores are updated regularly. {renderTimeSinceUpdate()}
-          </CardDescription>
         </div>
         <Button onClick={() => loadScores(true)} variant="ghost" size="icon" className="text-muted-foreground hover:text-primary" disabled={loading}>
           <RefreshCw className={cn("h-5 w-5", { "animate-spin": loading && matches.length > 0 })} />

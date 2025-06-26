@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
@@ -6,7 +5,6 @@ import { fetchFootballLiveScores } from '@/services/sportmonksAPI';
 import type { ProcessedFootballLiveScore } from '@/types/sportmonks';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { AlertTriangle, Loader2, RefreshCw, Info, Goal } from 'lucide-react';
-import { formatDistanceToNowStrict, isValid } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -19,7 +17,6 @@ export default function FootballLiveScoresDisplay() {
   const [matches, setMatches] = useState<ProcessedFootballLiveScore[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const { toast } = useToast();
 
   const loadScores = useCallback(async (isManualRefresh: boolean = false) => {
@@ -33,7 +30,6 @@ export default function FootballLiveScoresDisplay() {
     try {
       const fetchedMatches = await fetchFootballLiveScores();
       setMatches(fetchedMatches);
-      setLastUpdated(new Date());
       if (isManualRefresh) {
         toast({ title: "Live Scores Updated", description: "Football live scores have been refreshed." });
       }
@@ -54,15 +50,6 @@ export default function FootballLiveScoresDisplay() {
     return () => clearInterval(intervalId);
   }, [loadScores]);
 
-  const renderTimeSinceUpdate = () => {
-    if (!lastUpdated || !isValid(lastUpdated)) return null;
-    return (
-      <span className="text-xs text-muted-foreground">
-        (Updated {formatDistanceToNowStrict(lastUpdated, { addSuffix: true })})
-      </span>
-    );
-  };
-  
   if (loading && matches.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-10 my-4 text-muted-foreground bg-card rounded-lg shadow-lg min-h-[200px]">
@@ -80,9 +67,6 @@ export default function FootballLiveScoresDisplay() {
             <Goal className="mr-2 h-5 w-5 md:h-6 md:w-6 text-blue-500" />
             Live Football Scores
           </CardTitle>
-          <CardDescription className="text-xs md:text-sm mt-1">
-            Scores are updated regularly. {renderTimeSinceUpdate()}
-          </CardDescription>
         </div>
          <Button onClick={() => loadScores(true)} variant="ghost" size="icon" className="text-muted-foreground hover:text-primary" disabled={loading}>
           <RefreshCw className={cn("h-5 w-5", { "animate-spin": loading })} />
