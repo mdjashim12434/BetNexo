@@ -34,10 +34,18 @@ export default function FootballLiveScoresDisplay() {
         } else {
             setLiveMatches([]); // Clear live matches
             const fetchedUpcoming = await fetchUpcomingFootballFixtures();
-            // Sort by starting time and take the top 5
-            const sortedUpcoming = fetchedUpcoming
+            
+            // Filter for matches that have not started yet (State: Not Started or To Be Announced).
+            // This prevents finished matches from today from showing up as "Upcoming".
+            const trulyUpcoming = fetchedUpcoming.filter(match => 
+                match.state?.state === 'NS' || match.state?.state === 'TBA'
+            );
+
+            // Sort the truly upcoming matches by starting time and take the top 5
+            const sortedUpcoming = trulyUpcoming
                 .sort((a, b) => new Date(a.startingAt).getTime() - new Date(b.startingAt).getTime())
                 .slice(0, 5);
+
             setUpcomingFixtures(sortedUpcoming);
         }
 
