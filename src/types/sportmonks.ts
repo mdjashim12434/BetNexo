@@ -58,6 +58,14 @@ export interface SportmonksOfficial {
     type: { name: string; };
 }
 
+export interface SportmonksPagination {
+    count: number;
+    per_page: number;
+    current_page: number;
+    next_page: string | null;
+    has_more: boolean;
+}
+
 // --- Types for API V3 (Football & Cricket Details) ---
 
 export interface SportmonksComment {
@@ -102,6 +110,7 @@ export interface SportmonksV3Fixture {
 
 export interface SportmonksV3FixturesResponse {
     data: SportmonksV3Fixture[];
+    pagination?: SportmonksPagination;
 }
 
 export interface SportmonksSingleV3FixtureResponse {
@@ -160,6 +169,7 @@ export interface SportmonksFootballLiveScore {
 
 export interface SportmonksFootballLiveResponse {
     data: SportmonksFootballLiveScore[];
+    pagination?: SportmonksPagination;
 }
 
 

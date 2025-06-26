@@ -22,7 +22,6 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const leagueId = searchParams.get('leagueId');
 
-  // Define the date range for upcoming fixtures (e.g., today to 10 days from now)
   const today = new Date();
   const futureDate = new Date();
   futureDate.setDate(today.getDate() + 10);
@@ -30,30 +29,45 @@ export async function GET(request: NextRequest) {
   const startDate = formatDate(today);
   const endDate = formatDate(futureDate);
 
-  // Includes for upcoming fixtures using V3 format
   const includes = "participants;league.country;state;odds";
   
-  // Fetch all available fixtures within the date range, without extra filters, to support a "Worldwide Plan".
-  let url = `${SPORTMONKS_CRICKET_API_URL}/fixtures/between/${startDate}/${endDate}?api_token=${apiKey}&include=${includes}`;
+  let baseUrl = `${SPORTMONKS_CRICKET_API_URL}/fixtures/between/${startDate}/${endDate}?api_token=${apiKey}&include=${includes}`;
 
   if (leagueId) {
-    url += `&leagues=${leagueId}`;
+    baseUrl += `&leagues=${leagueId}`;
   }
 
   try {
-    const apiResponse = await fetch(url, {
-        next: { revalidate: 600 } // Cache for 10 minutes
-    });
+    let allFixtures: any[] = [];
+    let currentPage = 1;
+    let hasMore = true;
 
-    if (!apiResponse.ok) {
-        const errorData = await apiResponse.json().catch(() => ({}));
-        console.error("Error from Sportmonks Cricket API (upcoming v3):", apiResponse.status, errorData);
-        const message = errorData.message || `Failed to fetch upcoming cricket data. Status: ${apiResponse.status}`;
-        return NextResponse.json({ error: message }, { status: apiResponse.status });
+    while(hasMore) {
+        const url = `${baseUrl}&page=${currentPage}`;
+        const apiResponse = await fetch(url, {
+            next: { revalidate: 600 } // Cache for 10 minutes
+        });
+
+        if (!apiResponse.ok) {
+            const errorData = await apiResponse.json().catch(() => ({}));
+            console.error("Error from Sportmonks Cricket API (upcoming v3):", apiResponse.status, errorData);
+            const message = errorData.message || `Failed to fetch upcoming cricket data. Status: ${apiResponse.status}`;
+            return NextResponse.json({ error: message }, { status: apiResponse.status });
+        }
+
+        const data = await apiResponse.json();
+        if (data.data && data.data.length > 0) {
+            allFixtures = allFixtures.concat(data.data);
+        }
+
+        if (data.pagination && data.pagination.has_more) {
+            currentPage++;
+        } else {
+            hasMore = false;
+        }
     }
-
-    const data = await apiResponse.json();
-    return NextResponse.json(data);
+    
+    return NextResponse.json({ data: allFixtures });
 
   } catch (error: any) {
     console.error("Error proxying request to Sportmonks Cricket API (upcoming v3):", error);

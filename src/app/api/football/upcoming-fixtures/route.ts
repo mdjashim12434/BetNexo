@@ -22,39 +22,52 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const leagueId = searchParams.get('leagueId');
     
-    // Define the date range for upcoming fixtures (e.g., today to 10 days from now)
     const today = new Date();
     const futureDate = new Date();
-    futureDate.setDate(today.getDate() + 10); // Fetch matches for the next 10 days
+    futureDate.setDate(today.getDate() + 10);
     
     const startDate = formatDate(today);
     const endDate = formatDate(futureDate);
 
-    // Includes for upcoming fixtures. participants = teams, league for league info. Added odds.
     const includes = "participants;league.country;state;odds";
     
-    // Fetch all available fixtures within the date range, removing any specific filters 
-    // to make the query robust and align with a "Worldwide Plan".
-    let url = `${SPORTMONKS_FOOTBALL_API_URL}/fixtures/between/${startDate}/${endDate}?api_token=${apiKey}&include=${includes}`;
+    let baseUrl = `${SPORTMONKS_FOOTBALL_API_URL}/fixtures/between/${startDate}/${endDate}?api_token=${apiKey}&include=${includes}`;
     
     if (leagueId) {
-        url += `&leagues=${leagueId}`;
+        baseUrl += `&leagues=${leagueId}`;
     }
 
     try {
-        const response = await fetch(url, {
-            next: { revalidate: 600 } // Cache for 10 minutes
-        });
+        let allFixtures: any[] = [];
+        let currentPage = 1;
+        let hasMore = true;
 
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            console.error('Error fetching from Sportmonks proxy for upcoming football fixtures:', response.status, errorData);
-            const message = errorData.message || `Failed to fetch football upcoming fixtures. Status: ${response.status}`;
-            return NextResponse.json({ error: message }, { status: response.status });
+        while (hasMore) {
+            const url = `${baseUrl}&page=${currentPage}`;
+            const response = await fetch(url, {
+                next: { revalidate: 600 } // Cache for 10 minutes
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                console.error('Error fetching from Sportmonks proxy for upcoming football fixtures:', response.status, errorData);
+                const message = errorData.message || `Failed to fetch football upcoming fixtures. Status: ${response.status}`;
+                return NextResponse.json({ error: message }, { status: response.status });
+            }
+            
+            const data = await response.json();
+            if (data.data && data.data.length > 0) {
+                allFixtures = allFixtures.concat(data.data);
+            }
+
+            if (data.pagination && data.pagination.has_more) {
+                currentPage++;
+            } else {
+                hasMore = false;
+            }
         }
         
-        const data = await response.json();
-        return NextResponse.json(data);
+        return NextResponse.json({ data: allFixtures });
 
     } catch (error: any) {
         console.error('Error in football upcoming fixtures proxy route:', error);

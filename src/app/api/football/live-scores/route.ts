@@ -16,34 +16,50 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const leagueId = searchParams.get('leagueId');
 
-  // Includes 'events' and 'round' as requested for more detailed live data.
   const includes = "participants;scores;periods;events;league.country;round";
   
-  let url = `${SPORTMONKS_API_BASE_URL}?api_token=${apiKey}&include=${includes}`;
+  let baseUrl = `${SPORTMONKS_API_BASE_URL}?api_token=${apiKey}&include=${includes}`;
 
   if (leagueId) {
-    url += `&leagues=${leagueId}`;
+    baseUrl += `&leagues=${leagueId}`;
   }
 
   try {
-    const apiResponse = await fetch(url, {
-      cache: 'no-store' // Always fetch fresh data
-    });
+    let allFixtures: any[] = [];
+    let currentPage = 1;
+    let hasMore = true;
 
-    if (!apiResponse.ok) {
-      const errorData = await apiResponse.json().catch(() => ({}));
-      console.error("Error from Sportmonks Football Live API:", apiResponse.status, errorData);
-      let errorMessage = `Failed to fetch football live scores. Status: ${apiResponse.status}`;
-      if (apiResponse.status === 403) {
-        errorMessage = `Forbidden: Your current API plan does not allow access to this data.`;
-      } else if (errorData && errorData.message) {
-        errorMessage += ` - Message: ${errorData.message}`;
+    while (hasMore) {
+      const url = `${baseUrl}&page=${currentPage}`;
+      const apiResponse = await fetch(url, {
+        cache: 'no-store' // Always fetch fresh data
+      });
+
+      if (!apiResponse.ok) {
+        const errorData = await apiResponse.json().catch(() => ({}));
+        console.error("Error from Sportmonks Football Live API:", apiResponse.status, errorData);
+        let errorMessage = `Failed to fetch football live scores. Status: ${apiResponse.status}`;
+        if (apiResponse.status === 403) {
+          errorMessage = `Forbidden: Your current API plan does not allow access to this data.`;
+        } else if (errorData && errorData.message) {
+          errorMessage += ` - Message: ${errorData.message}`;
+        }
+        return NextResponse.json({ error: errorMessage }, { status: apiResponse.status });
       }
-      return NextResponse.json({ error: errorMessage }, { status: apiResponse.status });
-    }
 
-    const data = await apiResponse.json();
-    return NextResponse.json(data);
+      const data = await apiResponse.json();
+      if (data.data && data.data.length > 0) {
+        allFixtures = allFixtures.concat(data.data);
+      }
+
+      if (data.pagination && data.pagination.has_more) {
+        currentPage++;
+      } else {
+        hasMore = false;
+      }
+    }
+    
+    return NextResponse.json({ data: allFixtures });
 
   } catch (error: any) {
     console.error("Error fetching from Sportmonks Football Live API via proxy:", error);

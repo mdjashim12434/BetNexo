@@ -11,30 +11,45 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'API key is not configured on the server.' }, { status: 500 });
   }
 
-  // Reduced includes to fetch essential live score data, avoiding potentially premium data like officials.
   const includes = "participants;league.country;state;runs";
-  
-  const url = `${SPORTMONKS_API_BASE_URL}?api_token=${apiKey}&include=${includes}`;
+  const baseUrl = `${SPORTMONKS_API_BASE_URL}?api_token=${apiKey}&include=${includes}`;
 
   try {
-    const apiResponse = await fetch(url, {
-      cache: 'no-store' // Always fetch fresh data
-    });
+    let allFixtures: any[] = [];
+    let currentPage = 1;
+    let hasMore = true;
 
-    if (!apiResponse.ok) {
-      const errorData = await apiResponse.json().catch(() => ({}));
-      console.error("Error from Sportmonks Cricket Live API (v3):", apiResponse.status, errorData);
-      let errorMessage = `Failed to fetch live cricket scores. Status: ${apiResponse.status}`;
-      if (apiResponse.status === 403) {
-        errorMessage = `Forbidden: Your current API plan does not allow access to this data.`;
-      } else if (errorData && errorData.message) {
-        errorMessage += ` - Message: ${errorData.message}`;
-      }
-      return NextResponse.json({ error: errorMessage }, { status: apiResponse.status });
+    while (hasMore) {
+        const url = `${baseUrl}&page=${currentPage}`;
+        const apiResponse = await fetch(url, {
+            cache: 'no-store' // Always fetch fresh data
+        });
+
+        if (!apiResponse.ok) {
+            const errorData = await apiResponse.json().catch(() => ({}));
+            console.error("Error from Sportmonks Cricket Live API (v3):", apiResponse.status, errorData);
+            let errorMessage = `Failed to fetch live cricket scores. Status: ${apiResponse.status}`;
+            if (apiResponse.status === 403) {
+                errorMessage = `Forbidden: Your current API plan does not allow access to this data.`;
+            } else if (errorData && errorData.message) {
+                errorMessage += ` - Message: ${errorData.message}`;
+            }
+            return NextResponse.json({ error: errorMessage }, { status: apiResponse.status });
+        }
+
+        const data = await apiResponse.json();
+        if (data.data && data.data.length > 0) {
+            allFixtures = allFixtures.concat(data.data);
+        }
+
+        if (data.pagination && data.pagination.has_more) {
+            currentPage++;
+        } else {
+            hasMore = false;
+        }
     }
-
-    const data = await apiResponse.json();
-    return NextResponse.json(data);
+    
+    return NextResponse.json({ data: allFixtures });
 
   } catch (error: any) {
     console.error("Error fetching from Sportmonks Cricket Live API (v3) via proxy:", error);
