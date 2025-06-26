@@ -2,7 +2,8 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import MatchCard from '@/components/sports/MatchCard';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Search, Frown, AlertTriangle } from 'lucide-react';
@@ -41,6 +42,7 @@ export default function SportsCategoryClientContent({
   error,
 }: SportsCategoryClientContentProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, loadingAuth } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -57,6 +59,14 @@ export default function SportsCategoryClientContent({
   const [activeTab, setActiveTab] = useState(
     showTabs && liveCount > 0 ? 'live' : 'all'
   );
+
+  const leagueId = searchParams.get('leagueId');
+  const displayTitle = useMemo(() => {
+    if (leagueId && initialMatches.length > 0) {
+      return initialMatches[0].league.name;
+    }
+    return categoryName;
+  }, [leagueId, initialMatches, categoryName]);
 
   // Fetch leagues if on the all-sports page
   useEffect(() => {
@@ -136,11 +146,11 @@ export default function SportsCategoryClientContent({
   const sharedHeader = (
      <>
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-        <Button variant="outline" onClick={() => router.push('/')} className="self-start sm:self-center">
-          <ArrowLeft className="mr-2 h-4 w-4" /> Home
+        <Button variant="outline" onClick={() => router.back()} className="self-start sm:self-center">
+          <ArrowLeft className="mr-2 h-4 w-4" /> Back
         </Button>
         <h1 className="font-headline text-3xl font-bold text-center sm:text-left flex-grow">
-          {categoryName}
+          {displayTitle}
         </h1>
       </div>
       <div className="flex flex-col md:flex-row gap-4 p-4 border rounded-lg bg-card">
@@ -176,9 +186,14 @@ export default function SportsCategoryClientContent({
             <CardContent>
               <ul className="space-y-2">
                 {filteredLeagues.map(league => (
-                  <li key={`${league.sport}-${league.id}`} className="flex items-center justify-between p-3 rounded-md hover:bg-muted/50 border">
-                    <span className="font-medium">{league.name}</span>
-                    <Badge variant={league.sport === 'football' ? 'default' : 'secondary'} className="capitalize">{league.sport}</Badge>
+                  <li key={`${league.sport}-${league.id}`}>
+                    <Link 
+                      href={`/sports/${league.sport}?leagueId=${league.id}`}
+                      className="flex items-center justify-between p-3 rounded-md hover:bg-muted/50 border transition-colors"
+                    >
+                      <span className="font-medium">{league.name}</span>
+                      <Badge variant={league.sport === 'football' ? 'default' : 'secondary'} className="capitalize">{league.sport}</Badge>
+                    </Link>
                   </li>
                 ))}
               </ul>

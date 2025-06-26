@@ -18,6 +18,9 @@ export async function GET(request: NextRequest) {
         console.error("SPORTMONKS_API_KEY is not set in environment variables.");
         return NextResponse.json({ error: 'API key is not configured on the server.' }, { status: 500 });
     }
+
+    const { searchParams } = new URL(request.url);
+    const leagueId = searchParams.get('leagueId');
     
     // Define the date range for upcoming fixtures (e.g., today to 7 days from now)
     const today = new Date();
@@ -32,8 +35,12 @@ export async function GET(request: NextRequest) {
     
     // Fetch all available fixtures within the date range, removing any specific filters 
     // to make the query robust and align with a "Worldwide Plan".
-    const url = `${SPORTMONKS_FOOTBALL_API_URL}/fixtures/between/${startDate}/${endDate}?api_token=${apiKey}&include=${includes}`;
+    let url = `${SPORTMONKS_FOOTBALL_API_URL}/fixtures/between/${startDate}/${endDate}?api_token=${apiKey}&include=${includes}`;
     
+    if (leagueId) {
+        url += `&leagues=${leagueId}`;
+    }
+
     try {
         const response = await fetch(url, {
             next: { revalidate: 600 } // Cache for 10 minutes

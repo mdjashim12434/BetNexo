@@ -5,6 +5,7 @@ import {
   fetchUpcomingFootballFixtures,
   fetchUpcomingCricketFixtures,
   fetchLiveFootballFixtures,
+  fetchLiveCricketFixtures,
 } from '@/services/sportmonksAPI';
 import SportsCategoryClientContent from '@/components/sports/SportsCategoryClientContent';
 
@@ -25,12 +26,14 @@ export async function generateStaticParams() {
 
 interface SportCategoryPageProps {
   params: { category: string };
+  searchParams: { [key: string]: string | string[] | undefined };
 }
 
 // This is a Server Component
-export default async function SportCategoryPage({ params }: SportCategoryPageProps) {
+export default async function SportCategoryPage({ params, searchParams }: SportCategoryPageProps) {
   const categorySlug = params.category;
   const categoryName = categoryMapping[categorySlug] || 'Sports';
+  const leagueId = searchParams.leagueId ? Number(searchParams.leagueId) : undefined;
 
   let matchesForCategory: ProcessedFixture[] = [];
   let fetchError: string | null = null;
@@ -50,25 +53,25 @@ export default async function SportCategoryPage({ params }: SportCategoryPagePro
       if (categorySlug === 'live') {
         // Only fetch live football as live cricket is not supported by the current API plan
         const [footballMatches] = await Promise.all([
-          fetchLiveFootballFixtures().catch((e) => handleFetchError('football', 'live', e)),
+          fetchLiveFootballFixtures(leagueId).catch((e) => handleFetchError('football', 'live', e)),
         ]);
         matchesForCategory = [...footballMatches];
       } else if (categorySlug === 'football') {
         const [liveMatches, upcomingMatches] = await Promise.all([
-          fetchLiveFootballFixtures().catch((e) => handleFetchError('football', 'live', e)),
-          fetchUpcomingFootballFixtures().catch((e) => handleFetchError('football', 'upcoming', e)),
+          fetchLiveFootballFixtures(leagueId).catch((e) => handleFetchError('football', 'live', e)),
+          fetchUpcomingFootballFixtures(leagueId).catch((e) => handleFetchError('football', 'upcoming', e)),
         ]);
         matchesForCategory = [...liveMatches, ...upcomingMatches];
       } else if (categorySlug === 'cricket') {
         // Only fetch upcoming cricket as live cricket is not supported by the API plan
         const [upcomingMatches] = await Promise.all([
-          fetchUpcomingCricketFixtures().catch((e) => handleFetchError('cricket', 'upcoming', e)),
+          fetchUpcomingCricketFixtures(leagueId).catch((e) => handleFetchError('cricket', 'upcoming', e)),
         ]);
         matchesForCategory = [...upcomingMatches];
       } else if (categorySlug === 'upcoming') {
         const [footballMatches, cricketMatches] = await Promise.all([
-          fetchUpcomingFootballFixtures().catch((e) => handleFetchError('football', 'upcoming', e)),
-          fetchUpcomingCricketFixtures().catch((e) => handleFetchError('cricket', 'upcoming', e)),
+          fetchUpcomingFootballFixtures(leagueId).catch((e) => handleFetchError('football', 'upcoming', e)),
+          fetchUpcomingCricketFixtures(leagueId).catch((e) => handleFetchError('cricket', 'upcoming', e)),
         ]);
         matchesForCategory = [...footballMatches, ...cricketMatches];
       }

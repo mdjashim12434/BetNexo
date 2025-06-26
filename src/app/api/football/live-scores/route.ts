@@ -13,10 +13,17 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'API key is not configured on the server.' }, { status: 500 });
   }
 
+  const { searchParams } = new URL(request.url);
+  const leagueId = searchParams.get('leagueId');
+
   // Reduced includes to fetch essential live score data, avoiding potentially premium data like events.
   const includes = "participants;scores;periods;league.country;state";
   
-  const url = `${SPORTMONKS_API_BASE_URL}?api_token=${apiKey}&include=${includes}`;
+  let url = `${SPORTMONKS_API_BASE_URL}?api_token=${apiKey}&include=${includes}`;
+
+  if (leagueId) {
+    url += `&leagues=${leagueId}`;
+  }
 
   try {
     const apiResponse = await fetch(url, {

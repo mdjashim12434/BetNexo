@@ -19,6 +19,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'API key is not configured on the server.' }, { status: 500 });
   }
 
+  const { searchParams } = new URL(request.url);
+  const leagueId = searchParams.get('leagueId');
+
   // Define the date range for upcoming fixtures (e.g., today to 7 days from now)
   const today = new Date();
   const futureDate = new Date();
@@ -31,7 +34,11 @@ export async function GET(request: NextRequest) {
   const includes = "participants;league.country;state;odds";
   
   // Fetch all available fixtures within the date range, without extra filters, to support a "Worldwide Plan".
-  const url = `${SPORTMONKS_CRICKET_API_URL}/fixtures/between/${startDate}/${endDate}?api_token=${apiKey}&include=${includes}`;
+  let url = `${SPORTMONKS_CRICKET_API_URL}/fixtures/between/${startDate}/${endDate}?api_token=${apiKey}&include=${includes}`;
+
+  if (leagueId) {
+    url += `&leagues=${leagueId}`;
+  }
 
   try {
     const apiResponse = await fetch(url, {
