@@ -13,13 +13,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'API key is not configured on the server.' }, { status: 500 });
   }
 
-  // Recommended includes for comprehensive live score data
-  const includes = "participants;scores;periods;events.type;league.country;state";
+  // Recommended includes for comprehensive live score data, including player details for events
+  const includes = "participants;scores;periods;events.type;events.participant;league.country;state";
   const url = `${SPORTMONKS_API_BASE_URL}?api_token=${apiKey}&include=${includes}`;
 
   try {
     const apiResponse = await fetch(url, {
-      next: { revalidate: 30 } // Cache for 30 seconds for live data
+      next: { revalidate: 10 } // Cache for 10 seconds for live data
     });
 
     if (!apiResponse.ok) {

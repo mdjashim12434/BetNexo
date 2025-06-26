@@ -173,7 +173,17 @@ const processFootballLiveScoresApiResponse = (data: SportmonksFootballLiveScore[
             const score = match.scores?.find(s => s.participant_id === participantId && s.type_id === 16);
             return score?.score.goals ?? 0;
         };
-        const latestEvent = match.events?.sort((a, b) => b.id - a.id)[0];
+        
+        const latestEvent = match.events?.filter(e => e.type.name.toLowerCase() !== 'period start').sort((a, b) => b.id - a.id)[0];
+        let latestEventString;
+        if (latestEvent) {
+            const playerName = latestEvent.participant?.name;
+            latestEventString = `${latestEvent.minute}' - ${latestEvent.type.name}`;
+            if (playerName && (latestEvent.type.name.toLowerCase().includes('goal') || latestEvent.type.name.toLowerCase().includes('card'))) {
+                latestEventString += ` (${playerName})`;
+            }
+        }
+
         return {
             id: match.id,
             name: match.name,
@@ -182,7 +192,7 @@ const processFootballLiveScoresApiResponse = (data: SportmonksFootballLiveScore[
             leagueName: match.league?.name || 'N/A',
             minute: match.periods?.find(p => p.has_timer)?.minutes,
             status: match.state?.name || 'Live',
-            latestEvent: latestEvent ? `${latestEvent.minute}' - ${latestEvent.type.name}` : "Match started"
+            latestEvent: latestEventString
         };
     });
 };

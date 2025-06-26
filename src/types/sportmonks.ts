@@ -187,6 +187,7 @@ export interface FootballEvent {
         code: string;
     };
     minute: number;
+    participant?: SportmonksParticipant;
 }
 
 export interface SportmonksFootballLiveScore {

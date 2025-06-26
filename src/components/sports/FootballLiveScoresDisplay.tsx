@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from "@/hooks/use-toast";
 import Link from 'next/link';
 
-const REFRESH_INTERVAL_MS = 60000; // 60 seconds
+const REFRESH_INTERVAL_MS = 15000; // 15 seconds
 
 export default function FootballLiveScoresDisplay() {
   const [matches, setMatches] = useState<ProcessedFootballLiveScore[]>([]);
@@ -23,6 +23,8 @@ export default function FootballLiveScoresDisplay() {
   const { toast } = useToast();
 
   const loadScores = useCallback(async (isManualRefresh: boolean = false) => {
+    if (loading && !isManualRefresh) return; // Prevent multiple simultaneous fetches
+    
     if (!isManualRefresh) {
       setLoading(true);
     }
@@ -43,7 +45,7 @@ export default function FootballLiveScoresDisplay() {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [toast, loading]);
 
   useEffect(() => {
     loadScores();
@@ -119,7 +121,12 @@ export default function FootballLiveScoresDisplay() {
                     <span className="truncate pr-2">{match.awayTeam.name}</span>
                     <span className="font-bold text-primary">{match.awayTeam.score}</span>
                 </div>
-                {match.latestEvent && <p className="text-xs text-center pt-2 text-accent font-medium">{match.latestEvent}</p>}
+                {match.latestEvent && (
+                  <p className="text-xs text-center pt-2 text-accent font-medium flex items-center justify-center gap-1.5">
+                    <Goal className="h-3 w-3" />
+                    {match.latestEvent}
+                  </p>
+                )}
                 </Card>
             </Link>
           ))}
