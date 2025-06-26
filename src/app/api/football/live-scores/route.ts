@@ -14,17 +14,17 @@ export async function GET(request: NextRequest) {
   }
 
   // Recommended includes for comprehensive live score data
-  const includes = "participants;scores;periods;events;league.country;round";
+  const includes = "participants;scores;periods;events.type;league.country;state";
   const url = `${SPORTMONKS_API_BASE_URL}?api_token=${apiKey}&include=${includes}`;
 
   try {
     const apiResponse = await fetch(url, {
-      next: { revalidate: 60 } // Cache for 60 seconds
+      next: { revalidate: 30 } // Cache for 30 seconds for live data
     });
 
     if (!apiResponse.ok) {
-      const errorData = await apiResponse.json();
-      console.error("Error from Sportmonks Football Live API:", errorData);
+      const errorData = await apiResponse.json().catch(() => ({}));
+      console.error("Error from Sportmonks Football Live API:", apiResponse.status, errorData);
       let errorMessage = `Failed to fetch football live scores. Status: ${apiResponse.status}`;
       if (errorData && errorData.message) {
         errorMessage += ` - Message: ${errorData.message}`;

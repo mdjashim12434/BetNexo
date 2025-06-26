@@ -14,26 +14,26 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'API key is not configured on the server.' }, { status: 500 });
   }
 
-  // Authenticate using the 'api_token' query parameter for reliability with v2
-  // Note: v2.0 endpoints might not use 'include' in the same way as v3. Removed it for simplicity.
-  const url = `${SPORTMONKS_API_URL}?api_token=${apiKey}`;
+  // Includes for live cricket score data
+  const includes = "localteam,visitorteam,league,runs";
+  const url = `${SPORTMONKS_API_URL}?api_token=${apiKey}&include=${includes}`;
 
   try {
     const apiResponse = await fetch(url, {
-        // The API token is in the URL, so no special headers are needed.
-        next: { revalidate: 60 } // Cache for 60 seconds
+        next: { revalidate: 30 } // Cache for 30 seconds for live data
     });
 
     if (!apiResponse.ok) {
-        const errorData = await apiResponse.json();
-        console.error("Error from Sportmonks API (live-scores):", errorData);
-        return NextResponse.json({ error: errorData.message || 'Failed to fetch live scores' }, { status: apiResponse.status });
+        const errorData = await apiResponse.json().catch(() => ({}));
+        console.error("Error from Sportmonks Cricket API (live-scores):", apiResponse.status, errorData);
+        const message = errorData.message || `Failed to fetch live cricket scores. Status: ${apiResponse.status}`;
+        return NextResponse.json({ error: message }, { status: apiResponse.status });
     }
 
     const data = await apiResponse.json();
     return NextResponse.json(data);
   } catch (error: any) {
-    console.error("Error fetching from Sportmonks API via proxy (live-scores):", error);
+    console.error("Error fetching from Sportmonks Cricket API via proxy (live-scores):", error);
     return NextResponse.json({ error: 'An internal server error occurred.' }, { status: 500 });
   }
 }
