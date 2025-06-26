@@ -5,7 +5,6 @@ import {
   fetchUpcomingFootballFixtures,
   fetchUpcomingCricketFixtures,
   fetchLiveFootballFixtures,
-  fetchLiveCricketFixtures,
 } from '@/services/sportmonksAPI';
 import SportsCategoryClientContent from '@/components/sports/SportsCategoryClientContent';
 
@@ -49,11 +48,11 @@ export default async function SportCategoryPage({ params }: SportCategoryPagePro
   if (categorySlug !== 'all-sports') {
     try {
       if (categorySlug === 'live') {
-        const [footballMatches, cricketMatches] = await Promise.all([
+        // Only fetch live football as live cricket is not supported by the current API plan
+        const [footballMatches] = await Promise.all([
           fetchLiveFootballFixtures().catch((e) => handleFetchError('football', 'live', e)),
-          fetchLiveCricketFixtures().catch((e) => handleFetchError('cricket', 'live', e)),
         ]);
-        matchesForCategory = [...footballMatches, ...cricketMatches];
+        matchesForCategory = [...footballMatches];
       } else if (categorySlug === 'football') {
         const [liveMatches, upcomingMatches] = await Promise.all([
           fetchLiveFootballFixtures().catch((e) => handleFetchError('football', 'live', e)),
@@ -61,11 +60,11 @@ export default async function SportCategoryPage({ params }: SportCategoryPagePro
         ]);
         matchesForCategory = [...liveMatches, ...upcomingMatches];
       } else if (categorySlug === 'cricket') {
-        const [liveMatches, upcomingMatches] = await Promise.all([
-          fetchLiveCricketFixtures().catch((e) => handleFetchError('cricket', 'live', e)),
+        // Only fetch upcoming cricket as live cricket is not supported by the API plan
+        const [upcomingMatches] = await Promise.all([
           fetchUpcomingCricketFixtures().catch((e) => handleFetchError('cricket', 'upcoming', e)),
         ]);
-        matchesForCategory = [...liveMatches, ...upcomingMatches];
+        matchesForCategory = [...upcomingMatches];
       } else if (categorySlug === 'upcoming') {
         const [footballMatches, cricketMatches] = await Promise.all([
           fetchUpcomingFootballFixtures().catch((e) => handleFetchError('football', 'upcoming', e)),

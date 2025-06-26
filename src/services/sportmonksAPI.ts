@@ -205,17 +205,7 @@ const processLiveFootballFixtures = (fixtures: SportmonksFootballLiveScore[]): P
 
 
 // --- Public Fetching Functions ---
-
-export async function fetchLiveScores(): Promise<ProcessedLiveScore[]> {
-    try {
-        const response = await fetch('/api/cricket/live-scores');
-        const responseData: SportmonksV3FixturesResponse = await handleApiResponse(response);
-        return processCricketV3LiveScoresApiResponse(responseData.data);
-    } catch (error) {
-        console.error('Error in fetchLiveScores (Cricket V3) service:', error);
-        throw error;
-    }
-}
+// The fetchLiveScores function is no longer needed as the component using it has been removed.
 
 export async function fetchFootballLiveScores(): Promise<ProcessedFootballLiveScore[]> {
   try {
@@ -240,6 +230,8 @@ export async function fetchLiveFootballFixtures(): Promise<ProcessedFixture[]> {
 }
 
 export async function fetchLiveCricketFixtures(): Promise<ProcessedFixture[]> {
+  // This function is being kept but will likely fail due to API plan.
+  // The UI layer is now responsible for not calling it or handling the error.
   try {
     const response = await fetch('/api/cricket/live-scores');
     const responseData: SportmonksV3FixturesResponse = await handleApiResponse(response);

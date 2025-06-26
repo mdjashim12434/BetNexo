@@ -11,7 +11,6 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import LiveScoresDisplay from '@/components/sports/LiveScoresDisplay';
 import FootballLiveScoresDisplay from '@/components/sports/FootballLiveScoresDisplay';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -155,9 +154,6 @@ export default function HomePage() {
              <Button variant="link" asChild><Link href="/sports/live">All</Link></Button>
           </div>
           <FootballLiveScoresDisplay />
-          <div className="mt-4">
-             <LiveScoresDisplay />
-          </div>
         </section>
 
       </div>
