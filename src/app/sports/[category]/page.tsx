@@ -1,7 +1,12 @@
 
 import AppLayout from '@/components/AppLayout';
 import type { ProcessedFixture } from '@/types/sportmonks';
-import { fetchUpcomingFootballFixtures, fetchUpcomingCricketFixtures } from '@/services/sportmonksAPI';
+import {
+  fetchUpcomingFootballFixtures,
+  fetchUpcomingCricketFixtures,
+  fetchLiveFootballFixtures,
+  fetchLiveCricketFixtures,
+} from '@/services/sportmonksAPI';
 import SportsCategoryClientContent from '@/components/sports/SportsCategoryClientContent';
 
 const validCategories = ['live', 'cricket', 'football', 'upcoming', 'all-sports'];
@@ -32,17 +37,34 @@ export default async function SportCategoryPage({ params }: SportCategoryPagePro
   let fetchError: string | null = null;
 
   try {
-    if (categorySlug === 'football' || categorySlug === 'upcoming' || categorySlug === 'all-sports') {
-      // Fetch all upcoming football fixtures instead of a specific round
+    if (categorySlug === 'live') {
+      const [footballMatches, cricketMatches] = await Promise.all([
+        fetchLiveFootballFixtures().catch((e) => {
+          console.error('Failed to fetch live football fixtures:', e.message);
+          return []; // Return empty array on failure to not break Promise.all
+        }),
+        fetchLiveCricketFixtures().catch((e) => {
+          console.error('Failed to fetch live cricket fixtures:', e.message);
+          return []; // Return empty array on failure
+        }),
+      ]);
+      matchesForCategory = [...footballMatches, ...cricketMatches];
+    } else if (
+      categorySlug === 'football' ||
+      categorySlug === 'upcoming' ||
+      categorySlug === 'all-sports'
+    ) {
       matchesForCategory = await fetchUpcomingFootballFixtures();
     } else if (categorySlug === 'cricket') {
       matchesForCategory = await fetchUpcomingCricketFixtures();
     }
   } catch (error: any) {
     console.error(`Failed to fetch fixtures for ${categorySlug}:`, error);
-    fetchError = error.message || `An unknown error occurred while fetching matches for ${categorySlug}.`;
+    fetchError =
+      error.message ||
+      `An unknown error occurred while fetching matches for ${categorySlug}.`;
   }
-  
+
   // Pass all fetched matches for client-side filtering if needed
   const allMatchesForFiltering = matchesForCategory;
 

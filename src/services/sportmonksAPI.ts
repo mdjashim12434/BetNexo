@@ -91,6 +91,29 @@ const processCricketFixtureData = (fixtures: SportmonksCricketFixture[]): Proces
     });
 };
 
+const processLiveCricketFixtures = (fixtures: SportmonksCricketLiveScore[]): ProcessedFixture[] => {
+    return fixtures.map(fixture => {
+        // Live scores endpoint for cricket also doesn't seem to provide odds.
+        return {
+            id: fixture.id,
+            sportKey: 'cricket',
+            name: `${fixture.localteam.name} vs ${fixture.visitorteam.name}`,
+            startingAt: fixture.starting_at,
+            state: { id: 0, state: fixture.status, name: fixture.status, short_name: fixture.status, developer_name: fixture.status },
+            league: {
+                id: fixture.league?.id || 0,
+                name: fixture.league?.name || 'N/A',
+                countryName: fixture.league?.country?.name || 'N/A'
+            },
+            homeTeam: { id: fixture.localteam.id, name: fixture.localteam.name, image_path: fixture.localteam.image_path },
+            awayTeam: { id: fixture.visitorteam.id, name: fixture.visitorteam.name, image_path: fixture.visitorteam.image_path },
+            odds: {}, // No odds in this endpoint
+            comments: [],
+        };
+    });
+};
+
+
 // --- Football Processing ---
 
 const processFootballFixtureData = (fixtures: SportmonksOddsFixture[]): ProcessedFixture[] => {
@@ -162,6 +185,26 @@ const processFootballLiveScoresApiResponse = (data: SportmonksFootballLiveScore[
     });
 };
 
+const processLiveFootballFixtures = (fixtures: SportmonksFootballLiveScore[]): ProcessedFixture[] => {
+    return fixtures.map(fixture => {
+        const homeTeam = fixture.participants.find(p => p.meta.location === 'home');
+        const awayTeam = fixture.participants.find(p => p.meta.location === 'away');
+        // Live scores endpoint does not include odds data.
+        return {
+            id: fixture.id,
+            sportKey: 'football',
+            name: fixture.name,
+            startingAt: fixture.starting_at,
+            state: fixture.state,
+            league: { id: fixture.league.id, name: fixture.league.name, countryName: fixture.league.country?.name || 'N/A' },
+            homeTeam: { id: homeTeam?.id || 0, name: homeTeam?.name || 'Home', image_path: homeTeam?.image_path },
+            awayTeam: { id: awayTeam?.id || 0, name: awayTeam?.name || 'Away', image_path: awayTeam?.image_path },
+            odds: {}, // Odds are not available in live score endpoint
+            comments: [], // Comments are not available in live score endpoint
+        };
+    });
+};
+
 
 // --- Public Fetching Functions ---
 
@@ -183,6 +226,28 @@ export async function fetchFootballLiveScores(): Promise<ProcessedFootballLiveSc
     return processFootballLiveScoresApiResponse(responseData.data);
   } catch (error) {
     console.error('Error in fetchFootballLiveScores service:', error);
+    throw error;
+  }
+}
+
+export async function fetchLiveFootballFixtures(): Promise<ProcessedFixture[]> {
+  try {
+    const response = await fetch('/api/football/live-scores');
+    const responseData: SportmonksFootballLiveResponse = await handleApiResponse(response);
+    return processLiveFootballFixtures(responseData.data);
+  } catch (error) {
+    console.error('Error in fetchLiveFootballFixtures service:', error);
+    throw error;
+  }
+}
+
+export async function fetchLiveCricketFixtures(): Promise<ProcessedFixture[]> {
+  try {
+    const response = await fetch('/api/live-scores'); // This is the cricket live scores proxy
+    const responseData: SportmonksCricketResponse = await handleApiResponse(response);
+    return processLiveCricketFixtures(responseData.data);
+  } catch (error) {
+    console.error('Error in fetchLiveCricketFixtures service:', error);
     throw error;
   }
 }
