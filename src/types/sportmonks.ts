@@ -160,11 +160,13 @@ export interface SportmonksSingleFixtureResponse {
 export interface FootballScore {
     id: number;
     fixture_id: number;
-    type_id: number; // e.g., 16 for current score
+    type_id: number;
     participant_id: number;
     score: {
         goals: number;
+        participant?: 'home' | 'away';
     };
+    description: string;
 }
 
 export interface FootballPeriod {

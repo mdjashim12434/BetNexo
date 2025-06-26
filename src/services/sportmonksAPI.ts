@@ -169,9 +169,18 @@ const processFootballLiveScoresApiResponse = (data: SportmonksFootballLiveScore[
     return data.map(match => {
         const homeTeam = match.participants?.find(p => p.meta.location === 'home');
         const awayTeam = match.participants?.find(p => p.meta.location === 'away');
+        
         const getScore = (participantId: number): number => {
-            const score = match.scores?.find(s => s.participant_id === participantId && s.type_id === 16);
-            return score?.score.goals ?? 0;
+            // First, try the most specific and correct way (by type_id)
+            let score = match.scores?.find(s => s.participant_id === participantId && s.type_id === 16);
+            if (score) return score.score.goals;
+
+            // As a fallback, try to find a score with description "CURRENT"
+            score = match.scores?.find(s => s.participant_id === participantId && s.description === 'CURRENT');
+            if (score) return score.score.goals;
+            
+            // If still nothing, it's likely 0 or data is missing.
+            return 0;
         };
         
         let latestEventString;
@@ -181,10 +190,10 @@ const processFootballLiveScoresApiResponse = (data: SportmonksFootballLiveScore[
                 .sort((a, b) => b.id - a.id)[0];
             
             if (latestEvent) {
-                const playerName = latestEvent.participant?.name;
+                const participantName = latestEvent.participant?.name; // This can be player OR team name
                 latestEventString = `${latestEvent.minute}' - ${latestEvent.type.name}`;
-                if (playerName && (latestEvent.type.name.toLowerCase().includes('goal') || latestEvent.type.name.toLowerCase().includes('card'))) {
-                    latestEventString += ` (${playerName})`;
+                if (participantName && (latestEvent.type.name.toLowerCase().includes('goal') || latestEvent.type.name.toLowerCase().includes('card'))) {
+                    latestEventString += ` (${participantName})`;
                 }
             }
         }
