@@ -2,33 +2,35 @@
 'use client'; // This page now fetches data client-side
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation'; // For App Router
+import { useParams, useSearchParams } from 'next/navigation'; // For App Router
 import AppLayout from '@/components/AppLayout';
 import type { ProcessedFixture } from '@/types/sportmonks';
 import MatchDetailClientContent from '@/components/match/MatchDetailClientContent';
-import { fetchFixtureById, processFixtureData } from '@/services/sportmonksAPI';
+import { fetchFixtureDetails } from '@/services/sportmonksAPI';
 import { Skeleton } from '@/components/ui/skeleton'; // For loading state
 
 
 export default function MatchDetailPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
 
   const matchId = params.id as string;
+  const sport = searchParams.get('sport') as 'football' | 'cricket' | null;
 
   const [match, setMatch] = useState<ProcessedFixture | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (matchId) {
-      console.log(`MatchDetailPage Client: Fetching fixtureId: ${matchId}`);
+    if (matchId && sport) {
+      console.log(`MatchDetailPage Client: Fetching ${sport} fixtureId: ${matchId}`);
       setLoading(true);
       setError(null);
-      fetchFixtureById(Number(matchId))
+      fetchFixtureDetails(Number(matchId), sport)
         .then(apiFixture => {
           if (apiFixture) {
-            console.log(`MatchDetailPage Client: Found API fixture ${matchId}. Transforming.`);
-            setMatch(processFixtureData([apiFixture])[0]);
+            console.log(`MatchDetailPage Client: Found API fixture ${matchId}. Transformed.`);
+            setMatch(apiFixture);
           } else {
             console.warn(`MatchDetailPage Client: API fixture ${matchId} not found.`);
             setError(`Match with ID ${matchId} not found. The match might no longer be available or the API did not return data for it.`);
@@ -36,16 +38,16 @@ export default function MatchDetailPage() {
         })
         .catch(err => {
           console.error(`MatchDetailPage Client: Error fetching fixture ${matchId}:`, err);
-          setError(err.message || 'Failed to fetch match details.');
+          setError(err.message || `Failed to fetch match details for ${sport}.`);
         })
         .finally(() => {
           setLoading(false);
         });
     } else {
-      setError('Match ID is missing.');
+      setError('Match ID or Sport is missing from the URL. Example: /match/123?sport=football');
       setLoading(false);
     }
-  }, [matchId]);
+  }, [matchId, sport]);
 
   if (loading) {
     return (

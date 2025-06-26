@@ -12,8 +12,8 @@ interface MatchCardProps {
 }
 
 const MatchCard: FC<MatchCardProps> = ({ match }) => {
-  const isLive = match.state?.state === 'INPLAY';
-  const isUpcoming = match.state?.state === 'UPCOMING' || !match.state;
+  const isLive = match.state?.state === 'INPLAY' || match.state?.state === 'Live';
+  const isUpcoming = !isLive && match.state?.state !== 'Finished' && match.state?.state !== 'FT';
 
   return (
     <Card className="overflow-hidden shadow-lg hover:shadow-primary/20 transition-shadow duration-300">
@@ -39,7 +39,7 @@ const MatchCard: FC<MatchCardProps> = ({ match }) => {
       </CardContent>
       <CardFooter>
         <Button variant="default" className="w-full" asChild>
-          <Link href={`/match/${match.id}`}>
+          <Link href={`/match/${match.id}?sport=${match.sportKey}`}>
             View Details <ArrowRight className="ml-2 h-4 w-4" />
           </Link>
         </Button>

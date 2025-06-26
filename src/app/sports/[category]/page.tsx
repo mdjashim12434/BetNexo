@@ -1,7 +1,7 @@
 
 import AppLayout from '@/components/AppLayout';
 import type { ProcessedFixture } from '@/types/sportmonks';
-import { fetchFixturesByRound, processFixtureData } from '@/services/sportmonksAPI';
+import { fetchFootballFixturesByRound, fetchUpcomingCricketFixtures } from '@/services/sportmonksAPI';
 import SportsCategoryClientContent from '@/components/sports/SportsCategoryClientContent';
 
 const validCategories = ['live', 'cricket', 'football', 'upcoming', 'all-sports'];
@@ -34,21 +34,20 @@ export default async function SportCategoryPage({ params }: SportCategoryPagePro
   let matchesForCategory: ProcessedFixture[] = [];
   let fetchError: string | null = null;
 
-  // Only fetch for football for now, other sports will show a "coming soon" message
-  if (categorySlug === 'football' || categorySlug === 'upcoming' || categorySlug === 'all-sports') {
-      try {
-        const rawRoundData = await fetchFixturesByRound(EPL_CURRENT_ROUND_ID);
-        // Correctly access the fixtures array inside the nested 'data' object from the API response.
-        if (rawRoundData && rawRoundData.data && rawRoundData.data.fixtures) {
-            matchesForCategory = processFixtureData(rawRoundData.data.fixtures);
-        }
-      } catch (error: any) {
-          console.error(`Failed to fetch fixtures for ${categorySlug}:`, error);
-          fetchError = error.message || "An unknown error occurred while fetching matches.";
-          // Keep matchesForCategory empty, the client component will show an error
+  try {
+    if (categorySlug === 'football' || categorySlug === 'upcoming' || categorySlug === 'all-sports') {
+      const rawRoundData = await fetchFootballFixturesByRound(EPL_CURRENT_ROUND_ID);
+      if (rawRoundData && rawRoundData.data && rawRoundData.data.fixtures) {
+        matchesForCategory = rawRoundData.data.fixtures;
       }
+    } else if (categorySlug === 'cricket') {
+      matchesForCategory = await fetchUpcomingCricketFixtures();
+    }
+  } catch (error: any) {
+    console.error(`Failed to fetch fixtures for ${categorySlug}:`, error);
+    fetchError = error.message || `An unknown error occurred while fetching matches for ${categorySlug}.`;
   }
-
+  
   // Pass all fetched matches for client-side filtering if needed
   const allMatchesForFiltering = matchesForCategory;
 

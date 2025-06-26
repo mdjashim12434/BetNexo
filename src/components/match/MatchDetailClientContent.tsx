@@ -153,7 +153,7 @@ export default function MatchDetailClientContent({ initialMatch }: MatchDetailCl
     return <div className="text-center p-10">Loading user session...</div>;
   }
   
-  const isFinished = match.state?.state === 'FINISHED';
+  const isFinished = match.state?.state === 'Finished' || match.state?.state === 'FT';
 
   const getOutcomeButton = (outcomeType: BetOutcome, label: string, oddsValue?: number, pointValue?: number, icon?: React.ElementType) => {
     if (oddsValue === undefined || oddsValue === null || oddsValue <=0) return null; // Don't render if no odds or invalid odds
@@ -188,7 +188,7 @@ export default function MatchDetailClientContent({ initialMatch }: MatchDetailCl
     }
   };
   
-  const isLive = match.state?.state === 'INPLAY';
+  const isLive = match.state?.state === 'INPLAY' || match.state?.state === 'Live';
 
   return (
     <div className="space-y-6">
@@ -224,7 +224,7 @@ export default function MatchDetailClientContent({ initialMatch }: MatchDetailCl
                   {/* H2H Odds */}
                   {(match.odds.home || match.odds.away || match.odds.draw) && (
                     <div className="space-y-2">
-                      <p className="text-sm font-medium text-muted-foreground">Match Winner (H2H):</p>
+                      <p className="text-sm font-medium text-muted-foreground">Match Winner:</p>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-stretch">
                         {getOutcomeButton('teamA', match.homeTeam.name, match.odds.home)}
                         {match.odds.draw && getOutcomeButton('draw', 'Draw', match.odds.draw)}
@@ -288,10 +288,7 @@ export default function MatchDetailClientContent({ initialMatch }: MatchDetailCl
               <Card>
                 <CardHeader><CardTitle className="font-headline flex items-center"><BarChart2 className="mr-2 h-5 w-5" />Match Statistics</CardTitle></CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground">Detailed match statistics will be available here. (e.g., possession, shots, score history)</p>
-                   <div className="mt-4 space-y-2">
-                    <p>Possession: {match.homeTeam.name} 55% - {match.awayTeam.name} 45% (Mock)</p>
-                  </div>
+                  <p className="text-muted-foreground">Detailed match statistics for {match.sportKey} will be available here.</p>
                 </CardContent>
               </Card>
             </TabsContent>

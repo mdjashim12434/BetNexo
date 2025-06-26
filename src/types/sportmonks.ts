@@ -1,4 +1,21 @@
-// --- Types for Cricket API v2.0 Live Scores ---
+
+// --- Common Types ---
+export interface SportmonksOdd {
+    id: number;
+    fixture_id: number;
+    market_id: number;
+    bookmaker_id: number;
+    label: string;
+    value: string;
+    winning: boolean | null;
+    stopped: boolean;
+    market_description: string;
+    original_label: string;
+    market?: { id: number; name: string; };
+    bookmaker?: { id: number; name: string; };
+}
+
+// --- Types for Cricket API v2.0 ---
 
 export interface CricketTeam {
     id: number;
@@ -20,10 +37,7 @@ export interface CricketLeague {
     id: number;
     name: string;
     code: string;
-    country?: {
-        id: number;
-        name: string;
-    }
+    country?: { id: number; name: string; };
 }
 
 export interface SportmonksCricketLiveScore {
@@ -60,8 +74,33 @@ export interface ProcessedLiveScore {
     note: string;
 }
 
+export interface SportmonksCricketFixture {
+    id: number;
+    league_id: number;
+    season_id: number;
+    stage_id: number;
+    round: string;
+    localteam_id: number;
+    visitorteam_id: number;
+    starting_at: string;
+    status: 'NS' | 'Live' | 'Finished' | 'Aban.' | 'Postp.' | 'Cancelled';
+    note: string;
+    localteam: CricketTeam;
+    visitorteam: CricketTeam;
+    league?: CricketLeague;
+    odds?: { data: SportmonksOdd[] };
+}
 
-// --- Types for Football Odds by Round (Kept for now to avoid breaking fixture pages) ---
+export interface SportmonksCricketFixturesResponse {
+    data: SportmonksCricketFixture[];
+}
+
+export interface SportmonksSingleCricketFixtureResponse {
+    data: SportmonksCricketFixture;
+}
+
+
+// --- Types for Football Odds by Round (V3) ---
 
 export interface SportmonksComment {
     id: number;
@@ -76,35 +115,12 @@ export interface SportmonksOddsParticipant {
     id: number;
     name: string;
     image_path: string;
-    meta: {
-        location: 'home' | 'away';
-    }
-}
-
-export interface SportmonksOdd {
-    id: number;
-    fixture_id: number;
-    market_id: number;
-    bookmaker_id: number;
-    label: string;
-    value: string;
-    winning: boolean | null;
-    stopped: boolean;
-    market_description: string;
-    original_label: string;
-    market: {
-        id: number;
-        name: string;
-    };
-    bookmaker: {
-        id: number;
-        name: string;
-    }
+    meta: { location: 'home' | 'away'; };
 }
 
 export interface SportmonksState {
     id: number;
-    state: 'NS' | 'INPLAY' | 'HT' | 'FT' | 'ET' | 'PEN_LIVE' | 'AET' | 'BREAK' | 'POSTP' | 'CANCL' | 'ABAN' | 'SUSP' | 'AWARDED' | 'DELETED' | 'TBA' | 'WO' | 'AU' | 'FINISHED'; // Common states
+    state: 'NS' | 'INPLAY' | 'HT' | 'FT' | 'ET' | 'PEN_LIVE' | 'AET' | 'BREAK' | 'POSTP' | 'CANCL' | 'ABAN' | 'SUSP' | 'AWARDED' | 'DELETED' | 'TBA' | 'WO' | 'AU' | 'Finished' | 'Live'; // Common states, added Finished/Live for cricket compatibility
     name: string;
     short_name: string;
     developer_name: string;
@@ -118,7 +134,7 @@ export interface SportmonksOddsFixture {
     state: SportmonksState;
     participants: SportmonksOddsParticipant[];
     odds: SportmonksOdd[];
-    league?: SportmonksLeague; // Note: Reusing CricketLeague type here, might need adjustment
+    league?: CricketLeague;
     comments?: SportmonksComment[];
 }
 
@@ -128,7 +144,7 @@ export interface SportmonksRoundResponse {
         name: string;
         league_id: number;
         fixtures: SportmonksOddsFixture[];
-        league: SportmonksLeague;
+        league: CricketLeague;
     }
 }
 
@@ -136,7 +152,8 @@ export interface SportmonksSingleFixtureResponse {
     data: SportmonksOddsFixture;
 }
 
-// Simplified structure for our odds components
+// --- GENERIC PROCESSED TYPES FOR UI COMPONENTS ---
+
 export interface ProcessedComment {
     id: number;
     comment: string;
@@ -147,6 +164,7 @@ export interface ProcessedComment {
 
 export interface ProcessedFixture {
     id: number;
+    sportKey: 'football' | 'cricket';
     name: string;
     startingAt: string;
     state: SportmonksState;

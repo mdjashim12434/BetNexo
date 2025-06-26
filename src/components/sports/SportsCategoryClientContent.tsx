@@ -55,8 +55,8 @@ export default function SportsCategoryClientContent({
     return <div className="text-center p-10">Redirecting to login...</div>;
   }
 
-  // Handle categories other than football gracefully
-  if (categorySlug !== 'football' && categorySlug !== 'upcoming' && categorySlug !== 'all-sports') {
+  // Handle categories that are not yet implemented with a generic message
+  if (categorySlug !== 'football' && categorySlug !== 'upcoming' && categorySlug !== 'all-sports' && categorySlug !== 'cricket') {
       return (
            <div className="space-y-6">
                <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -117,7 +117,7 @@ export default function SportsCategoryClientContent({
         </div>
       ) : !error && (
         <p className="text-center text-muted-foreground py-10">
-          No upcoming football matches found. Please check back later.
+          No upcoming {categorySlug} matches found. Please check back later.
         </p>
       )}
     </div>
