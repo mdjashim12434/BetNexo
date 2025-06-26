@@ -10,8 +10,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'API key is not configured on the server.' }, { status: 500 });
   }
 
-  // Use /fixtures with status=LIVE as requested to get full fixture details for live games
-  const includes = "participants,league,runs,scores,events";
+  // Use /fixtures with status=LIVE as requested to get full fixture details for live games.
+  // Corrected includes for Cricket V3 API. 'scores' and 'events' are not valid includes for cricket fixtures.
+  const includes = "participants,league,runs";
   const url = `${SPORTMONKS_CRICKET_API_URL}/fixtures?api_token=${apiKey}&filter[status]=Live&include=${includes}`;
 
   try {
