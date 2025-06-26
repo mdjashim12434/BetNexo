@@ -31,9 +31,12 @@ interface SportCategoryPageProps {
 
 // This is a Server Component
 export default async function SportCategoryPage({ params, searchParams }: SportCategoryPageProps) {
-  const categorySlug = params.category;
+  const awaitedParams = await params;
+  const awaitedSearchParams = await searchParams;
+
+  const categorySlug = awaitedParams.category;
   const categoryName = categoryMapping[categorySlug] || 'Sports';
-  const leagueId = searchParams.leagueId ? Number(searchParams.leagueId) : undefined;
+  const leagueId = awaitedSearchParams.leagueId ? Number(awaitedSearchParams.leagueId) : undefined;
 
   let matchesForCategory: ProcessedFixture[] = [];
   let fetchError: string | null = null;
