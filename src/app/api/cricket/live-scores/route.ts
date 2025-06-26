@@ -10,9 +10,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'API key is not configured on the server.' }, { status: 500 });
   }
 
-  // Using fixtures endpoint with INPLAY state filter. This is the correct developer name for live matches.
-  // Correct includes for cricket are participants, league, runs, state.
-  const includes = "participants,league,runs,state";
+  // Using fixtures endpoint with INPLAY state filter. 'state' is the correct filter key for V3.
+  // 'state' is a root object on the fixture, not a separate relation, so it should not be in the 'include' string.
+  // The correct includes for cricket are participants, league, and runs.
+  const includes = "participants,league,runs";
   const stateFilter = "INPLAY"; // Use 'INPLAY' for live matches as per Sportmonks V3 docs
   const url = `${SPORTMONKS_CRICKET_API_URL}/fixtures?filter[state]=${stateFilter}&api_token=${apiKey}&include=${includes}`;
 
