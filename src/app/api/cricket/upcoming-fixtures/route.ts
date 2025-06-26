@@ -1,8 +1,8 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
 
-// Cricket API v3 endpoint
-const SPORTMONKS_CRICKET_API_URL = "https://api.sportmonks.com/v3/cricket";
+// Cricket API v2.0 endpoint
+const SPORTMONKS_CRICKET_API_URL = "https://cricket.sportmonks.com/api/v2.0";
 const apiKey = process.env.SPORTMONKS_API_KEY;
 
 // Leagues included in the user's plan
@@ -30,14 +30,14 @@ export async function GET(request: NextRequest) {
   const startDate = formatDate(today);
   const endDate = formatDate(futureDate);
 
-  // Includes for upcoming fixtures. participants = teams, league for league info, odds for betting.
-  const includes = "participants,league,odds";
-  const marketFilter = "markets:1"; // Filter for H2H odds only (Match Winner) to optimize the call.
-  const leagueIdsFilter = `leagueIds:${cricketLeagueIds.join(',')}`;
+  // Includes for upcoming fixtures. localteam/visitorteam, league for info, odds for betting.
+  const includes = "localteam,visitorteam,league,odds";
+  // For v2.0, leagues are passed as a comma-separated parameter.
+  const leaguesParam = `&leagues=${cricketLeagueIds.join(',')}`;
+  // For v2.0, date range is a filter parameter
+  const dateFilter = `&filter[starts_between]=${startDate},${endDate}`;
 
-  // The MatchCard only displays H2H odds, so filtering here reduces payload size.
-  const combinedFilters = `${marketFilter};${leagueIdsFilter}`;
-  const url = `${SPORTMONKS_CRICKET_API_URL}/fixtures/between/${startDate}/${endDate}?api_token=${apiKey}&include=${includes}&filters=${combinedFilters}`;
+  const url = `${SPORTMONKS_CRICKET_API_URL}/fixtures?api_token=${apiKey}&include=${includes}${leaguesParam}${dateFilter}&sort=starting_at`;
 
   try {
     const apiResponse = await fetch(url, {
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
 
     if (!apiResponse.ok) {
         const errorData = await apiResponse.json().catch(() => ({}));
-        console.error("Error from Sportmonks Cricket API (upcoming v3):", apiResponse.status, errorData);
+        console.error("Error from Sportmonks Cricket API (upcoming v2.0):", apiResponse.status, errorData);
         const message = errorData.message || `Failed to fetch upcoming cricket data. Status: ${apiResponse.status}`;
         return NextResponse.json({ error: message }, { status: apiResponse.status });
     }
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(data);
 
   } catch (error: any) {
-    console.error("Error proxying request to Sportmonks Cricket API (upcoming v3):", error);
+    console.error("Error proxying request to Sportmonks Cricket API (upcoming v2.0):", error);
     return NextResponse.json({ error: 'An internal server error occurred while contacting the proxy API.' }, { status: 500 });
   }
 }

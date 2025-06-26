@@ -1,5 +1,6 @@
 
 
+
 // --- Common Types ---
 export interface SportmonksOdd {
     id: number;
@@ -18,7 +19,7 @@ export interface SportmonksOdd {
 
 export interface SportmonksState {
     id: number;
-    state: 'NS' | 'INPLAY' | 'HT' | 'FT' | 'ET' | 'PEN_LIVE' | 'AET' | 'BREAK' | 'POSTP' | 'CANCL' | 'ABAN' | 'SUSP' | 'AWARDED' | 'DELETED' | 'TBA' | 'WO' | 'AU' | 'Finished' | 'Live' | '1st Innings' | '2nd Innings' | 'Innings Break'; // Common states, added more cricket states
+    state: 'NS' | 'INPLAY' | 'HT' | 'FT' | 'ET' | 'PEN_LIVE' | 'AET' | 'BREAK' | 'POSTP' | 'CANCL' | 'ABAN' | 'SUSP' | 'AWARDED' | 'DELETED' | 'TBA' | 'WO' | 'AU' | 'Finished' | 'Live' | '1st Innings' | '2nd Innings' | 'Innings Break' | 'Cancelled'; // Common states, added more cricket states
     name: string;
     short_name: string;
     developer_name: string;
@@ -34,14 +35,15 @@ export interface SportmonksParticipant {
 export interface CricketLeague {
     id: number;
     name: string;
-    code: string;
-    country?: { id: number; name: string; }; // This is present in Football league, optional in Cricket
+    code?: string;
+    country?: { id: number; name: string; };
 }
 
 export interface SportmonksVenue {
     id: number;
     name: string;
-    city_name: string;
+    city_name?: string; // V3 field
+    city?: string; // V2 field
     country_name: string;
 }
 
@@ -57,43 +59,49 @@ export interface SportmonksOfficial {
 }
 
 
-// --- Types for Cricket API v3 ---
+// --- Types for Cricket API v2.0 ---
+export interface SportmonksCricketTeam {
+    id: number;
+    name: string;
+    code: string;
+    image_path: string;
+}
 
 export interface CricketRun {
     fixture_id: number;
-    participant_id: number; // Changed from team_id
+    participant_id: number; // For V2, this is team_id
     inning: number;
     score: number;
     wickets: number;
     overs: number;
 }
 
-export interface SportmonksCricketV3Fixture {
+export interface SportmonksCricketV2Fixture {
     id: number;
-    name: string;
     league_id: number;
-    season_id: number;
-    stage_id: number;
-    round: string;
     starting_at: string;
-    state: SportmonksState;
+    status: string;
     note: string;
-    participants: SportmonksParticipant[];
+    live: boolean;
+    
+    localteam_id: number;
+    visitorteam_id: number;
+    localteam: SportmonksCricketTeam;
+    visitorteam: SportmonksCricketTeam;
+    
     league?: CricketLeague;
     runs?: CricketRun[];
     odds?: SportmonksOdd[];
-    scores?: FootballScore[];
-    events?: FootballEvent[];
     venue?: SportmonksVenue;
     officials?: SportmonksOfficial[];
 }
 
-export interface SportmonksCricketV3FixturesResponse {
-    data: SportmonksCricketV3Fixture[];
+export interface SportmonksCricketV2FixturesResponse {
+    data: SportmonksCricketV2Fixture[];
 }
 
-export interface SportmonksSingleCricketV3FixtureResponse {
-    data: SportmonksCricketV3Fixture;
+export interface SportmonksSingleCricketV2FixtureResponse {
+    data: SportmonksCricketV2Fixture;
 }
 
 
