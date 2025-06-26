@@ -5,9 +5,6 @@ import { NextResponse, type NextRequest } from 'next/server';
 const SPORTMONKS_CRICKET_API_URL = "https://cricket.sportmonks.com/api/v2.0";
 const apiKey = process.env.SPORTMONKS_API_KEY;
 
-// Leagues included in the user's plan
-const cricketLeagueIds = [7, 11, 5, 29, 32, 225, 9, 216, 237, 186, 231, 264, 13, 19, 47, 138, 141, 189, 83, 294, 168, 204, 180, 183, 222, 228, 1, 106, 276, 255, 288, 234, 317, 314, 282, 249, 6, 8, 252, 320, 150, 243, 10, 270, 100, 171, 177, 22, 23, 3, 12, 16, 17, 35, 258, 261, 2, 4, 18, 41, 86, 201, 14, 15];
-
 // Helper to format date to YYYY-MM-DD
 const formatDate = (date: Date): string => {
   const year = date.getFullYear();
@@ -32,12 +29,13 @@ export async function GET(request: NextRequest) {
 
   // Includes for upcoming fixtures. localteam/visitorteam, league for info, odds for betting.
   const includes = "localteam,visitorteam,league,odds";
-  // For v2.0, leagues are passed as a comma-separated parameter.
-  const leaguesParam = `&leagues=${cricketLeagueIds.join(',')}`;
+  
   // For v2.0, date range is a filter parameter
   const dateFilter = `&filter[starts_between]=${startDate},${endDate}`;
 
-  const url = `${SPORTMONKS_CRICKET_API_URL}/fixtures?api_token=${apiKey}&include=${includes}${leaguesParam}${dateFilter}&sort=starting_at`;
+  // NOTE: Removed specific league filtering to make the query more robust for a "Worldwide Plan".
+  // The V2 API is less flexible with combined filters.
+  const url = `${SPORTMONKS_CRICKET_API_URL}/fixtures?api_token=${apiKey}&include=${includes}${dateFilter}&sort=starting_at`;
 
   try {
     const apiResponse = await fetch(url, {
