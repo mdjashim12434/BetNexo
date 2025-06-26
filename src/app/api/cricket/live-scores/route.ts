@@ -11,8 +11,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'API key is not configured on the server.' }, { status: 500 });
   }
 
-  // Includes for comprehensive live score data
-  const includes = "participants;league.country;state;runs;officials";
+  // Reduced includes to fetch essential live score data, avoiding potentially premium data like officials.
+  const includes = "participants;league.country;state;runs";
   
   const url = `${SPORTMONKS_API_BASE_URL}?api_token=${apiKey}&include=${includes}`;
 
@@ -25,7 +25,9 @@ export async function GET(request: NextRequest) {
       const errorData = await apiResponse.json().catch(() => ({}));
       console.error("Error from Sportmonks Cricket Live API (v3):", apiResponse.status, errorData);
       let errorMessage = `Failed to fetch live cricket scores. Status: ${apiResponse.status}`;
-      if (errorData && errorData.message) {
+      if (apiResponse.status === 403) {
+        errorMessage = `Forbidden: Your current API plan does not allow access to this data.`;
+      } else if (errorData && errorData.message) {
         errorMessage += ` - Message: ${errorData.message}`;
       }
       return NextResponse.json({ error: errorMessage }, { status: apiResponse.status });
