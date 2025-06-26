@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
@@ -42,10 +41,9 @@ export default function FootballLiveScoresDisplay() {
                 match.state?.state === 'NS' || match.state?.state === 'TBA'
             );
 
-            // Sort the truly upcoming matches by starting time and take the top 5
+            // Sort the truly upcoming matches by starting time
             const sortedUpcoming = trulyUpcoming
-                .sort((a, b) => new Date(a.startingAt).getTime() - new Date(b.startingAt).getTime())
-                .slice(0, 5);
+                .sort((a, b) => new Date(a.startingAt).getTime() - new Date(b.startingAt).getTime());
 
             setUpcomingFixtures(sortedUpcoming);
         }
