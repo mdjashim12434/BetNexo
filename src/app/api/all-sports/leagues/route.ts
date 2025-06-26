@@ -1,12 +1,16 @@
 
 export async function GET() {
-  const footballToken = process.env.SPORTMONKS_FOOTBALL_TOKEN;
-  const cricketToken = process.env.SPORTMONKS_CRICKET_TOKEN;
+  const apiKey = process.env.SPORTMONKS_API_KEY;
+
+  if (!apiKey) {
+    console.error("SPORTMONKS_API_KEY is not set in environment variables.");
+    return new Response("API key is not configured on the server.", { status: 500 });
+  }
 
   try {
     const [footballRes, cricketRes] = await Promise.all([
-      fetch(`https://api.sportmonks.com/v3/football/leagues?api_token=${footballToken}`, { cache: 'no-store' }),
-      fetch(`https://cricket.sportmonks.com/api/v2.0/leagues?api_token=${cricketToken}`, { cache: 'no-store' })
+      fetch(`https://api.sportmonks.com/v3/football/leagues?api_token=${apiKey}`, { cache: 'no-store' }),
+      fetch(`https://cricket.sportmonks.com/api/v2.0/leagues?api_token=${apiKey}`, { cache: 'no-store' })
     ]);
 
     if (!footballRes.ok) {
