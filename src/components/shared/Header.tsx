@@ -21,7 +21,7 @@ export default function Header() {
             <div className="h-9 w-24 animate-pulse rounded-md bg-muted" />
           ) : user && user.role !== 'Admin' ? (
             <Button variant="ghost" size="sm" asChild>
-              <Link href="/deposit" className="flex items-center gap-2">
+              <Link href="/wallet" className="flex items-center gap-2">
                 <PlusCircle className="h-5 w-5 text-primary" />
                 <div className="flex flex-col items-start">
                   <span className="text-xs font-semibold text-foreground">{balance.toFixed(2)}</span>
