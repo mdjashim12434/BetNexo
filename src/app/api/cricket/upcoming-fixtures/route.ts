@@ -13,26 +13,20 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'API key is not configured on the server.' }, { status: 500 });
   }
 
-  const { searchParams } = new URL(request.url);
-  const fixtureId = searchParams.get('fixtureId');
-  
-  if (!fixtureId) {
-    return NextResponse.json({ error: 'A fixtureId must be provided to get match details.' }, { status: 400 });
-  }
-
-  // Fetch a single fixture with details. 'odds' is included for betting purposes.
-  const includes = "localteam,visitorteam,league,runs,odds"; 
-  const url = `${SPORTMONKS_CRICKET_API_URL}/fixtures/${fixtureId}?api_token=${apiKey}&include=${includes}`;
+  // Fetch upcoming fixtures. Essential 'includes' are added to ensure data consistency.
+  // 'status=NS' filters for "Not Started" matches.
+  const includes = "localteam,visitorteam,league,odds";
+  const url = `${SPORTMONKS_CRICKET_API_URL}/fixtures?api_token=${apiKey}&sort=starting_at&filter[status]=NS&include=${includes}`;
 
   try {
     const apiResponse = await fetch(url, {
-        next: { revalidate: 60 * 5 } // Cache for 5 minutes
+        next: { revalidate: 60 * 15 } // Cache for 15 minutes
     });
 
     if (!apiResponse.ok) {
         const errorData = await apiResponse.json().catch(() => ({}));
-        console.error("Error from Sportmonks Cricket API:", apiResponse.status, errorData);
-        const message = errorData.message || `Failed to fetch cricket data. Status: ${apiResponse.status}`;
+        console.error("Error from Sportmonks Cricket API (upcoming):", apiResponse.status, errorData);
+        const message = errorData.message || `Failed to fetch upcoming cricket data. Status: ${apiResponse.status}`;
         return NextResponse.json({ error: message }, { status: apiResponse.status });
     }
 
@@ -40,7 +34,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(data);
 
   } catch (error: any) {
-    console.error("Error proxying request to Sportmonks Cricket API:", error);
+    console.error("Error proxying request to Sportmonks Cricket API (upcoming):", error);
     return NextResponse.json({ error: 'An internal server error occurred while contacting the proxy API.' }, { status: 500 });
   }
 }

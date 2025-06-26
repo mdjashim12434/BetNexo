@@ -246,7 +246,7 @@ export async function fetchUpcomingFootballFixtures(): Promise<ProcessedFixture[
 
 export async function fetchUpcomingCricketFixtures(): Promise<ProcessedFixture[]> {
     try {
-        const response = await fetch('/api/cricket/fixtures');
+        const response = await fetch('/api/cricket/upcoming-fixtures');
         const rawData: SportmonksCricketFixturesResponse = await handleApiResponse(response);
         return processCricketFixtureData(rawData.data);
     } catch (error) {
