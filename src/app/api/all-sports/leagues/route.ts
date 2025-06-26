@@ -4,35 +4,50 @@ export async function GET() {
 
   if (!apiKey) {
     console.error("SPORTMONKS_API_KEY is not set in environment variables.");
-    return new Response("API key is not configured on the server.", { status: 500 });
-  }
-
-  try {
-    const [footballRes, cricketRes] = await Promise.all([
-      fetch(`https://api.sportmonks.com/v3/football/leagues?api_token=${apiKey}`, { next: { revalidate: 3600 } }), // Cache for 1 hour
-      fetch(`https://api.sportmonks.com/v3/cricket/leagues?api_token=${apiKey}`, { next: { revalidate: 3600 } }) // Cache for 1 hour, V3 URL
-    ]);
-
-    if (!footballRes.ok) {
-        const errorText = await footballRes.text();
-        console.error("Football API Error:", errorText);
-        throw new Error(`Football API request failed with status ${footballRes.status}`);
-    }
-    if (!cricketRes.ok) {
-        const errorText = await cricketRes.text();
-        console.error("Cricket API Error:", errorText);
-        throw new Error(`Cricket API request failed with status ${cricketRes.status}`);
-    }
-
-    const football = await footballRes.json();
-    const cricket = await cricketRes.json();
-
-    return Response.json({
-      footballLeagues: football.data ?? [],
-      cricketLeagues: cricket.data ?? []
+    return new Response(JSON.stringify({ error: "API key is not configured on the server." }), { 
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
     });
-  } catch (error) {
-    console.error("API error in /api/all-sports/leagues:", error);
-    return new Response("Server error while fetching leagues", { status: 500 });
   }
+
+  const [footballResult, cricketResult] = await Promise.allSettled([
+    fetch(`https://api.sportmonks.com/v3/football/leagues?api_token=${apiKey}`, { next: { revalidate: 3600 } }),
+    fetch(`https://api.sportmonks.com/v3/cricket/leagues?api_token=${apiKey}`, { next: { revalidate: 3600 } })
+  ]);
+
+  let footballLeagues = [];
+  let cricketLeagues = [];
+
+  if (footballResult.status === 'fulfilled' && footballResult.value.ok) {
+    const footballData = await footballResult.value.json();
+    footballLeagues = footballData.data ?? [];
+  } else if (footballResult.status === 'fulfilled') {
+    // API returned non-ok status
+    console.error(`Football leagues API failed with status ${footballResult.value.status}:`, await footballResult.value.text());
+  } else {
+    // Fetch itself failed
+    console.error("Fetching football leagues failed:", footballResult.reason);
+  }
+
+  if (cricketResult.status === 'fulfilled' && cricketResult.value.ok) {
+    const cricketData = await cricketResult.value.json();
+    cricketLeagues = cricketData.data ?? [];
+  } else if (cricketResult.status === 'fulfilled') {
+    // API returned non-ok status
+    console.error(`Cricket leagues API failed with status ${cricketResult.value.status}:`, await cricketResult.value.text());
+  } else {
+    // Fetch itself failed
+    console.error("Fetching cricket leagues failed:", cricketResult.reason);
+  }
+  
+  // If both APIs failed to return any data, we might still want to inform the client.
+  // However, for maximum resilience, we return what we have. An empty list will be handled by the UI.
+  if (footballLeagues.length === 0 && cricketLeagues.length === 0) {
+      console.warn("Both football and cricket league fetches failed or returned no data.");
+  }
+
+  return Response.json({
+    footballLeagues,
+    cricketLeagues
+  });
 }
