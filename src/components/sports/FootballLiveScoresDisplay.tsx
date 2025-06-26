@@ -81,7 +81,7 @@ export default function FootballLiveScoresDisplay() {
             Live Football Scores
           </CardTitle>
           <CardDescription className="text-xs md:text-sm mt-1">
-            Live scores from Sportmonks. {renderTimeSinceUpdate()}
+            Scores are updated regularly. {renderTimeSinceUpdate()}
           </CardDescription>
         </div>
          <Button onClick={() => loadScores(true)} variant="ghost" size="icon" className="text-muted-foreground hover:text-primary" disabled={loading}>
