@@ -49,14 +49,22 @@ export default async function SportCategoryPage({ params }: SportCategoryPagePro
         }),
       ]);
       matchesForCategory = [...footballMatches, ...cricketMatches];
-    } else if (
-      categorySlug === 'football' ||
-      categorySlug === 'upcoming' ||
-      categorySlug === 'all-sports'
-    ) {
+    } else if (categorySlug === 'football') {
       matchesForCategory = await fetchUpcomingFootballFixtures();
     } else if (categorySlug === 'cricket') {
       matchesForCategory = await fetchUpcomingCricketFixtures();
+    } else if (categorySlug === 'upcoming' || categorySlug === 'all-sports') {
+      const [footballMatches, cricketMatches] = await Promise.all([
+        fetchUpcomingFootballFixtures().catch((e) => {
+          console.error('Failed to fetch upcoming football fixtures:', e.message);
+          return [];
+        }),
+        fetchUpcomingCricketFixtures().catch((e) => {
+          console.error('Failed to fetch upcoming cricket fixtures:', e.message);
+          return [];
+        }),
+      ]);
+      matchesForCategory = [...footballMatches, ...cricketMatches];
     }
   } catch (error: any) {
     console.error(`Failed to fetch fixtures for ${categorySlug}:`, error);

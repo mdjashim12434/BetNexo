@@ -55,27 +55,6 @@ export default function SportsCategoryClientContent({
     return <div className="text-center p-10">Redirecting to login...</div>;
   }
 
-  // Handle categories that are not yet implemented with a generic message
-  if (categorySlug !== 'football' && categorySlug !== 'upcoming' && categorySlug !== 'all-sports' && categorySlug !== 'cricket') {
-      return (
-           <div className="space-y-6">
-               <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-                <Button variant="outline" onClick={() => router.back()} className="self-start sm:self-center">
-                    <ArrowLeft className="mr-2 h-4 w-4" /> Back
-                </Button>
-                <h1 className="font-headline text-3xl font-bold text-center sm:text-left flex-grow">
-                    {categoryName}
-                </h1>
-                </div>
-                 <div className="text-center text-muted-foreground py-10">
-                    <Frown className="mx-auto h-12 w-12 mb-4" />
-                    <p className="text-lg font-semibold">Coming Soon!</p>
-                    <p>Matches for {categoryName} will be available soon.</p>
-                </div>
-           </div>
-      );
-  }
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -116,9 +95,11 @@ export default function SportsCategoryClientContent({
           ))}
         </div>
       ) : !error && (
-        <p className="text-center text-muted-foreground py-10">
-          No upcoming {categorySlug} matches found. Please check back later.
-        </p>
+        <div className="text-center text-muted-foreground py-10">
+          <Frown className="mx-auto h-12 w-12 mb-4" />
+          <p className="text-lg font-semibold">No Matches Found</p>
+          <p>No {searchTerm ? `matches for "${searchTerm}"` : `${categoryName.toLowerCase()}`} found at the moment. Please check back later.</p>
+        </div>
       )}
     </div>
   );
