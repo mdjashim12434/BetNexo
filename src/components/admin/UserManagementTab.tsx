@@ -7,10 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { MoreHorizontal, Edit2, ShieldCheck, UserX, UserCheck, DollarSign, Phone, Mail, Search, Users } from 'lucide-react';
+import { MoreHorizontal, Edit2, ShieldCheck, UserX, UserCheck, DollarSign, Phone, Mail, Search, Users, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/contexts/AuthContext'; 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { cn } from '@/lib/utils';
 
 interface AdminManagedUser extends User {
   role: 'User' | 'Agent' | 'Admin';

@@ -83,11 +83,9 @@ export default function HomePage() {
         <ScrollArea className="w-full whitespace-nowrap -mt-4">
           <div className="flex justify-between items-center p-2 gap-4">
             {topNavItems.map((item, index) => (
-              <Link href={item.href} key={item.name} legacyBehavior>
-                <a className={cn("flex flex-col items-center justify-center gap-1.5 pb-2 text-muted-foreground hover:text-primary transition-colors", index === 0 ? "text-primary border-b-2 border-primary" : "")}>
-                  <item.icon className="h-6 w-6" />
-                  <span className="text-xs font-medium tracking-tight">{item.name}</span>
-                </a>
+              <Link href={item.href} key={item.name} className={cn("flex flex-col items-center justify-center gap-1.5 pb-2 text-muted-foreground hover:text-primary transition-colors", index === 0 ? "text-primary border-b-2 border-primary" : "")}>
+                <item.icon className="h-6 w-6" />
+                <span className="text-xs font-medium tracking-tight">{item.name}</span>
               </Link>
             ))}
           </div>
@@ -98,13 +96,11 @@ export default function HomePage() {
         <ScrollArea className="w-full whitespace-nowrap">
           <div className="flex gap-3 px-1 py-1">
             {sportsGridItems.map(sport => (
-               <Link href={sport.href} key={sport.name} legacyBehavior>
-                  <a className="flex flex-col items-center justify-center w-20 h-20 bg-card rounded-lg shadow-sm hover:shadow-md transition-shadow gap-1.5 p-2">
-                    <div className="w-8 h-8 flex items-center justify-center bg-primary/20 rounded-full">
-                       <sport.icon className="h-5 w-5 text-primary" />
-                    </div>
-                    <span className="text-xs font-medium text-foreground truncate">{sport.name}</span>
-                  </a>
+               <Link href={sport.href} key={sport.name} className="flex flex-col items-center justify-center w-20 h-20 bg-card rounded-lg shadow-sm hover:shadow-md transition-shadow gap-1.5 p-2">
+                  <div className="w-8 h-8 flex items-center justify-center bg-primary/20 rounded-full">
+                     <sport.icon className="h-5 w-5 text-primary" />
+                  </div>
+                  <span className="text-xs font-medium text-foreground truncate">{sport.name}</span>
               </Link>
             ))}
           </div>
@@ -120,9 +116,8 @@ export default function HomePage() {
                     <Image 
                       src={`https://placehold.co/400x200.png`} 
                       alt={banner.title} 
-                      layout="fill"
-                      objectFit="cover"
-                      className="group-hover:scale-105 transition-transform duration-300"
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
                       data-ai-hint={banner.imageHint}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
@@ -140,14 +135,12 @@ export default function HomePage() {
         <ScrollArea className="w-full whitespace-nowrap">
            <div className="flex gap-4 px-1 py-1">
              {casinoLinks.map(link => (
-                <Link href={link.href} key={link.name} legacyBehavior>
-                    <a className="flex flex-col items-center justify-center gap-2 w-20 text-center">
-                        <Avatar className="h-16 w-16 border-2 border-primary/20">
-                            <AvatarImage src={`https://placehold.co/128x128.png`} data-ai-hint={link.imageHint}/>
-                            <AvatarFallback><ImageIcon /></AvatarFallback>
-                        </Avatar>
-                        <span className="text-xs font-medium text-muted-foreground truncate w-full">{link.name}</span>
-                    </a>
+                <Link href={link.href} key={link.name} className="flex flex-col items-center justify-center gap-2 w-20 text-center">
+                    <Avatar className="h-16 w-16 border-2 border-primary/20">
+                        <AvatarImage src={`https://placehold.co/128x128.png`} data-ai-hint={link.imageHint}/>
+                        <AvatarFallback><ImageIcon /></AvatarFallback>
+                    </Avatar>
+                    <span className="text-xs font-medium text-muted-foreground truncate w-full">{link.name}</span>
                 </Link>
              ))}
            </div>

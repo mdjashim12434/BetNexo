@@ -52,8 +52,8 @@ export default function CasinoPage() {
                   <Image 
                     src={`https://placehold.co/600x400.png?text=${game.name.replace(' ', '+')}`} 
                     alt={game.name} 
-                    layout="fill" 
-                    objectFit="cover" 
+                    fill
+                    className="object-cover" 
                     data-ai-hint={game.imageHint}
                   />
                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
