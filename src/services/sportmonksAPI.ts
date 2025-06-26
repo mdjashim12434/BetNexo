@@ -12,7 +12,7 @@ import type {
 } from '@/types/sportmonks';
 
 // Define the base URL for API calls. For production, this should come from an environment variable.
-const API_BASE_URL = 'http://localhost:9002';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:9002';
 
 // Helper to generate user-friendly error messages based on HTTP status
 const handleApiResponse = async (response: Response) => {
@@ -65,7 +65,7 @@ const processCricketV3LiveScoresApiResponse = (data: SportmonksV3Fixture[]): Pro
             awayTeam: { name: awayTeam?.name || 'Team 2', score: formatScore(awayTeam?.id) },
             leagueName: match.league?.name ?? 'N/A',
             countryName: match.league?.country?.name || 'N/A',
-            startTime: match.starting_at, // Keep as UTC string
+            startTime: match.starting_at.replace(' ', 'T') + 'Z', // Ensure UTC format
             status: match.state.name,
             note: match.state.name, // v3 doesn't have a simple 'note' field like v2
             latestEvent: match.state.name,
@@ -128,7 +128,7 @@ const processV3FixtureData = (fixtures: SportmonksV3Fixture[], sportKey: 'footba
             id: fixture.id,
             sportKey: sportKey,
             name: fixture.name,
-            startingAt: fixture.starting_at, // Keep as UTC string
+            startingAt: fixture.starting_at.replace(' ', 'T') + 'Z', // Ensure UTC format
             state: fixture.state,
             league: { id: fixture.league_id, name: fixture.league?.name || 'N/A', countryName: fixture.league?.country?.name || 'N/A' },
             homeTeam: { id: homeTeam?.id || 0, name: homeTeam?.name || 'Home', image_path: homeTeam?.image_path },
@@ -216,7 +216,7 @@ const processLiveFootballFixtures = (fixtures: SportmonksFootballLiveScore[]): P
             id: fixture.id,
             sportKey: 'football',
             name: fixture.name,
-            startingAt: fixture.starting_at, // Keep as UTC string
+            startingAt: fixture.starting_at.replace(' ', 'T') + 'Z', // Ensure UTC format
             state: fixture.state,
             league: { id: fixture.league?.id || 0, name: fixture.league?.name || 'N/A', countryName: fixture.league?.country?.name || 'N/A' },
             homeTeam: { id: homeTeam?.id || 0, name: homeTeam?.name || 'Home', image_path: homeTeam?.image_path },
