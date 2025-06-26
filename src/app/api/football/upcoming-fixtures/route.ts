@@ -29,9 +29,10 @@ export async function GET(request: NextRequest) {
 
     // Includes for upcoming fixtures. participants = teams, league for league info.
     const includes = "participants;league.country;state;odds";
+    const marketFilter = "markets:1"; // Filter for H2H odds only to optimize the call
 
-    // Removed markets and bookmakers filters to simplify the API call and avoid potential errors.
-    const url = `${SPORTMONKS_FOOTBALL_API_URL}/fixtures/between/${startDate}/${endDate}?api_token=${apiKey}&include=${includes}`;
+    // The MatchCard only displays H2H odds, so filtering here reduces payload size.
+    const url = `${SPORTMONKS_FOOTBALL_API_URL}/fixtures/between/${startDate}/${endDate}?api_token=${apiKey}&include=${includes}&filters=${marketFilter}`;
     
     try {
         const response = await fetch(url, {
