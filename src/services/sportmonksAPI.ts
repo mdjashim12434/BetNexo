@@ -41,29 +41,17 @@ const handleApiResponse = async (response: Response) => {
 };
 
 // Helper function to robustly parse date strings from the API into a standard ISO format.
-// This prevents timezone ambiguity by explicitly constructing a UTC date.
+// This is the most reliable way to handle timezone-less timestamps from an API.
 const parseSportmonksDateStringToISO = (dateString: string): string => {
-    // Input format is "YYYY-MM-DD HH:MM:SS"
-    const parts = dateString.match(/(\d{4})-(\d{2})-(\d{2})\s(\d{2}):(\d{2}):(\d{2})/);
-    if (!parts) {
-        // Fallback for safety, though it might be incorrect if the format is unexpected
-        console.warn(`Could not parse date string: ${dateString}. Falling back to default parsing.`);
-        // The original fallback, kept for safety in edge cases.
-        return new Date(dateString.replace(' ', 'T') + 'Z').toISOString();
+    // The API is configured to return dates in UTC.
+    // The format is "YYYY-MM-DD HH:MM:SS".
+    // We convert it to the ISO 8601 format "YYYY-MM-DDTHH:MM:SSZ"
+    // which is universally understood by JavaScript's Date object as UTC.
+    if (!dateString || !dateString.includes(' ')) {
+        console.warn(`Invalid or null date string received: '${dateString}'. Returning current time as a fallback to prevent crashes.`);
+        return new Date().toISOString(); // Return a valid ISO string as a safe fallback
     }
-
-    const year = parseInt(parts[1], 10);
-    const month = parseInt(parts[2], 10) - 1; // JS Date months are 0-indexed
-    const day = parseInt(parts[3], 10);
-    const hour = parseInt(parts[4], 10);
-    const minute = parseInt(parts[5], 10);
-    const second = parseInt(parts[6], 10);
-
-    // Date.UTC() returns milliseconds since epoch for a UTC date, avoiding local timezone interpretation.
-    const utcDate = new Date(Date.UTC(year, month, day, hour, minute, second));
-    
-    // toISOString() will return the date in the standard "YYYY-MM-DDTHH:mm:ss.sssZ" format.
-    return utcDate.toISOString();
+    return dateString.replace(' ', 'T') + 'Z';
 };
 
 
@@ -74,9 +62,9 @@ const processCricketV2ApiResponse = (fixtures: SportmonksV2Fixture[]): Processed
         // Find Pre-Match odds for 1/2 market
         let homeOddValue: number | undefined;
         let awayOddValue: number | undefined;
+        // Safely check if odds and its nested properties exist
         const preMatchOdds = fixture.odds?.data?.find(o => o.name === '2-Way');
         if (preMatchOdds) {
-            // Find a bookmaker that has odds, e.g., 'bet365' or just the first one
             const bookmaker = preMatchOdds.bookmaker?.data?.[0];
             if (bookmaker?.odds?.data) {
                 const homeOdd = bookmaker.odds.data.find(o => o.label === '1');
@@ -106,7 +94,7 @@ const processCricketV2ApiResponse = (fixtures: SportmonksV2Fixture[]): Processed
         let homeScore: string | number | undefined;
         let awayScore: string | number | undefined;
 
-        if (state.state.includes('Innings') || state.state === 'Live' || state.state === 'Finished') {
+        if (state.state && (state.state.includes('Innings') || state.state === 'Live' || state.state === 'Finished')) {
              homeScore = formatScore(fixture.localteam.id);
              awayScore = formatScore(fixture.visitorteam.id);
         }
@@ -205,7 +193,7 @@ const processV3FixtureData = (fixtures: SportmonksV3Fixture[], sportKey: 'footba
         let awayScore: string | number | undefined;
         let latestEvent: string | undefined;
 
-        if (sportKey === 'cricket' && (fixture.state.state.includes('Innings') || fixture.state.state === 'Live')) {
+        if (sportKey === 'cricket' && fixture.state?.state && (fixture.state.state.includes('Innings') || fixture.state.state === 'Live')) {
             const formatScore = (participantId?: number) => {
                 if (!participantId || !fixture.runs || fixture.runs.length === 0) return "Yet to bat";
                 const participantRuns = fixture.runs
