@@ -9,6 +9,7 @@ import type {
     SportmonksFootballLiveScore,
     SportmonksState,
 } from '@/types/sportmonks';
+import { format } from 'date-fns';
 
 // Define the base URL for API calls. For production, this should come from an environment variable.
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:9002';
@@ -179,8 +180,12 @@ export async function fetchLiveFootballFixtures(leagueId?: number): Promise<Proc
     const url = leagueId ? `/api/football/live-scores?leagueId=${leagueId}` : '/api/football/live-scores';
     const response = await fetch(`${API_BASE_URL}${url}`, { cache: 'no-store' });
     const responseData: SportmonksV3FixturesResponse = await handleApiResponse(response);
-    // The '/api/football/live-scores' route now reliably returns only live fixtures, so no extra filtering is needed here.
-    return processV3FixtureData(responseData?.data || [], 'football');
+    
+    // Process all of today's fixtures from the API response
+    const allTodaysFixtures = processV3FixtureData(responseData?.data || [], 'football');
+    
+    // Filter to return only the fixtures that are currently live
+    return allTodaysFixtures.filter(fixture => fixture.isLive);
   } catch (error) {
     console.error('Error in fetchLiveFootballFixtures service:', error);
     throw error;
@@ -265,3 +270,4 @@ export async function fetchFixtureDetails(fixtureId: number, sport: 'football' |
         throw error;
     }
 }
+

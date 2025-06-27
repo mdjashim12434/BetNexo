@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -175,7 +176,7 @@ export default function MatchDetailClientContent({ initialMatch }: MatchDetailCl
     return <div className="text-center p-10">Loading user session...</div>;
   }
   
-  const isFinished = match.state?.state === 'Finished' || match.state?.state === 'FT';
+  const isFinished = match.isFinished;
 
   const getOutcomeButton = (outcomeType: BetOutcome, label: string, oddsValue?: number, pointValue?: number, icon?: React.ElementType) => {
     if (oddsValue === undefined || oddsValue === null || oddsValue <=0) return null;
@@ -219,7 +220,7 @@ export default function MatchDetailClientContent({ initialMatch }: MatchDetailCl
     }
   };
   
-  const isLive = match.state?.state === 'INPLAY' || match.state?.state === 'Live';
+  const isLive = match.isLive;
   const hasAnyFootballOdds = match.sportKey === 'football' && (match.odds.home || (match.odds.overUnder && match.odds.overUnder.over) || (match.odds.btts && match.odds.btts.yes) || (match.odds.dnb && match.odds.dnb.home) || (match.odds.dc && match.odds.dc.homeOrDraw));
   const hasAnyCricketOdds = match.sportKey === 'cricket' && (match.odds.home || match.odds.away);
 
