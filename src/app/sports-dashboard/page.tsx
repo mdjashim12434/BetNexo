@@ -5,17 +5,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import AppLayout from '@/components/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { AlertTriangle, Frown, Loader2, ChevronsRight } from "lucide-react";
+import { AlertTriangle, Frown, Loader2, ChevronsRight, ChevronDown, ChevronUp } from "lucide-react";
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion"
+import { cn } from '@/lib/utils';
 
 interface Match {
     id: number;
@@ -37,14 +32,18 @@ interface OddsData {
     oddValue: string;
 }
 
+type ViewState = 'live' | 'upcoming' | 'leagues' | 'league-fixtures';
 
 export default function SportsDashboardPage() {
-  const [view, setView] = useState('live');
+  const [view, setView] = useState<ViewState>('live');
   const [matches, setMatches] = useState<Match[]>([]);
   const [leagues, setLeagues] = useState<League[]>([]);
   const [odds, setOdds] = useState<Record<number, OddsData[]>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedLeagueName, setSelectedLeagueName] = useState('');
+  const [expandedMatch, setExpandedMatch] = useState<number | null>(null);
+  const [loadingOdds, setLoadingOdds] = useState<Set<number>>(new Set());
 
   const { user, loadingAuth } = useAuth();
   const router = useRouter();
@@ -56,17 +55,18 @@ export default function SportsDashboardPage() {
     }
   }, [user, loadingAuth, router]);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (currentView: ViewState) => {
     setLoading(true);
     setError(null);
     setMatches([]);
-    setLeagues([]);
+    // Do not clear leagues when switching to live/upcoming
+    if (currentView === 'leagues') setLeagues([]);
 
     try {
         let url = '';
-        if (view === 'live') url = '/api/live-matches';
-        else if (view === 'upcoming') url = '/api/upcoming-matches';
-        else if (view === 'leagues') url = '/api/leagues';
+        if (currentView === 'live') url = '/api/live-matches';
+        else if (currentView === 'upcoming') url = '/api/upcoming-matches';
+        else if (currentView === 'leagues') url = '/api/leagues';
         
         if (!url) {
             setLoading(false);
@@ -76,11 +76,11 @@ export default function SportsDashboardPage() {
         const res = await fetch(url);
         if (!res.ok) {
             const errData = await res.json();
-            throw new Error(errData.error || 'Failed to fetch data');
+            throw new Error(errData.error || `Failed to fetch ${currentView} data`);
         }
         const data = await res.json();
         
-        if (view === 'leagues') {
+        if (currentView === 'leagues') {
             setLeagues(data);
         } else {
             setMatches(data);
@@ -91,18 +91,20 @@ export default function SportsDashboardPage() {
     } finally {
         setLoading(false);
     }
-  }, [view, toast]);
+  }, [toast]);
 
   useEffect(() => {
-      if (user) {
-        fetchData();
+      if (user && (view === 'live' || view === 'upcoming' || view === 'leagues')) {
+        fetchData(view);
       }
   }, [view, user, fetchData]);
 
   const fetchFixturesByLeague = async (league: League) => {
     setLoading(true);
     setError(null);
-    setView('league-fixtures'); // A temporary view state
+    setMatches([]);
+    setView('league-fixtures');
+    setSelectedLeagueName(league.name);
     try {
         const res = await fetch(`/api/fixtures-by-league?league_id=${league.id}&sport=${league.sport}`);
         if (!res.ok) throw new Error('Failed to fetch league fixtures');
@@ -116,62 +118,41 @@ export default function SportsDashboardPage() {
     }
   };
 
-  const fetchOdds = async (fixtureId: number, sport: 'football' | 'cricket') => {
-    if (odds[fixtureId]) return; // Don't fetch if already present
-    
-    // Show loading state for odds
-    setOdds(prev => ({...prev, [fixtureId]: []})); // Empty array indicates loading
+  const toggleOdds = async (match: Match) => {
+    if (expandedMatch === match.id) {
+        setExpandedMatch(null);
+        return;
+    }
 
+    setExpandedMatch(match.id);
+    if (odds[match.id]) return; // Don't re-fetch if already present
+
+    setLoadingOdds(prev => new Set(prev.add(match.id)));
     try {
-        const res = await fetch(`/api/odds/${fixtureId}?sport=${sport}`);
+        const res = await fetch(`/api/odds/${match.id}?sport=${match.sport}`);
         if (!res.ok) throw new Error('Failed to fetch odds');
         const data = await res.json();
-        setOdds(prev => ({ ...prev, [fixtureId]: data }));
+        setOdds(prev => ({ ...prev, [match.id]: data }));
     } catch (e: any) {
         toast({ title: 'Odds Error', description: e.message, variant: 'destructive' });
-        setOdds(prev => ({ ...prev, [fixtureId]: [{ marketName: 'Error', oddValue: 'N/A'}] }));
+        setOdds(prev => ({ ...prev, [match.id]: [{ marketName: 'Error fetching odds', oddValue: 'N/A'}] }));
+    } finally {
+        setLoadingOdds(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(match.id);
+            return newSet;
+        });
     }
   };
-  
-  const renderMatches = () => (
-      matches.map(match => (
-          <Accordion key={match.id} type="single" collapsible className="w-full">
-            <AccordionItem value={`item-${match.id}`} className="border rounded-md mb-2 px-4 bg-card">
-              <AccordionTrigger onClick={() => fetchOdds(match.id, match.sport)}>
-                <div className="text-left">
-                  <p className="font-semibold">{match.home_team} vs {match.away_team}</p>
-                  <p className="text-xs text-muted-foreground">{match.date} - {match.time}</p>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent>
-                {odds[match.id] ? (
-                    odds[match.id].length > 0 ? (
-                        <div className="pt-2 border-t">
-                            <h4 className="font-semibold mb-2 text-primary">Available Odds</h4>
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
-                            {odds[match.id].map(odd => (
-                                <div key={odd.marketName} className="flex justify-between p-2 bg-muted rounded">
-                                    <span>{odd.marketName}</span>
-                                    <span className="font-bold">{odd.oddValue}</span>
-                                </div>
-                            ))}
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="flex items-center justify-center p-4">
-                            <Loader2 className="h-5 w-5 animate-spin" />
-                            <span className="ml-2">Loading Odds...</span>
-                        </div>
-                    )
-                ) : (
-                    <p className="text-muted-foreground text-center p-2">Click trigger to view odds.</p>
-                )}
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
-      ))
-  );
 
+  const getTitle = () => {
+    if(view === 'league-fixtures') return selectedLeagueName;
+    if(view === 'live') return 'Live Matches';
+    if(view === 'upcoming') return 'Upcoming Matches';
+    if(view === 'leagues') return 'All Leagues';
+    return 'Sports Dashboard';
+  }
+  
   const renderContent = () => {
     if (loading) {
         return <div className="flex justify-center items-center p-10"><Loader2 className="h-8 w-8 animate-spin" /></div>;
@@ -182,19 +163,67 @@ export default function SportsDashboardPage() {
     if (view === 'leagues') {
         return (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {leagues.map(league => (
-                    <Button key={league.id} variant="outline" className="justify-between h-auto py-3" onClick={() => fetchFixturesByLeague(league)}>
-                        <span className="text-left flex-1">{league.name}</span>
+                {leagues.length > 0 ? leagues.map(league => (
+                    <Button key={league.id} variant="outline" className="justify-between h-auto py-3 text-left" onClick={() => fetchFixturesByLeague(league)}>
+                        <span className="flex-1">{league.name}</span>
                         <ChevronsRight className="h-4 w-4 ml-2" />
                     </Button>
-                ))}
+                )) : <div className="text-center text-muted-foreground p-10 col-span-full"><Frown className="mx-auto h-8 w-8 mb-2" />No leagues found.</div>}
             </div>
         )
     }
+
     if (matches.length === 0) {
         return <div className="text-center text-muted-foreground p-10"><Frown className="mx-auto h-8 w-8 mb-2" />No matches found for this view.</div>;
     }
-    return <div className="space-y-2">{renderMatches()}</div>;
+    
+    return (
+        <div className="space-y-3">
+            {matches.map(match => (
+                <Card key={match.id} className="bg-card">
+                    <CardContent className="p-4">
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <p className="font-semibold">{match.home_team} vs {match.away_team}</p>
+                                <p className="text-xs text-muted-foreground">{new Date(match.date).toLocaleDateString()} - {match.time}</p>
+                            </div>
+                            <Button variant="outline" size="sm" onClick={() => toggleOdds(match)} className="w-28">
+                                {loadingOdds.has(match.id) ? <Loader2 className="h-4 w-4 animate-spin"/> :
+                                 expandedMatch === match.id ? <><ChevronUp className="h-4 w-4 mr-1"/> Hide Odds</> : <><ChevronDown className="h-4 w-4 mr-1"/> Show Odds</>
+                                }
+                            </Button>
+                        </div>
+                        {expandedMatch === match.id && (
+                            <div className="mt-4 pt-4 border-t">
+                                {odds[match.id] ? (
+                                    odds[match.id].length > 0 && odds[match.id][0].marketName !== 'Error fetching odds' ? (
+                                        <>
+                                            <h4 className="font-semibold mb-2 text-primary">Available Odds</h4>
+                                            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
+                                                {odds[match.id].map(odd => (
+                                                    <div key={odd.marketName} className="flex justify-between p-2 bg-muted rounded">
+                                                        <span>{odd.marketName}</span>
+                                                        <span className="font-bold">{odd.oddValue}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <p className="text-sm text-center text-muted-foreground">No odds available for this match.</p>
+                                    )
+                                ) : (
+                                    <div className="flex items-center justify-center p-4">
+                                        <Loader2 className="h-5 w-5 animate-spin" />
+                                        <span className="ml-2">Loading Odds...</span>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            ))}
+        </div>
+    );
   };
   
   if (loadingAuth && !user) {
@@ -211,13 +240,13 @@ export default function SportsDashboardPage() {
   return (
     <AppLayout>
       <div className="container py-6">
-        <Card>
+        <Card className="shadow-lg">
             <CardHeader>
-                <CardTitle className="font-headline text-3xl">Sports Dashboard</CardTitle>
+                <CardTitle className="font-headline text-3xl">{getTitle()}</CardTitle>
                 <CardDescription>View live matches, upcoming fixtures, and browse all leagues.</CardDescription>
             </CardHeader>
             <CardContent>
-                <div className="flex flex-wrap gap-2 mb-4">
+                <div className="flex flex-wrap gap-2 mb-4 border-b pb-4">
                     <Button onClick={() => setView('live')} variant={view === 'live' ? 'default' : 'outline'}>Live</Button>
                     <Button onClick={() => setView('upcoming')} variant={view === 'upcoming' ? 'default' : 'outline'}>Upcoming</Button>
                     <Button onClick={() => setView('leagues')} variant={view === 'leagues' ? 'default' : 'outline'}>All Leagues</Button>
