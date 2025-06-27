@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     // Includes for comprehensive details, combining original and new requirements.
     const includes = "odds;participants;league.country;comments;venue;referee;state;scores;events;statistics;sidelined;weatherReport";
 
-    const url = `${SPORTMONKS_FOOTBALL_API_URL}/fixtures/${fixtureId}?api_token=${apiKey}&include=${includes}`;
+    const url = `${SPORTMONKS_FOOTBALL_API_URL}/fixtures/${fixtureId}?api_token=${apiKey}&include=${includes}&tz=UTC`;
     
     try {
         const response = await fetch(url, {

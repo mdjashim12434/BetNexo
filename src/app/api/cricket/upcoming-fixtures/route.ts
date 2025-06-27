@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
   // v2 includes are comma-separated
   const includes = "localteam,visitorteam,league,runs,venue,odds,stage";
   
-  let baseUrl = `${SPORTMONKS_CRICKET_API_URL}/fixtures?api_token=${apiKey}&filter[starts_between]=${startDate},${endDate}&include=${includes}&sort=starting_at`;
+  let baseUrl = `${SPORTMONKS_CRICKET_API_URL}/fixtures?api_token=${apiKey}&filter[starts_between]=${startDate},${endDate}&include=${includes}&sort=starting_at&tz=UTC`;
 
   if (leagueId) {
     baseUrl += `&league_id=${leagueId}`; // v2 uses league_id parameter

@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 
   const includes = "participants;scores;periods;events;league.country;round";
   
-  let baseUrl = `${SPORTMONKS_API_BASE_URL}?api_token=${apiKey}&include=${includes}`;
+  let baseUrl = `${SPORTMONKS_API_BASE_URL}?api_token=${apiKey}&include=${includes}&tz=UTC`;
 
   if (leagueId) {
     baseUrl += `&leagues=${leagueId}`;

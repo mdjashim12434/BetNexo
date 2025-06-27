@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
 
   // Fetch a single fixture with details using v2 includes
   const includes = "localteam,visitorteam,league,runs,odds,venue,officials,stage,comments";
-  const url = `${SPORTMONKS_CRICKET_API_URL}/fixtures/${fixtureId}?api_token=${apiKey}&include=${includes}`;
+  const url = `${SPORTMONKS_CRICKET_API_URL}/fixtures/${fixtureId}?api_token=${apiKey}&include=${includes}&tz=UTC`;
 
   try {
     const apiResponse = await fetch(url, {

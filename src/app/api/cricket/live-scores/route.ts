@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
 
   // v2 includes
   const includes = "localteam,visitorteam,league,runs,venue,stage";
-  const baseUrl = `${SPORTMONKS_API_BASE_URL}?api_token=${apiKey}&include=${includes}`;
+  const baseUrl = `${SPORTMONKS_API_BASE_URL}?api_token=${apiKey}&include=${includes}&tz=UTC`;
 
   try {
     let allFixtures: any[] = [];

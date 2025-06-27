@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
 
     const includes = "participants;league.country;state;odds";
     
-    let baseUrl = `${SPORTMONKS_FOOTBALL_API_URL}/fixtures/between/${startDate}/${endDate}?api_token=${apiKey}&include=${includes}`;
+    let baseUrl = `${SPORTMONKS_FOOTBALL_API_URL}/fixtures/between/${startDate}/${endDate}?api_token=${apiKey}&include=${includes}&tz=UTC`;
     
     if (leagueId) {
         baseUrl += `&leagues=${leagueId}`;
