@@ -4,18 +4,13 @@ import type { ProcessedFixture } from '@/types/sportmonks';
 
 export async function GET(request: NextRequest, { params }: { params: { fixtureId: string } }) {
     const { fixtureId } = params;
-    const { searchParams } = new URL(request.url);
-    const sport = searchParams.get('sport') as 'football' | 'cricket';
 
     if (!fixtureId) {
         return NextResponse.json({ error: 'Fixture ID is required.' }, { status: 400 });
     }
-    if (!sport) {
-        return NextResponse.json({ error: 'Sport parameter is required.' }, { status: 400 });
-    }
 
     try {
-        const fixtureDetails: ProcessedFixture = await fetchFixtureDetails(Number(fixtureId), sport);
+        const fixtureDetails: ProcessedFixture = await fetchFixtureDetails(Number(fixtureId));
         
         const oddsData: { marketName: string, oddValue: string }[] = [];
 

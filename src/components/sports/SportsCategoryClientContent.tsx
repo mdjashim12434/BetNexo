@@ -25,7 +25,7 @@ interface ApiLeague {
 interface CombinedLeague {
   id: number;
   name: string;
-  sport: 'football' | 'cricket';
+  sport: 'football';
 }
 
 interface SportsCategoryClientContentProps {
@@ -59,7 +59,7 @@ export default function SportsCategoryClientContent({
   const [leagues, setLeagues] = useState<CombinedLeague[]>([]);
   const [loadingLeagues, setLoadingLeagues] = useState(false);
 
-  const showTabs = categorySlug === 'football' || categorySlug === 'cricket' || categorySlug === 'live' || categorySlug === 'upcoming';
+  const showTabs = categorySlug === 'football' || categorySlug === 'live' || categorySlug === 'upcoming';
   
   // Default active tab logic
   const getDefaultTab = () => {
@@ -83,10 +83,9 @@ export default function SportsCategoryClientContent({
           if (!res.ok) throw new Error('Failed to fetch leagues');
           return res.json();
         })
-        .then((data: { footballLeagues: ApiLeague[], cricketLeagues: ApiLeague[] }) => {
+        .then((data: { footballLeagues: ApiLeague[] }) => {
           const combined: CombinedLeague[] = [
             ...(data.footballLeagues || []).map(l => ({ id: l.id, name: l.name, sport: 'football' as const })),
-            ...(data.cricketLeagues || []).map(l => ({ id: l.id, name: l.name, sport: 'cricket' as const }))
           ];
           combined.sort((a, b) => a.name.localeCompare(b.name));
           setLeagues(combined);
@@ -218,7 +217,7 @@ export default function SportsCategoryClientContent({
                       className="flex items-center justify-between p-3 rounded-md hover:bg-muted/50 border transition-colors"
                     >
                       <span className="font-medium">{league.name}</span>
-                      <Badge variant={league.sport === 'football' ? 'default' : 'secondary'} className="capitalize">{league.sport}</Badge>
+                      <Badge variant={'default'} className="capitalize">{league.sport}</Badge>
                     </Link>
                   </li>
                 ))}

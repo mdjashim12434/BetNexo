@@ -9,24 +9,14 @@ export async function GET() {
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:9002';
 
   try {
-    const [footballResult, cricketResult] = await Promise.allSettled([
-      fetch(`${apiBaseUrl}/api/football/leagues`, { next: { revalidate: 3600 } }),
-      fetch(`${apiBaseUrl}/api/cricket/leagues`, { next: { revalidate: 3600 } })
-    ]);
+    const footballResult = await fetch(`${apiBaseUrl}/api/football/leagues`, { next: { revalidate: 3600 } });
 
-    const combinedLeagues: { id: number; name: string; sport: 'football' | 'cricket' }[] = [];
+    const combinedLeagues: { id: number; name: string }[] = [];
 
-    if (footballResult.status === 'fulfilled' && footballResult.value.ok) {
-      const footballData = await footballResult.value.json();
+    if (footballResult.ok) {
+      const footballData = await footballResult.json();
       (footballData.data || []).forEach((league: ApiLeague) => {
-        combinedLeagues.push({ id: league.id, name: league.name, sport: 'football' });
-      });
-    }
-
-    if (cricketResult.status === 'fulfilled' && cricketResult.value.ok) {
-      const cricketData = await cricketResult.value.json();
-      (cricketData.data || []).forEach((league: ApiLeague) => {
-        combinedLeagues.push({ id: league.id, name: league.name, sport: 'cricket' });
+        combinedLeagues.push({ id: league.id, name: league.name });
       });
     }
     

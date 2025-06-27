@@ -7,7 +7,6 @@ import { AlertTriangle, Info, Goal, Calendar, Flame, Clock } from 'lucide-react'
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { format } from 'date-fns';
-import { CricketIcon } from '../icons/CricketIcon';
 
 interface HomeMatchesDisplayProps {
   liveMatches?: ProcessedFixture[];
@@ -24,11 +23,8 @@ export default function HomeMatchesDisplay({
   const hasLiveMatches = liveMatches.length > 0;
   const hasUpcomingMatches = upcomingMatches.length > 0;
   
-  const sportIcon = (sportKey: 'football' | 'cricket') => {
-      if (sportKey === 'football') {
-          return <Goal className="mr-2 h-5 w-5 md:h-6 md:w-6 text-blue-500" />;
-      }
-      return <CricketIcon className="mr-2 h-5 w-5 md:h-6 md:w-6 text-red-500" />;
+  const sportIcon = (sportKey: 'football') => {
+      return <Goal className="mr-2 h-5 w-5 md:h-6 md:w-6 text-blue-500" />;
   }
 
   return (
@@ -62,7 +58,7 @@ export default function HomeMatchesDisplay({
 
         <div className="space-y-3">
           {hasLiveMatches && liveMatches.map((match) => (
-            <Link key={`live-${match.id}`} href={`/match/${match.id}?sport=${match.sportKey}`} legacyBehavior passHref>
+            <Link key={`live-${match.id}`} href={`/match/${match.id}`} legacyBehavior passHref>
               <a className="block p-3 sm:p-4 transition-all cursor-pointer bg-background border border-border/50 hover:border-primary/50 rounded-lg">
                 <div className="flex justify-between items-center mb-2">
                     <p className="text-xs text-muted-foreground truncate flex items-center gap-1.5">
@@ -92,7 +88,7 @@ export default function HomeMatchesDisplay({
           ))}
 
           {hasUpcomingMatches && upcomingMatches.map((match) => (
-             <Link key={`upcoming-${match.id}`} href={`/match/${match.id}?sport=${match.sportKey}`} legacyBehavior passHref>
+             <Link key={`upcoming-${match.id}`} href={`/match/${match.id}`} legacyBehavior passHref>
               <a className="block p-3 sm:p-4 transition-all cursor-pointer bg-background border border-border/50 hover:border-primary/50 rounded-lg">
                 <div className="flex justify-between items-center mb-2">
                     <p className="text-xs text-muted-foreground truncate flex items-center gap-1.5">

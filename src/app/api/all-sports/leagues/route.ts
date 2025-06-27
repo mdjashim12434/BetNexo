@@ -10,39 +10,27 @@ export async function GET() {
     });
   }
 
-  // Uses separate, version-specific API routes
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:9002';
 
-  const [footballResult, cricketResult] = await Promise.allSettled([
-    fetch(`${apiBaseUrl}/api/football/leagues`, { next: { revalidate: 3600 } }),
-    fetch(`${apiBaseUrl}/api/cricket/leagues`, { next: { revalidate: 3600 } })
-  ]);
+  const footballResult = await fetch(`${apiBaseUrl}/api/football/leagues`, { next: { revalidate: 3600 } });
 
   let footballLeagues = [];
-  let cricketLeagues = [];
 
-  if (footballResult.status === 'fulfilled' && footballResult.value.ok) {
-    const footballData = await footballResult.value.json();
+  if (footballResult.ok) {
+    const footballData = await footballResult.json();
     footballLeagues = footballData.data ?? [];
   } else {
-    const reason = footballResult.status === 'rejected' ? footballResult.reason : `Status: ${footballResult.value.status}`;
-    console.error("Fetching football leagues failed:", reason);
-  }
-
-  if (cricketResult.status === 'fulfilled' && cricketResult.value.ok) {
-    const cricketData = await cricketResult.value.json();
-    cricketLeagues = cricketData.data ?? [];
-  } else {
-     const reason = cricketResult.status === 'rejected' ? cricketResult.reason : `Status: ${cricketResult.value.status}`;
-    console.error("Fetching cricket leagues failed:", reason);
+    console.error("Fetching football leagues failed:", `Status: ${footballResult.status}`);
   }
   
-  if (footballLeagues.length === 0 && cricketLeagues.length === 0) {
-      console.warn("Both football and cricket league fetches failed or returned no data.");
+  if (footballLeagues.length === 0) {
+      console.warn("Football league fetch failed or returned no data.");
   }
 
+  // The component expects a `footballLeagues` property.
+  // We remove cricketLeagues by providing an empty array.
   return Response.json({
     footballLeagues,
-    cricketLeagues
+    cricketLeagues: [] 
   });
 }

@@ -3,16 +3,13 @@ import AppLayout from '@/components/AppLayout';
 import SportsCategoryClientContent from '@/components/sports/SportsCategoryClientContent';
 import {
   fetchUpcomingFootballFixtures,
-  fetchUpcomingCricketFixtures,
   fetchLiveFootballFixtures,
-  fetchLiveCricketFixtures,
 } from '@/services/sportmonksAPI';
 import type { ProcessedFixture } from '@/types/sportmonks';
 
-const validCategories = ['live', 'cricket', 'football', 'upcoming', 'all-sports'];
+const validCategories = ['live', 'football', 'upcoming', 'all-sports'];
 const categoryMapping: { [key: string]: string } = {
   live: 'Live Matches',
-  cricket: 'Cricket',
   football: 'Football',
   upcoming: 'Upcoming Matches',
   'all-sports': 'All Sports Leagues',
@@ -43,28 +40,17 @@ async function getMatchesForCategory(categorySlug: string, leagueId?: number) {
     });
 
   if (categorySlug === 'live') {
-    liveMatchesPromise = Promise.all([
-      handleFetch(fetchLiveFootballFixtures(leagueId)),
-      handleFetch(fetchLiveCricketFixtures(leagueId))
-    ]).then(results => results.flat());
-    // No upcoming matches for the 'live' page
+    liveMatchesPromise = handleFetch(fetchLiveFootballFixtures(leagueId));
     upcomingMatchesPromise = Promise.resolve([]);
 
   } else if (categorySlug === 'football') {
     liveMatchesPromise = handleFetch(fetchLiveFootballFixtures(leagueId));
     upcomingMatchesPromise = handleFetch(fetchUpcomingFootballFixtures(leagueId));
 
-  } else if (categorySlug === 'cricket') {
-    liveMatchesPromise = handleFetch(fetchLiveCricketFixtures(leagueId));
-    upcomingMatchesPromise = handleFetch(fetchUpcomingCricketFixtures(leagueId));
-
   } else if (categorySlug === 'upcoming') {
      // No live matches for the 'upcoming' page
     liveMatchesPromise = Promise.resolve([]);
-    upcomingMatchesPromise = Promise.all([
-      handleFetch(fetchUpcomingFootballFixtures(leagueId)),
-      handleFetch(fetchUpcomingCricketFixtures(leagueId))
-    ]).then(results => results.flat());
+    upcomingMatchesPromise = handleFetch(fetchUpcomingFootballFixtures(leagueId));
   }
 
   const [liveMatches, upcomingMatchesUnfiltered] = await Promise.all([

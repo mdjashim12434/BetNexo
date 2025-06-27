@@ -1,30 +1,19 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { fetchUpcomingFootballFixtures, fetchLiveFootballFixtures, fetchUpcomingCricketFixtures, fetchLiveCricketFixtures } from '@/services/sportmonksAPI';
+import { fetchUpcomingFootballFixtures, fetchLiveFootballFixtures } from '@/services/sportmonksAPI';
 import type { ProcessedFixture } from '@/types/sportmonks';
 
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const leagueId = searchParams.get("league_id");
-  const sport = searchParams.get("sport");
 
-  if (!leagueId || !sport) {
-    return NextResponse.json({ error: 'league_id and sport parameters are required.' }, { status: 400 });
+  if (!leagueId) {
+    return NextResponse.json({ error: 'league_id parameter is required.' }, { status: 400 });
   }
 
   try {
-    let liveMatchesPromise: Promise<ProcessedFixture[]>;
-    let upcomingMatchesPromise: Promise<ProcessedFixture[]>;
-
-    if (sport === 'football') {
-        liveMatchesPromise = fetchLiveFootballFixtures(Number(leagueId));
-        upcomingMatchesPromise = fetchUpcomingFootballFixtures(Number(leagueId));
-    } else if (sport === 'cricket') {
-        liveMatchesPromise = fetchLiveCricketFixtures(Number(leagueId));
-        upcomingMatchesPromise = fetchUpcomingCricketFixtures(Number(leagueId));
-    } else {
-        return NextResponse.json({ error: 'Invalid sport parameter.' }, { status: 400 });
-    }
+    const liveMatchesPromise: Promise<ProcessedFixture[]> = fetchLiveFootballFixtures(Number(leagueId));
+    const upcomingMatchesPromise: Promise<ProcessedFixture[]> = fetchUpcomingFootballFixtures(Number(leagueId));
     
     const [liveResult, upcomingResult] = await Promise.allSettled([liveMatchesPromise, upcomingMatchesPromise]);
 

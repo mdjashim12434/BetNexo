@@ -57,7 +57,7 @@ const MatchCard: FC<MatchCardProps> = ({ match }) => {
       </CardContent>
       <CardFooter>
         <Button variant="default" className="w-full" asChild>
-          <Link href={`/match/${match.id}?sport=${match.sportKey}`}>
+          <Link href={`/match/${match.id}`}>
             View Details <ArrowRight className="ml-2 h-4 w-4" />
           </Link>
         </Button>

@@ -2,7 +2,7 @@
 'use client'; // This page now fetches data client-side
 
 import { useEffect, useState } from 'react';
-import { useParams, useSearchParams } from 'next/navigation'; // For App Router
+import { useParams } from 'next/navigation'; // For App Router
 import AppLayout from '@/components/AppLayout';
 import type { ProcessedFixture } from '@/types/sportmonks';
 import MatchDetailClientContent from '@/components/match/MatchDetailClientContent';
@@ -14,22 +14,20 @@ import { useRouter } from 'next/navigation';
 
 export default function MatchDetailPage() {
   const params = useParams();
-  const searchParams = useSearchParams();
   const router = useRouter();
 
   const matchId = params.id as string;
-  const sport = searchParams.get('sport') as 'football' | 'cricket' | null;
 
   const [match, setMatch] = useState<ProcessedFixture | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (matchId && sport) {
-      console.log(`MatchDetailPage Client: Fetching ${sport} fixtureId: ${matchId}`);
+    if (matchId) {
+      console.log(`MatchDetailPage Client: Fetching football fixtureId: ${matchId}`);
       setLoading(true);
       setError(null);
-      fetchFixtureDetails(Number(matchId), sport)
+      fetchFixtureDetails(Number(matchId))
         .then(apiFixture => {
           if (apiFixture) {
             console.log(`MatchDetailPage Client: Found API fixture ${matchId}. Transformed.`);
@@ -41,16 +39,16 @@ export default function MatchDetailPage() {
         })
         .catch(err => {
           console.error(`MatchDetailPage Client: Error fetching fixture ${matchId}:`, err);
-          setError(err.message || `Failed to fetch match details for ${sport}.`);
+          setError(err.message || `Failed to fetch match details for football.`);
         })
         .finally(() => {
           setLoading(false);
         });
     } else {
-      setError('Match ID or Sport is missing from the URL. Example: /match/123?sport=football');
+      setError('Match ID is missing from the URL.');
       setLoading(false);
     }
-  }, [matchId, sport]);
+  }, [matchId]);
 
   if (loading) {
     return (

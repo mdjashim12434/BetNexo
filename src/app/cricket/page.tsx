@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 
 export default function CricketPage() {
-  redirect('/sports/cricket');
+  // Redirect to football page as cricket is removed
+  redirect('/sports/football');
 }

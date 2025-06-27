@@ -1,22 +1,10 @@
 import { NextResponse } from 'next/server';
-import { fetchLiveFootballFixtures, fetchLiveCricketFixtures } from '@/services/sportmonksAPI';
+import { fetchLiveFootballFixtures } from '@/services/sportmonksAPI';
 import type { ProcessedFixture } from '@/types/sportmonks';
 
 export async function GET() {
   try {
-    const [footballResult, cricketResult] = await Promise.allSettled([
-      fetchLiveFootballFixtures(),
-      fetchLiveCricketFixtures()
-    ]);
-
-    const liveMatches: ProcessedFixture[] = [];
-
-    if (footballResult.status === 'fulfilled') {
-      liveMatches.push(...footballResult.value);
-    }
-    if (cricketResult.status === 'fulfilled') {
-      liveMatches.push(...cricketResult.value);
-    }
+    const liveMatches: ProcessedFixture[] = await fetchLiveFootballFixtures();
     
     liveMatches.sort((a, b) => new Date(a.startingAt).getTime() - new Date(b.startingAt).getTime());
 

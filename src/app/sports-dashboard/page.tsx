@@ -18,13 +18,12 @@ interface Match {
     away_team: string;
     date: string;
     time: string;
-    sport: 'football' | 'cricket';
+    sport: 'football';
 }
 
 interface League {
     id: number;
     name: string;
-    sport: 'football' | 'cricket';
 }
 
 interface OddsData {
@@ -106,7 +105,7 @@ export default function SportsDashboardPage() {
     setView('league-fixtures');
     setSelectedLeagueName(league.name);
     try {
-        const res = await fetch(`/api/fixtures-by-league?league_id=${league.id}&sport=${league.sport}`);
+        const res = await fetch(`/api/fixtures-by-league?league_id=${league.id}`);
         if (!res.ok) throw new Error('Failed to fetch league fixtures');
         const data = await res.json();
         setMatches(data);
@@ -118,28 +117,28 @@ export default function SportsDashboardPage() {
     }
   };
 
-  const toggleOdds = async (match: Match) => {
-    if (expandedMatch === match.id) {
+  const toggleOdds = async (matchId: number) => {
+    if (expandedMatch === matchId) {
         setExpandedMatch(null);
         return;
     }
 
-    setExpandedMatch(match.id);
-    if (odds[match.id]) return; // Don't re-fetch if already present
+    setExpandedMatch(matchId);
+    if (odds[matchId]) return; // Don't re-fetch if already present
 
-    setLoadingOdds(prev => new Set(prev.add(match.id)));
+    setLoadingOdds(prev => new Set(prev.add(matchId)));
     try {
-        const res = await fetch(`/api/odds/${match.id}?sport=${match.sport}`);
+        const res = await fetch(`/api/odds/${matchId}`);
         if (!res.ok) throw new Error('Failed to fetch odds');
         const data = await res.json();
-        setOdds(prev => ({ ...prev, [match.id]: data }));
+        setOdds(prev => ({ ...prev, [matchId]: data }));
     } catch (e: any) {
         toast({ title: 'Odds Error', description: e.message, variant: 'destructive' });
-        setOdds(prev => ({ ...prev, [match.id]: [{ marketName: 'Error fetching odds', oddValue: 'N/A'}] }));
+        setOdds(prev => ({ ...prev, [matchId]: [{ marketName: 'Error fetching odds', oddValue: 'N/A'}] }));
     } finally {
         setLoadingOdds(prev => {
             const newSet = new Set(prev);
-            newSet.delete(match.id);
+            newSet.delete(matchId);
             return newSet;
         });
     }
@@ -187,7 +186,7 @@ export default function SportsDashboardPage() {
                                 <p className="font-semibold">{match.home_team} vs {match.away_team}</p>
                                 <p className="text-xs text-muted-foreground">{new Date(match.date).toLocaleDateString()} - {match.time}</p>
                             </div>
-                            <Button variant="outline" size="sm" onClick={() => toggleOdds(match)} className="w-28">
+                            <Button variant="outline" size="sm" onClick={() => toggleOdds(match.id)} className="w-28">
                                 {loadingOdds.has(match.id) ? <Loader2 className="h-4 w-4 animate-spin"/> :
                                  expandedMatch === match.id ? <><ChevronUp className="h-4 w-4 mr-1"/> Hide Odds</> : <><ChevronDown className="h-4 w-4 mr-1"/> Show Odds</>
                                 }

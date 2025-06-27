@@ -112,49 +112,6 @@ export interface SportmonksSingleV3FixtureResponse {
     data: SportmonksV3Fixture;
 }
 
-// --- V2 Cricket Specific Types ---
-export interface SportmonksV2Team {
-    id: number;
-    name: string;
-    code: string;
-    image_path: string;
-}
-
-export interface SportmonksV2Run {
-    fixture_id: number;
-    team_id: number;
-    inning: number;
-    score: number;
-    wickets: number;
-    overs: number;
-}
-
-export interface SportmonksV2Fixture {
-    id: number;
-    league_id: number;
-    starting_at: string;
-    type: string;
-    live: boolean;
-    status: string;
-    note: string;
-    localteam: SportmonksV2Team;
-    visitorteam: SportmonksV2Team;
-    league?: { data: { id: number; name: string; } };
-    venue?: { data: { id: number; name: string; city: string; } };
-    runs?: SportmonksV2Run[];
-    comments?: { data: any[] };
-    officials?: any;
-}
-
-export interface SportmonksV2FixturesResponse {
-    data: SportmonksV2Fixture[];
-    meta?: { pagination: any };
-}
-
-export interface SportmonksV2SingleFixtureResponse {
-    data: SportmonksV2Fixture;
-}
-
 
 // --- PROCESSED TYPES FOR UI COMPONENTS ---
 export interface ProcessedComment {
@@ -167,7 +124,7 @@ export interface ProcessedComment {
 
 export interface ProcessedFixture {
     id: number;
-    sportKey: 'football' | 'cricket';
+    sportKey: 'football';
     name: string;
     startingAt: string;
     state: SportmonksState;

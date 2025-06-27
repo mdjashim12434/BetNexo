@@ -221,8 +221,7 @@ export default function MatchDetailClientContent({ initialMatch }: MatchDetailCl
   };
   
   const isLive = match.isLive;
-  const hasAnyFootballOdds = match.sportKey === 'football' && (match.odds.home || (match.odds.overUnder && match.odds.overUnder.over) || (match.odds.btts && match.odds.btts.yes) || (match.odds.dnb && match.odds.dnb.home) || (match.odds.dc && match.odds.dc.homeOrDraw));
-  const hasAnyCricketOdds = match.sportKey === 'cricket' && (match.odds.home || match.odds.away);
+  const hasAnyFootballOdds = (match.odds.home || (match.odds.overUnder && match.odds.overUnder.over) || (match.odds.btts && match.odds.btts.yes) || (match.odds.dnb && match.odds.dnb.home) || (match.odds.dc && match.odds.dc.homeOrDraw));
 
   return (
     <div className="space-y-6">
@@ -314,7 +313,7 @@ export default function MatchDetailClientContent({ initialMatch }: MatchDetailCl
 
 
                    {/* No Odds Available */}
-                   {!hasAnyFootballOdds && !hasAnyCricketOdds && !isFinished && (
+                   {!hasAnyFootballOdds && !isFinished && (
                         <div className="text-center py-10 text-muted-foreground flex flex-col items-center justify-center">
                             <ShieldQuestion className="h-10 w-10 mb-3 text-primary/50" />
                             <p className="font-semibold">Odds not available for this match yet.</p>
@@ -360,7 +359,7 @@ export default function MatchDetailClientContent({ initialMatch }: MatchDetailCl
                       )}
                     </div>
                   )}
-                  {!selectedBet && !isFinished && (hasAnyFootballOdds || hasAnyCricketOdds) && (
+                  {!selectedBet && !isFinished && hasAnyFootballOdds && (
                     <p className="text-sm text-muted-foreground text-center py-4">
                       Please select an outcome above to place a bet.
                     </p>
@@ -377,7 +376,7 @@ export default function MatchDetailClientContent({ initialMatch }: MatchDetailCl
               <Card>
                 <CardHeader><CardTitle className="font-headline flex items-center"><BarChart2 className="mr-2 h-5 w-5" />Match Statistics</CardTitle></CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground">Detailed match statistics for {match.sportKey} will be available here.</p>
+                  <p className="text-muted-foreground">Detailed match statistics for football will be available here.</p>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -403,7 +402,7 @@ export default function MatchDetailClientContent({ initialMatch }: MatchDetailCl
                         <div className="flex items-start">
                            <Gavel className="h-4 w-4 mr-2 mt-1 text-muted-foreground"/>
                            <div>
-                            <h4 className="font-semibold text-muted-foreground">{match.sportKey === 'cricket' ? 'Umpire' : 'Referee'}</h4>
+                            <h4 className="font-semibold text-muted-foreground">Referee</h4>
                             <p>{match.referee.name}</p>
                            </div>
                         </div>
