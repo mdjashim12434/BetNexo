@@ -1,4 +1,3 @@
-
 'use client';
 
 import AppLayout from "@/components/AppLayout";
@@ -58,8 +57,8 @@ export default function AdminPage() {
     }
   }, [user, loadingAuth, router]);
   
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     toast({ title: "Logged Out", description: "You have been logged out successfully." });
     router.push('/login');
   };
