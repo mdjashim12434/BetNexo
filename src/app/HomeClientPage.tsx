@@ -11,11 +11,11 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import FootballLiveScoresDisplay from '@/components/sports/FootballLiveScoresDisplay';
+import HomeMatchesDisplay from '@/components/sports/FootballLiveScoresDisplay';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
-import type { ProcessedFootballLiveScore, ProcessedFixture } from '@/types/sportmonks';
+import type { ProcessedFixture } from '@/types/sportmonks';
 
 // --- Top Navigation Data ---
 const topNavItems = [
@@ -55,14 +55,12 @@ const casinoLinks = [
 ];
 
 interface HomeClientPageProps {
-  initialLiveMatches: ProcessedFootballLiveScore[];
-  initialUpcomingFixtures: ProcessedFixture[];
+  initialMatches: ProcessedFixture[];
   initialError: string | null;
 }
 
 export default function HomeClientPage({
-  initialLiveMatches,
-  initialUpcomingFixtures,
+  initialMatches,
   initialError,
 }: HomeClientPageProps) {
   const { user, loadingAuth } = useAuth();
@@ -165,10 +163,9 @@ export default function HomeClientPage({
               <h2 className="font-headline text-xl font-bold text-foreground">Top LIVE <Button variant="ghost" size="sm" className="ml-1 text-primary">Sport</Button></h2>
               <Button variant="link" asChild><Link href="/sports/live">All</Link></Button>
             </div>
-            <FootballLiveScoresDisplay 
-              initialLiveMatches={initialLiveMatches}
-              initialUpcomingFixtures={initialUpcomingFixtures}
-              initialError={initialError || undefined}
+            <HomeMatchesDisplay 
+              matches={initialMatches}
+              error={initialError || undefined}
             />
           </section>
 

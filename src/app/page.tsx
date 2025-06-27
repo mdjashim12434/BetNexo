@@ -1,36 +1,40 @@
 import {
-  fetchFootballLiveScores,
+  fetchLiveFootballFixtures,
   fetchUpcomingFootballFixtures,
+  fetchLiveCricketFixtures,
+  fetchUpcomingCricketFixtures,
 } from '@/services/sportmonksAPI';
-import type {
-  ProcessedFootballLiveScore,
-  ProcessedFixture,
-} from '@/types/sportmonks';
+import type { ProcessedFixture } from '@/types/sportmonks';
 import HomeClientPage from './HomeClientPage';
 
 async function getHomePageMatches() {
   try {
-    const liveMatches = await fetchFootballLiveScores();
+    const liveFootballFixtures = await fetchLiveFootballFixtures();
+    const liveCricketFixtures = await fetchLiveCricketFixtures();
+    
+    const liveMatches = [...liveFootballFixtures, ...liveCricketFixtures];
 
     if (liveMatches.length > 0) {
-      return { liveMatches, upcomingFixtures: [], error: null };
+      liveMatches.sort((a,b) => {
+        if (a.sportKey === 'football' && b.sportKey === 'cricket') return -1;
+        if (a.sportKey === 'cricket' && b.sportKey === 'football') return 1;
+        return new Date(a.startingAt).getTime() - new Date(b.startingAt).getTime();
+      });
+      return { matches: liveMatches, error: null };
     } else {
-      const upcomingFixtures = await fetchUpcomingFootballFixtures();
-      // Filter for matches that have not started yet
-      const trulyUpcoming = upcomingFixtures.filter(
-        (match) => match.state?.state === 'NS' || match.state?.state === 'TBA'
-      );
-      // Sort upcoming matches by starting time
-      const sortedUpcoming = trulyUpcoming.sort(
-        (a, b) => new Date(a.startingAt).getTime() - new Date(b.startingAt).getTime()
-      );
-      return { liveMatches: [], upcomingFixtures: sortedUpcoming, error: null };
+      const upcomingFootball = await fetchUpcomingFootballFixtures();
+      const upcomingCricket = await fetchUpcomingCricketFixtures();
+      
+      const upcomingFixtures = [...upcomingFootball, ...upcomingCricket]
+        .filter(match => match.state?.state === 'NS' || match.state?.state === 'TBA')
+        .sort((a, b) => new Date(a.startingAt).getTime() - new Date(b.startingAt).getTime());
+        
+      return { matches: upcomingFixtures, error: null };
     }
   } catch (error) {
     console.error('Error fetching matches for home page:', error);
     return {
-      liveMatches: [],
-      upcomingFixtures: [],
+      matches: [],
       error:
         (error as Error).message ||
         'An unknown error occurred while fetching matches.',
@@ -39,12 +43,11 @@ async function getHomePageMatches() {
 }
 
 export default async function HomePage() {
-  const { liveMatches, upcomingFixtures, error } = await getHomePageMatches();
+  const { matches, error } = await getHomePageMatches();
 
   return (
     <HomeClientPage
-      initialLiveMatches={liveMatches}
-      initialUpcomingFixtures={upcomingFixtures}
+      initialMatches={matches}
       initialError={error}
     />
   );

@@ -1,92 +1,44 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import { fetchFootballLiveScores, fetchUpcomingFootballFixtures } from '@/services/sportmonksAPI';
-import type { ProcessedFootballLiveScore, ProcessedFixture } from '@/types/sportmonks';
+import type { ProcessedFixture } from '@/types/sportmonks';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle, Loader2, Info, Goal, Calendar } from 'lucide-react';
+import { AlertTriangle, Loader2, Info, Goal, Calendar, Flame } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
-import { useToast } from "@/hooks/use-toast";
 import Link from 'next/link';
 import { format } from 'date-fns';
+import { CricketIcon } from '../icons/CricketIcon';
 
-const REFRESH_INTERVAL_MS = 60000; // 60 seconds
-
-interface FootballLiveScoresDisplayProps {
-  initialLiveMatches?: ProcessedFootballLiveScore[];
-  initialUpcomingFixtures?: ProcessedFixture[];
-  initialError?: string;
+interface HomeMatchesDisplayProps {
+  matches?: ProcessedFixture[];
+  error?: string;
 }
 
-export default function FootballLiveScoresDisplay({
-  initialLiveMatches = [],
-  initialUpcomingFixtures = [],
-  initialError,
-}: FootballLiveScoresDisplayProps) {
-  const [liveMatches, setLiveMatches] = useState<ProcessedFootballLiveScore[]>(initialLiveMatches);
-  const [upcomingFixtures, setUpcomingFixtures] = useState<ProcessedFixture[]>(initialUpcomingFixtures);
-  const [loading, setLoading] = useState(false); // No initial loading state needed
-  const [error, setError] = useState<string | null>(initialError || null);
-  const { toast } = useToast();
+const isLive = (match: ProcessedFixture) => {
+    const liveStates = ['INPLAY', 'Live', '1st Innings', '2nd Innings', 'Innings Break'];
+    return liveStates.includes(match.state.state);
+}
 
-  const loadData = useCallback(async (isManualRefresh: boolean = false) => {
-    if (isManualRefresh) {
-        setLoading(true);
-    }
-    setError(null);
+const isUpcoming = (match: ProcessedFixture) => {
+    const upcomingStates = ['NS', 'TBA'];
+    return upcomingStates.includes(match.state.state);
+}
 
-    try {
-        const fetchedLiveMatches = await fetchFootballLiveScores();
-        if (fetchedLiveMatches.length > 0) {
-            setLiveMatches(fetchedLiveMatches);
-            setUpcomingFixtures([]); // Clear upcoming if live are found
-        } else {
-            setLiveMatches([]); // Clear live matches
-            const fetchedUpcoming = await fetchUpcomingFootballFixtures();
-            
-            const trulyUpcoming = fetchedUpcoming.filter(match => 
-                match.state?.state === 'NS' || match.state?.state === 'TBA'
-            );
+export default function HomeMatchesDisplay({
+  matches = [],
+  error,
+}: HomeMatchesDisplayProps) {
 
-            const sortedUpcoming = trulyUpcoming
-                .sort((a, b) => new Date(a.startingAt).getTime() - new Date(b.startingAt).getTime());
-
-            setUpcomingFixtures(sortedUpcoming);
-        }
-
-        if (isManualRefresh) {
-            toast({ title: "Scores Updated", description: "Match data has been refreshed." });
-        }
-    } catch (err: any) {
-        const errorMessage = err.message || 'An unknown error occurred while fetching matches.';
-        setError(errorMessage);
-        if (isManualRefresh) {
-            toast({ title: "Refresh Failed", description: errorMessage, variant: "destructive", duration: 10000 });
-        }
-    } finally {
-        if (isManualRefresh) {
-            setLoading(false);
-        }
-    }
-  }, [toast]);
-
-  useEffect(() => {
-    // Data is pre-fetched, so this interval is just for background updates.
-    const intervalId = setInterval(() => loadData(false), REFRESH_INTERVAL_MS);
-    return () => clearInterval(intervalId);
-  }, [loadData]);
+  const liveMatches = matches.filter(isLive);
+  const upcomingFixtures = matches.filter(isUpcoming);
 
   const hasLiveMatches = liveMatches.length > 0;
   const hasUpcomingMatches = upcomingFixtures.length > 0;
   
-  if (loading) { // Only show loader on manual refresh, not initial load.
-    return (
-      <div className="flex flex-col items-center justify-center py-10 my-4 text-muted-foreground bg-card rounded-lg shadow-lg min-h-[200px]">
-        <Loader2 className="mr-2 h-8 w-8 animate-spin text-primary" />
-        <p className="mt-2 text-lg">Refreshing Matches...</p>
-      </div>
-    );
+  const sportIcon = (sportKey: 'football' | 'cricket') => {
+      if (sportKey === 'football') {
+          return <Goal className="mr-2 h-5 w-5 md:h-6 md:w-6 text-blue-500" />;
+      }
+      return <CricketIcon className="mr-2 h-5 w-5 md:h-6 md:w-6 text-red-500" />;
   }
 
   return (
@@ -95,9 +47,9 @@ export default function FootballLiveScoresDisplay({
         <div>
           <CardTitle className="font-headline text-xl md:text-2xl flex items-center text-primary">
             {hasLiveMatches ? (
-              <><Goal className="mr-2 h-5 w-5 md:h-6 md:w-6 text-blue-500" /> Live Football Scores</>
+              <><Flame className="mr-2 h-5 w-5 md:h-6 md:w-6 text-red-500" /> Live Matches</>
             ) : (
-              <><Calendar className="mr-2 h-5 w-5 md:h-6 md:w-6 text-blue-500" /> Upcoming Football</>
+              <><Calendar className="mr-2 h-5 w-5 md:h-6 md:w-6 text-blue-500" /> Upcoming Matches</>
             )}
           </CardTitle>
         </div>
@@ -113,17 +65,19 @@ export default function FootballLiveScoresDisplay({
         {!hasLiveMatches && !hasUpcomingMatches && !error && (
           <div className="text-center py-10 text-muted-foreground min-h-[150px] flex flex-col items-center justify-center">
             <Info className="h-10 w-10 mb-3 text-primary/50" />
-            <p className="font-semibold">No live or upcoming football matches found.</p>
+            <p className="font-semibold">No live or upcoming matches found.</p>
             <p className="text-sm">Please check back later.</p>
           </div>
         )}
 
         <div className="space-y-3">
           {hasLiveMatches && liveMatches.map((match) => (
-            <Link key={`live-${match.id}`} href={`/match/${match.id}?sport=football`} legacyBehavior passHref>
+            <Link key={`live-${match.id}`} href={`/match/${match.id}?sport=${match.sportKey}`} legacyBehavior passHref>
               <a className="block p-3 sm:p-4 transition-all cursor-pointer bg-background border border-border/50 hover:border-primary/50 rounded-lg">
                 <div className="flex justify-between items-center mb-2">
-                    <p className="text-xs text-muted-foreground truncate">{match.leagueName}</p>
+                    <p className="text-xs text-muted-foreground truncate flex items-center gap-1.5">
+                        {sportIcon(match.sportKey)} {match.league.name}
+                    </p>
                     <div className="flex items-center gap-2">
                         {match.minute && <span className="text-xs font-semibold text-yellow-500">{match.minute}'</span>}
                         <Badge variant="destructive" className="animate-pulse">LIVE</Badge>
@@ -131,11 +85,11 @@ export default function FootballLiveScoresDisplay({
                 </div>
                 <div className="flex justify-between items-center text-md font-semibold">
                     <span className="truncate pr-2">{match.homeTeam.name}</span>
-                    <span className="font-bold text-primary">{match.homeTeam.score}</span>
+                    <span className="font-bold text-primary text-sm">{match.homeScore}</span>
                 </div>
                 <div className="flex justify-between items-center text-md font-semibold">
                     <span className="truncate pr-2">{match.awayTeam.name}</span>
-                    <span className="font-bold text-primary">{match.awayTeam.score}</span>
+                    <span className="font-bold text-primary text-sm">{match.awayScore}</span>
                 </div>
                 {match.latestEvent && (
                   <p className="text-xs text-center pt-2 text-accent-foreground font-medium flex items-center justify-center gap-1.5">
@@ -148,10 +102,12 @@ export default function FootballLiveScoresDisplay({
           ))}
 
           {hasUpcomingMatches && upcomingFixtures.map((match) => (
-             <Link key={`upcoming-${match.id}`} href={`/match/${match.id}?sport=football`} legacyBehavior passHref>
+             <Link key={`upcoming-${match.id}`} href={`/match/${match.id}?sport=${match.sportKey}`} legacyBehavior passHref>
               <a className="block p-3 sm:p-4 transition-all cursor-pointer bg-background border border-border/50 hover:border-primary/50 rounded-lg">
                 <div className="flex justify-between items-center mb-2">
-                    <p className="text-xs text-muted-foreground truncate">{match.league.name}</p>
+                    <p className="text-xs text-muted-foreground truncate flex items-center gap-1.5">
+                        {sportIcon(match.sportKey)} {match.league.name}
+                    </p>
                     <Badge variant="secondary" className="text-blue-500 border-blue-500/30">
                         {format(new Date(match.startingAt), 'MMM d, h:mm a')}
                     </Badge>

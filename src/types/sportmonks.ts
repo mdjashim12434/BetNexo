@@ -1,5 +1,6 @@
 
 
+
 // --- Common Types ---
 export interface SportmonksOdd {
     id: number;
@@ -189,18 +190,6 @@ export interface ProcessedLiveScore {
     latestEvent?: string;
 }
 
-// Processed type for homepage live football scores
-export interface ProcessedFootballLiveScore {
-    id: number;
-    name: string;
-    homeTeam: { name: string; score: number };
-    awayTeam: { name: string; score: number };
-    leagueName: string;
-    minute?: number;
-    status: string;
-    latestEvent?: string;
-}
-
 export interface ProcessedComment {
     id: number;
     comment: string;
@@ -257,4 +246,9 @@ export interface ProcessedFixture {
     comments?: ProcessedComment[];
     venue?: { name: string; city: string; };
     referee?: { name: string; };
+    // New fields for live scores
+    homeScore?: string | number;
+    awayScore?: string | number;
+    minute?: number;
+    latestEvent?: string;
 }

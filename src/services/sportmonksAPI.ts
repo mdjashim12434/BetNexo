@@ -7,7 +7,6 @@ import type {
     SportmonksSingleV3FixtureResponse,
     SportmonksFootballLiveResponse,
     SportmonksFootballLiveScore,
-    ProcessedFootballLiveScore,
     SportmonksState
 } from '@/types/sportmonks';
 
@@ -65,7 +64,7 @@ const processCricketV3LiveScoresApiResponse = (data: SportmonksV3Fixture[]): Pro
             awayTeam: { name: awayTeam?.name || 'Team 2', score: formatScore(awayTeam?.id) },
             leagueName: match.league?.name ?? 'N/A',
             countryName: match.league?.country?.name || 'N/A',
-            startTime: match.starting_at.replace(' ', 'T') + 'Z', // Ensure UTC format
+            startTime: match.starting_at, // Ensure UTC format
             status: match.state.name,
             note: match.state.name, // v3 doesn't have a simple 'note' field like v2
             latestEvent: match.state.name,
@@ -124,11 +123,31 @@ const processV3FixtureData = (fixtures: SportmonksV3Fixture[], sportKey: 'footba
              if (umpire) mainOfficialName = umpire.fullname;
         }
 
+        let homeScore: string | number | undefined;
+        let awayScore: string | number | undefined;
+        let latestEvent: string | undefined;
+
+        if (sportKey === 'cricket' && (fixture.state.state.includes('Innings') || fixture.state.state === 'Live')) {
+            const formatScore = (participantId?: number) => {
+                if (!participantId || !fixture.runs || fixture.runs.length === 0) return "Yet to bat";
+                const participantRuns = fixture.runs
+                    .filter(r => r.participant_id === participantId)
+                    .sort((a, b) => b.inning - a.inning);
+                if (participantRuns.length === 0) return "Yet to bat";
+                const currentInning = participantRuns[0];
+                return `${currentInning.score}/${currentInning.wickets} (${currentInning.overs})`;
+            };
+            homeScore = formatScore(homeTeam?.id);
+            awayScore = formatScore(awayTeam?.id);
+            latestEvent = fixture.state.name;
+        }
+
+
         return {
             id: fixture.id,
             sportKey: sportKey,
             name: fixture.name,
-            startingAt: fixture.starting_at.replace(' ', 'T') + 'Z', // Ensure UTC format
+            startingAt: fixture.starting_at, // Ensure UTC format
             state: fixture.state,
             league: { id: fixture.league_id, name: fixture.league?.name || 'N/A', countryName: fixture.league?.country?.name || 'N/A' },
             homeTeam: { id: homeTeam?.id || 0, name: homeTeam?.name || 'Home', image_path: homeTeam?.image_path },
@@ -159,29 +178,26 @@ const processV3FixtureData = (fixtures: SportmonksV3Fixture[], sportKey: 'footba
             comments: comments,
             venue: fixture.venue ? { name: fixture.venue.name, city: fixture.venue.city_name || fixture.venue.city || '' } : undefined,
             referee: mainOfficialName ? { name: mainOfficialName } : undefined,
+            homeScore,
+            awayScore,
+            latestEvent,
         };
     });
 };
 
-const processFootballLiveScoresApiResponse = (data: SportmonksFootballLiveScore[]): ProcessedFootballLiveScore[] => {
-    if (!Array.isArray(data)) return [];
-    return data.map(match => {
-        const homeTeam = match.participants?.find(p => p.meta.location === 'home');
-        const awayTeam = match.participants?.find(p => p.meta.location === 'away');
-        
+const processLiveFootballFixtures = (fixtures: SportmonksFootballLiveScore[]): ProcessedFixture[] => {
+    if (!Array.isArray(fixtures)) return [];
+    return fixtures.map(fixture => {
+        const homeTeam = fixture.participants?.find(p => p.meta.location === 'home');
+        const awayTeam = fixture.participants?.find(p => p.meta.location === 'away');
         const getScore = (participantId: number): number => {
-            let score = match.scores?.find(s => s.participant_id === participantId && s.type_id === 16); // type_id 16 is 'current' score for football
-            if (score) return score.score.goals;
-
-            score = match.scores?.find(s => s.participant_id === participantId && s.description === 'CURRENT');
-            if (score) return score.score.goals;
-            
-            return 0;
+            const score = fixture.scores?.find(s => s.participant_id === participantId && s.description === 'CURRENT');
+            return score ? score.score.goals : 0;
         };
-        
+
         let latestEventString;
-        if (match.events && match.events.length > 0) {
-            const latestEvent = match.events
+        if (fixture.events && fixture.events.length > 0) {
+            const latestEvent = fixture.events
                 .filter(e => e.type && e.type.name.toLowerCase() !== 'period start')
                 .sort((a, b) => b.id - a.id)[0];
             
@@ -195,51 +211,26 @@ const processFootballLiveScoresApiResponse = (data: SportmonksFootballLiveScore[
         }
 
         return {
-            id: match.id,
-            name: match.name,
-            homeTeam: { name: homeTeam?.name ?? 'Home', score: homeTeam ? getScore(homeTeam.id) : 0 },
-            awayTeam: { name: awayTeam?.name ?? 'Away', score: awayTeam ? getScore(awayTeam.id) : 0 },
-            leagueName: match.league?.name || 'N/A',
-            minute: match.periods?.find(p => p.ticking)?.minutes,
-            status: match.state?.name || 'Live',
-            latestEvent: latestEventString
-        };
-    });
-};
-
-const processLiveFootballFixtures = (fixtures: SportmonksFootballLiveScore[]): ProcessedFixture[] => {
-    if (!Array.isArray(fixtures)) return [];
-    return fixtures.map(fixture => {
-        const homeTeam = fixture.participants?.find(p => p.meta.location === 'home');
-        const awayTeam = fixture.participants?.find(p => p.meta.location === 'away');
-        return {
             id: fixture.id,
             sportKey: 'football',
             name: fixture.name,
-            startingAt: fixture.starting_at.replace(' ', 'T') + 'Z', // Ensure UTC format
+            startingAt: fixture.starting_at,
             state: fixture.state,
             league: { id: fixture.league?.id || 0, name: fixture.league?.name || 'N/A', countryName: fixture.league?.country?.name || 'N/A' },
             homeTeam: { id: homeTeam?.id || 0, name: homeTeam?.name || 'Home', image_path: homeTeam?.image_path },
             awayTeam: { id: awayTeam?.id || 0, name: awayTeam?.name || 'Away', image_path: awayTeam?.image_path },
             odds: {}, // Live football endpoint doesn't provide odds
             comments: [],
+            homeScore: homeTeam ? getScore(homeTeam.id) : 0,
+            awayScore: awayTeam ? getScore(awayTeam.id) : 0,
+            minute: fixture.periods?.find(p => p.ticking)?.minutes,
+            latestEvent: latestEventString,
         };
     });
 };
 
 
 // --- Public Fetching Functions ---
-
-export async function fetchFootballLiveScores(): Promise<ProcessedFootballLiveScore[]> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/football/live-scores`);
-    const responseData: SportmonksFootballLiveResponse = await handleApiResponse(response);
-    return processFootballLiveScoresApiResponse(responseData?.data || []);
-  } catch (error) {
-    console.error('Error in fetchFootballLiveScores service:', error);
-    throw error;
-  }
-}
 
 export async function fetchLiveFootballFixtures(leagueId?: number): Promise<ProcessedFixture[]> {
   try {
