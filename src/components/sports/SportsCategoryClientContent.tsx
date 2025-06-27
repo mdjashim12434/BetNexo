@@ -1,8 +1,8 @@
 
 'use client';
 
-import { useEffect, useState, useMemo, useCallback } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import MatchCard from '@/components/sports/MatchCard';
 import { Button } from '@/components/ui/button';
@@ -15,12 +15,6 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import {
-  fetchUpcomingFootballFixtures,
-  fetchUpcomingCricketFixtures,
-  fetchLiveFootballFixtures,
-  fetchLiveCricketFixtures,
-} from '@/services/sportmonksAPI';
 
 // Interfaces for leagues
 interface ApiLeague {
@@ -37,24 +31,29 @@ interface CombinedLeague {
 interface SportsCategoryClientContentProps {
   categorySlug: string;
   categoryName: string;
+  initialMatches: ProcessedFixture[];
+  initialError: string | null;
+  leagueId?: string;
 }
 
 export default function SportsCategoryClientContent({
   categorySlug,
   categoryName,
+  initialMatches,
+  initialError,
+  leagueId,
 }: SportsCategoryClientContentProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { user, loadingAuth } = useAuth();
   const { toast } = useToast();
 
-  const [matches, setMatches] = useState<ProcessedFixture[]>([]);
-  const [loadingMatches, setLoadingMatches] = useState(true);
-  const [fetchError, setFetchError] = useState<string | null>(null);
+  // Data is now passed via props, so we just initialize state with it.
+  const [matches, setMatches] = useState<ProcessedFixture[]>(initialMatches);
+  const [fetchError, setFetchError] = useState<string | null>(initialError);
   
   const [searchTerm, setSearchTerm] = useState('');
   
-  // State for all-sports leagues
+  // State for all-sports leagues remains client-side as it's a different page.
   const [leagues, setLeagues] = useState<CombinedLeague[]>([]);
   const [loadingLeagues, setLoadingLeagues] = useState(false);
 
@@ -65,112 +64,27 @@ export default function SportsCategoryClientContent({
 
   const [activeTab, setActiveTab] = useState('all');
 
-  const leagueId = searchParams.get('leagueId');
-
   // Fetch leagues if on the all-sports page
   useEffect(() => {
     if (categorySlug === 'all-sports') {
-      const fetchLeagues = async () => {
-        setLoadingLeagues(true);
-        try {
-          const res = await fetch('/api/all-sports/leagues');
-          if (!res.ok) {
-            const errorData = await res.json().catch(() => ({}));
-            throw new Error(errorData.error || 'Failed to fetch leagues from the server.');
-          }
-          const data: { footballLeagues: ApiLeague[], cricketLeagues: ApiLeague[] } = await res.json();
-          
+      setLoadingLeagues(true);
+      fetch('/api/all-sports/leagues')
+        .then(res => {
+          if (!res.ok) throw new Error('Failed to fetch leagues');
+          return res.json();
+        })
+        .then((data: { footballLeagues: ApiLeague[], cricketLeagues: ApiLeague[] }) => {
           const combined: CombinedLeague[] = [
             ...(data.footballLeagues || []).map(l => ({ id: l.id, name: l.name, sport: 'football' as const })),
             ...(data.cricketLeagues || []).map(l => ({ id: l.id, name: l.name, sport: 'cricket' as const }))
           ];
-
           combined.sort((a, b) => a.name.localeCompare(b.name));
           setLeagues(combined);
-        } catch (err: any) {
-          toast({
-            title: "Error Loading Leagues",
-            description: err.message,
-            variant: "destructive"
-          });
-        } finally {
-          setLoadingLeagues(false);
-        }
-      };
-      fetchLeagues();
+        })
+        .catch(err => toast({ title: "Error Loading Leagues", description: err.message, variant: "destructive" }))
+        .finally(() => setLoadingLeagues(false));
     }
   }, [categorySlug, toast]);
-
-  const fetchMatchesData = useCallback(async () => {
-    if (categorySlug === 'all-sports') {
-      setLoadingMatches(false);
-      return;
-    }
-
-    setLoadingMatches(true);
-    setFetchError(null);
-    
-    let matchesForCategory: ProcessedFixture[] = [];
-    const errorMessages: string[] = [];
-    const leagueIdNum = leagueId ? Number(leagueId) : undefined;
-
-    const handleFetchError = (sport: string, type: string, e: any) => {
-        const message = e.message || `Unknown error fetching ${type} ${sport} fixtures.`;
-        console.error(`Failed to fetch ${type} ${sport} fixtures:`, message);
-        errorMessages.push(`Could not load ${type} ${sport} matches.`);
-        return [];
-    };
-
-    try {
-        if (categorySlug === 'live') {
-            const [footballMatches] = await Promise.all([
-                fetchLiveFootballFixtures(leagueIdNum).catch((e) => handleFetchError('football', 'live', e)),
-            ]);
-            matchesForCategory = [...footballMatches];
-        } else if (categorySlug === 'football') {
-            const [liveMatches, upcomingMatches] = await Promise.all([
-                fetchLiveFootballFixtures(leagueIdNum).catch((e) => handleFetchError('football', 'live', e)),
-                fetchUpcomingFootballFixtures(leagueIdNum).catch((e) => handleFetchError('football', 'upcoming', e)),
-            ]);
-            matchesForCategory = [...liveMatches, ...upcomingMatches];
-        } else if (categorySlug === 'cricket') {
-            const [upcomingMatches] = await Promise.all([
-                fetchUpcomingCricketFixtures(leagueIdNum).catch((e) => handleFetchError('cricket', 'upcoming', e)),
-            ]);
-            matchesForCategory = [...upcomingMatches];
-        } else if (categorySlug === 'upcoming') {
-            const [footballMatches, cricketMatches] = await Promise.all([
-                fetchUpcomingFootballFixtures(leagueIdNum).catch((e) => handleFetchError('football', 'upcoming', e)),
-                fetchUpcomingCricketFixtures(leagueIdNum).catch((e) => handleFetchError('cricket', 'upcoming', e)),
-            ]);
-            matchesForCategory = [...footballMatches, ...cricketMatches];
-        }
-
-        if (errorMessages.length > 0) {
-            setFetchError(errorMessages.join('\n'));
-        }
-
-        matchesForCategory.sort((a, b) => {
-            const aIsLive = a.state?.state === 'INPLAY' || a.state?.state === 'Live';
-            const bIsLive = b.state?.state === 'INPLAY' || b.state?.state === 'Live';
-            if (aIsLive && !bIsLive) return -1;
-            if (!aIsLive && bIsLive) return 1;
-            return new Date(a.startingAt).getTime() - new Date(b.startingAt).getTime();
-        });
-
-        setMatches(matchesForCategory);
-
-    } catch (error: any) {
-        console.error(`A top-level error occurred while fetching fixtures for ${categorySlug}:`, error);
-        setFetchError(error.message || `An unknown error occurred while fetching matches for ${categorySlug}.`);
-    } finally {
-        setLoadingMatches(false);
-    }
-  }, [categorySlug, leagueId]);
-
-  useEffect(() => {
-    fetchMatchesData();
-  }, [fetchMatchesData]);
   
   const displayTitle = useMemo(() => {
     if (leagueId && matches.length > 0) {
@@ -214,8 +128,28 @@ export default function SportsCategoryClientContent({
   }, [user, loadingAuth, router]);
 
   if (loadingAuth) {
-    return <div className="text-center p-10">Loading session...</div>;
+    return (
+        <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+              <Skeleton className="h-10 w-24" />
+              <Skeleton className="h-9 w-1/2" />
+            </div>
+             <div className="flex flex-col md:flex-row gap-4 p-4 border rounded-lg bg-card">
+               <Skeleton className="h-10 flex-grow" />
+             </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[...Array(6)].map((_, i) => (
+                    <Card key={i}>
+                        <CardHeader><Skeleton className="h-5 w-3/4" /><Skeleton className="h-4 w-1/2 mt-2" /></CardHeader>
+                        <CardContent><Skeleton className="h-10 w-full" /></CardContent>
+                        <CardFooter><Skeleton className="h-10 w-full" /></CardFooter>
+                    </Card>
+                ))}
+            </div>
+        </div>
+    );
   }
+  
   if (!user && !loadingAuth) {
     return <div className="text-center p-10">Redirecting to login...</div>;
   }
@@ -284,33 +218,6 @@ export default function SportsCategoryClientContent({
           </div>
         )}
       </div>
-    );
-  }
-
-  // Loading state for match categories
-  if (loadingMatches) {
-     return (
-        <div className="space-y-6">
-            {sharedHeader}
-            {showTabs && (
-              <Tabs value={activeTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="all"><Skeleton className="h-4 w-20" /></TabsTrigger>
-                  <TabsTrigger value="live"><Skeleton className="h-4 w-20" /></TabsTrigger>
-                  <TabsTrigger value="upcoming"><Skeleton className="h-4 w-20" /></TabsTrigger>
-                </TabsList>
-              </Tabs>
-            )}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[...Array(6)].map((_, i) => (
-                    <Card key={i}>
-                        <CardHeader><Skeleton className="h-5 w-3/4" /><Skeleton className="h-4 w-1/2 mt-2" /></CardHeader>
-                        <CardContent><Skeleton className="h-10 w-full" /></CardContent>
-                        <CardFooter><Skeleton className="h-10 w-full" /></CardFooter>
-                    </Card>
-                ))}
-            </div>
-        </div>
     );
   }
 
