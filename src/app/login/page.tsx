@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useAuth, type User } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { Mail, Phone, MessageSquare, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -76,7 +76,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 type AuthMethod = 'email' | 'phone' | 'sms' | 'social';
 
 export default function LoginPage() {
-  const { login: loginToAppContext, user: appUser, loadingAuth, firebaseUser } = useAuth();
+  const { user: appUser, loadingAuth } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [activeMethod, setActiveMethod] = useState<AuthMethod>('email');
@@ -95,13 +95,14 @@ export default function LoginPage() {
   // Effect to redirect if user is already logged in and verified
   useEffect(() => {
     if (!loadingAuth && appUser && appUser.emailVerified) {
+      toast({ title: "Login Successful", description: "Welcome back! Redirecting..." });
       if (appUser.role === 'Admin') {
         router.push('/admin');
       } else {
         router.push('/');
       }
     }
-  }, [appUser, loadingAuth, router]);
+  }, [appUser, loadingAuth, router, toast]);
 
   async function onSubmit(data: LoginFormValues) {
     form.clearErrors();
@@ -142,19 +143,13 @@ export default function LoginPage() {
           variant: "destructive",
           duration: 10000,
         });
-        return;
+        return; // Stop the process here. onAuthStateChanged will handle the auth state.
       }
       
-      const userPayloadForAppContext = {
-        id: fbUser.uid,
-        email: fbUser.email,
-        emailVerified: fbUser.emailVerified,
-      };
-      
-      // Update the auth context. The useEffect will handle the redirect.
-      await loginToAppContext(userPayloadForAppContext, false);
-      
-      toast({ title: "Login Successful", description: "Welcome back! Redirecting..." });
+      // If login is successful, the `onAuthStateChanged` listener in AuthContext
+      // will handle fetching data and setting the user state.
+      // The useEffect hook on this page will then handle the redirection.
+      // No need to call another function or push the router here.
 
     } catch (error: any) {
       console.error("Login failed on page:", error);
