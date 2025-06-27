@@ -1,4 +1,6 @@
 
+import { NextResponse } from 'next/server';
+
 export async function GET() {
   const apiKey = process.env.SPORTMONKS_API_KEY;
 
@@ -12,25 +14,22 @@ export async function GET() {
 
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:9002';
 
-  const footballResult = await fetch(`${apiBaseUrl}/api/football/leagues`, { next: { revalidate: 3600 } });
+  try {
+    const footballResult = await fetch(`${apiBaseUrl}/api/football/leagues`, { next: { revalidate: 3600 } });
 
-  let footballLeagues = [];
+    if (!footballResult.ok) {
+      const errorText = await footballResult.text();
+      console.error("Fetching football leagues failed:", `Status: ${footballResult.status}`, errorText);
+      return NextResponse.json({ error: 'Failed to fetch football leagues' }, { status: footballResult.status });
+    }
 
-  if (footballResult.ok) {
     const footballData = await footballResult.json();
-    footballLeagues = footballData.data ?? [];
-  } else {
-    console.error("Fetching football leagues failed:", `Status: ${footballResult.status}`);
+    const footballLeagues = footballData.data ?? [];
+    
+    // Return a single `leagues` array for simplicity
+    return NextResponse.json({ leagues: footballLeagues });
+  } catch (error) {
+    console.error("Error in /api/all-sports/leagues:", error);
+    return NextResponse.json({ error: 'An internal server error occurred.' }, { status: 500 });
   }
-  
-  if (footballLeagues.length === 0) {
-      console.warn("Football league fetch failed or returned no data.");
-  }
-
-  // The component expects a `footballLeagues` property.
-  // We remove cricketLeagues by providing an empty array.
-  return Response.json({
-    footballLeagues,
-    cricketLeagues: [] 
-  });
 }

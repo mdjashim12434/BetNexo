@@ -83,10 +83,12 @@ export default function SportsCategoryClientContent({
           if (!res.ok) throw new Error('Failed to fetch leagues');
           return res.json();
         })
-        .then((data: { footballLeagues: ApiLeague[] }) => {
-          const combined: CombinedLeague[] = [
-            ...(data.footballLeagues || []).map(l => ({ id: l.id, name: l.name, sport: 'football' as const })),
-          ];
+        .then((data: { leagues: ApiLeague[] }) => {
+          const combined: CombinedLeague[] = (data.leagues || []).map(l => ({ 
+            id: l.id, 
+            name: l.name, 
+            sport: 'football' as const 
+          }));
           combined.sort((a, b) => a.name.localeCompare(b.name));
           setLeagues(combined);
         })
