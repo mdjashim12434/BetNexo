@@ -89,7 +89,7 @@ const processCricketV2ApiResponse = (fixtures: SportmonksV2Fixture[]): Processed
             id: fixture.id,
             sportKey: 'cricket',
             name: `${fixture.localteam.name} vs ${fixture.visitorteam.name}`,
-            startingAt: fixture.starting_at,
+            startingAt: fixture.starting_at.endsWith('Z') ? fixture.starting_at : `${fixture.starting_at}Z`,
             state: state,
             league: {
                 id: fixture.league.id,
