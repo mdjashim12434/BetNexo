@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -44,7 +43,7 @@ const MatchCard: FC<MatchCardProps> = ({ match }) => {
         ) : (
           <div className="flex items-center text-sm text-muted-foreground">
             <Calendar className="h-4 w-4 mr-2" />
-            <span>{format(new Date(match.startingAt), 'PPp')}</span>
+            <span>{format(new Date(match.startingAt), "PPp")}</span>
           </div>
         )}
 

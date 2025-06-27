@@ -99,7 +99,7 @@ export default function HomeMatchesDisplay({
                         {sportIcon(match.sportKey)} {match.league.name}
                     </p>
                     <Badge variant="secondary" className="text-blue-500 border-blue-500/30">
-                        {format(new Date(match.startingAt), 'MMM d, h:mm a')}
+                        {format(new Date(match.startingAt), "MMM d, h:mm a")}
                     </Badge>
                 </div>
                 <div className="flex items-center text-md font-semibold">

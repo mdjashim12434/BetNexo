@@ -1,4 +1,3 @@
-
 'use client';
 
 import AppLayout from '@/components/AppLayout';
@@ -37,7 +36,7 @@ export default function ProfilePage() {
     }
     try {
       // Convert Firestore Timestamp to JS Date and format it
-      return format(timestamp.toDate(), 'MMMM d, yyyy');
+      return format(timestamp.toDate(), "MMMM d, yyyy");
     } catch (error) {
       console.error("Error formatting date:", error);
       return 'Invalid Date';

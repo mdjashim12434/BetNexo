@@ -194,7 +194,7 @@ export default function TransactionsLogTab() {
   const formatDate = (timestamp?: Timestamp) => {
     if (!timestamp) return 'N/A';
     try {
-      return format(timestamp.toDate(), 'PPpp'); 
+      return format(timestamp.toDate(), "PPpp"); 
     } catch (e) {
         console.error("Error formatting date:", e, "Timestamp:", timestamp);
         return 'Invalid Date';

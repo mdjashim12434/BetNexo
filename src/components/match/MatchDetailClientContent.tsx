@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -233,7 +232,7 @@ export default function MatchDetailClientContent({ initialMatch }: MatchDetailCl
       <Card className="overflow-hidden shadow-xl">
         <CardHeader>
           <CardTitle className="font-headline text-3xl">{match.name}</CardTitle>
-          <CardDescription className="text-lg">{match.league.name} | {format(new Date(match.startingAt), 'PPp')}</CardDescription>
+          <CardDescription className="text-lg">{match.league.name} | {format(new Date(match.startingAt), "PPp")}</CardDescription>
             {(isLive || isFinished) && (
               <span className={cn("w-fit text-white px-3 py-1.5 text-sm font-bold rounded", { "bg-red-600 animate-pulse": isLive, "bg-gray-600": isFinished })}>
                 {isLive ? "LIVE" : "FINISHED"}

@@ -1,4 +1,3 @@
-
 'use client';
 
 import AppLayout from '@/components/AppLayout';
@@ -136,7 +135,7 @@ export default function BetHistoryPage() {
   const formatDate = (timestamp?: Timestamp | null) => {
     if (!timestamp) return 'N/A';
     try {
-      return format(timestamp.toDate(), 'PPp');
+      return format(timestamp.toDate(), "PPp");
     } catch (e) {
       return 'Invalid Date';
     }
