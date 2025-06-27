@@ -110,12 +110,10 @@ export default function SignupPage() {
     }
   }
 
-  if (loadingAuth) {
-    return <div className="flex min-h-screen items-center justify-center bg-background p-4"><div className="text-center text-muted-foreground">Loading...</div></div>;
-  }
-
-  if (appUser && appUser.emailVerified) {
-     return <div className="flex min-h-screen items-center justify-center bg-background p-4"><div className="text-center text-muted-foreground">Redirecting...</div></div>;
+  // The global loader from AuthContext handles the main loading state.
+  // This page should not render anything if loading or if user is already logged in.
+  if (loadingAuth || (appUser && appUser.emailVerified)) {
+    return null; // Return null because the GlobalLoader or a redirect will happen.
   }
 
   const AuthMethodButton = ({ method, icon: Icon, label }: { method: AuthMethod, icon: React.ElementType, label: string }) => (

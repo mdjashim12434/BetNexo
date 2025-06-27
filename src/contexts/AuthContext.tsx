@@ -33,59 +33,21 @@ interface AuthContextType {
   firebaseUser: FirebaseUserType | null;
 }
 
-const SoccerBallIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="none"
-    className="h-7 w-7 animate-spin text-white"
-  >
-    <path
-      stroke="currentColor"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth="1.5"
-      d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10Z"
-    />
-    <path
-      stroke="currentColor"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth="1.5"
-      d="M12 8.333V3.5m0 17v-4.833m-7.275-2.408L2.73 12m18.54 0-4.425-.009M7.05 7.05l-3.4 3.4M16.95 16.95l3.4-3.4m-13.3.05 3.4 3.4M13.55 7.05l3.4-3.4"
-      opacity=".4"
-    />
-    <path
-      fill="currentColor"
-      d="m12.383 12.755-2.288-1.442.87-2.602 2.706.492.001.002 1.41 2.262-2.7 1.29Zm-3.15-.316-.002-.002-2.707-.49-1.428 2.296 2.28 1.45.002.002 2.724-1.258-.87-1.998ZM12 14.4l-2.723 1.258.006 3.003L12 20l2.717-1.34-.006-3.002L12 14.4Z"
-    />
-  </svg>
-);
-
-
 const GlobalLoader = () => (
-    <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-background text-primary">
-        <div className="flex flex-col items-center justify-center gap-8">
-            {/* Logo */}
-            <h1 className="text-6xl font-black italic" style={{fontFamily: "'Poppins', sans-serif"}}>
-                <span className="text-white">BET</span><span className="text-primary">BABU</span>
-            </h1>
-
-            {/* Loader */}
-            <div className="flex items-center gap-4">
-                <SoccerBallIcon />
-                <div className="flex items-center gap-2.5">
-                    <span className="h-3 w-3 rounded-full bg-muted animate-loader-dot" style={{ animationDelay: '0.0s' }}></span>
-                    <span className="h-3 w-3 rounded-full bg-muted animate-loader-dot" style={{ animationDelay: '0.1s' }}></span>
-                    <span className="h-3 w-3 rounded-full bg-muted animate-loader-dot" style={{ animationDelay: '0.2s' }}></span>
-                    <span className="h-3 w-3 rounded-full bg-muted animate-loader-dot" style={{ animationDelay: '0.3s' }}></span>
-                    <span className="h-3 w-3 rounded-full bg-muted animate-loader-dot" style={{ animationDelay: '0.4s' }}></span>
-                    <span className="h-3 w-3 rounded-full bg-muted animate-loader-dot" style={{ animationDelay: '0.5s' }}></span>
-                </div>
-            </div>
-        </div>
+  <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-background text-primary">
+    <div className="flex flex-col items-center justify-center gap-6">
+      {/* Logo */}
+      <h1 className="text-5xl font-headline font-bold text-primary tracking-wider animate-pulse">
+        BETBABU
+      </h1>
+      {/* Loading bar */}
+      <div className="w-48 h-1.5 bg-muted rounded-full overflow-hidden">
+        <div className="w-full h-full bg-primary animate-loading-bar"></div>
+      </div>
     </div>
+  </div>
 );
+
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 

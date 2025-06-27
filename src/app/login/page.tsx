@@ -12,7 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Phone, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { auth, signInWithEmailAndPassword, sendEmailVerification, findUserByCustomId, type FirebaseUserType, db, doc, getDoc } from '@/lib/firebase';
+import { auth, signInWithEmailAndPassword, sendEmailVerification, findUserByCustomId, type FirebaseUserType } from '@/lib/firebase';
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { Separator } from '@/components/ui/separator';
@@ -33,7 +33,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 
 export default function LoginPage() {
-  const { user: appUser, loadingAuth } = useAuth();
+  const { user: appUser, loadingAuth, login } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   
@@ -102,22 +102,12 @@ export default function LoginPage() {
         return; 
       }
       
-      const userDocRef = doc(db, "users", fbUser.uid);
-      const userDocSnap = await getDoc(userDocRef);
-
-      if (userDocSnap.exists()) {
-          const userData = userDocSnap.data();
-          toast({ title: "Login Successful", description: "Welcome back! Redirecting..." });
-          if (userData.role === 'Admin') {
-              router.push('/admin');
-          } else {
-              router.push('/');
-          }
-      } else {
-          // Fallback if doc is missing, AuthContext will create it.
-          toast({ title: "Login Successful", description: "Welcome back! Redirecting..." });
-          router.push('/');
-      }
+      // Call the central login function from the context.
+      // This will handle fetching user docs and setting the global state.
+      // The useEffect hook will then handle the redirection.
+      await login({ id: fbUser.uid, email: fbUser.email, emailVerified: fbUser.emailVerified });
+      
+      toast({ title: "Login Successful", description: "Welcome back! Redirecting..." });
 
     } catch (error: any) {
       console.error("Login failed on page:", error);
@@ -150,12 +140,10 @@ export default function LoginPage() {
   };
 
 
+  // The global loader from AuthContext handles the main loading state.
+  // This page should not render anything until loading is complete and there's no user.
   if (loadingAuth || appUser) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 p-4">
-        <div className="text-slate-500">Loading...</div>
-      </div>
-    );
+    return null; // Return null because the GlobalLoader or a redirect will happen.
   }
 
   return (
