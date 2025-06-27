@@ -2,7 +2,7 @@
 
 import type { ProcessedFixture } from '@/types/sportmonks';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle, Loader2, Info, Goal, Calendar, Flame } from 'lucide-react';
+import { AlertTriangle, Info, Goal, Calendar, Flame } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { format } from 'date-fns';
@@ -13,14 +13,21 @@ interface HomeMatchesDisplayProps {
   error?: string;
 }
 
-const isLive = (match: ProcessedFixture) => {
+const isLive = (match: ProcessedFixture): boolean => {
+    if (!match?.state) return false;
     const liveStates = ['INPLAY', 'Live', '1st Innings', '2nd Innings', 'Innings Break'];
     return liveStates.includes(match.state.state);
 }
 
-const isUpcoming = (match: ProcessedFixture) => {
-    const upcomingStates = ['NS', 'TBA'];
-    return upcomingStates.includes(match.state.state);
+// Any match that is not live AND not finished, is upcoming for the purpose of this display.
+const isUpcoming = (match: ProcessedFixture): boolean => {
+    if (!match?.state) return true; // Default to upcoming if state is missing
+    const finishedStates = ['Finished', 'FT', 'AET', 'POSTP', 'CANCL', 'ABAN', 'SUSP', 'AWARDED', 'DELETED', 'WO', 'AU'];
+    if (finishedStates.includes(match.state.state)) {
+        return false;
+    }
+    // If it's not finished, and not live, it's upcoming
+    return !isLive(match);
 }
 
 export default function HomeMatchesDisplay({
