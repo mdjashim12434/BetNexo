@@ -2,83 +2,37 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // --- Helper Functions ---
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
-    }
-
-    function isAdmin() {
-      // Check if the requesting user has the 'Admin' role in their user document.
-      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin';
-    }
-
-    // --- Collection Rules ---
-
-    // Users Collection
-    // Users can read their own data, Admins can read any user's data.
-    // Users can create their own document (signup).
-    // Users can update their own non-critical data.
-    // Admins can update any user's data (e.g., balance).
+    
+    // Users Collection Rules
     match /users/{userId} {
-      allow read: if isOwner(userId) || isAdmin();
-      
-      // On signup, a user creates their own document.
-      // We enforce that they cannot assign themselves as 'Admin' or give themselves a starting balance.
-      allow create: if isOwner(userId)
-                    && request.resource.data.role == 'User'
-                    // Balance can be 0 or not exist
-                    && (!('balance' in request.resource.data) || request.resource.data.balance == 0);
-      
-      // Users can update their name, avatar etc. but NOT their balance or role.
-      // Admins can update anything, which is crucial for adjusting balances.
-      allow update: if (isOwner(userId) && !('balance' in request.resource.data) && !('role' in request.resource.data))
-                    || isAdmin();
+      // A user can read or update their own document. Admins can do anything.
+      allow read, update: if request.auth.uid == userId;
+      allow write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin';
     }
 
-    // Payment Methods Collection
-    // Any authenticated user can read the methods.
-    // Only Admins can create, update, or delete methods.
-    match /paymentMethods/{methodId} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin(); // write = create, update, delete
-    }
-
-    // Transactions Collection (Deposits & Withdrawals)
-    // Users can create their own transaction requests, but they must be 'pending'.
-    // Users can read their own transaction history.
-    // Admins can read all transactions and update their status (approve/reject).
+    // Transactions Collection Rules
     match /transactions/{transactionId} {
-      allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid) || isAdmin();
-      
-      // When a user creates a request, it MUST be pending. They cannot set their own amount directly on their balance.
-      // They also can't impersonate another user.
-      allow create: if isOwner(request.resource.data.userId)
-                    && request.resource.data.status == 'pending';
+      // User can create a transaction for themselves.
+      allow create: if request.auth.uid != null && request.resource.data.userId == request.auth.uid;
+      // Admins can read/update any transaction (for approvals).
+      allow read, update: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin';
+    }
 
-      // Only Admins can update transactions (to approve/reject them).
-      allow update: if isAdmin();
+    // Bets Collection Rules
+    match /bets/{betId} {
+      // User can create a bet for themselves.
+      allow create: if request.auth.uid != null && request.resource.data.userId == request.auth.uid;
+      // User can read their own bets. Admins can read any bet.
+      allow read: if (request.auth.uid != null && resource.data.userId == request.auth.uid) ||
+                   (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin');
     }
     
-    // Bets Collection
-    // Users can create their own bets, which must be 'pending'.
-    // Users can read their own bet history.
-    // Admins can read all bets and update their status (e.g., to settle them as 'won' or 'lost').
-    match /bets/{betId} {
-      allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid) || isAdmin();
-      
-      // When a user places a bet, it MUST be pending.
-      // The user's balance is updated on the client, which is a simplification.
-      // A Cloud Function would be more secure for transactional updates.
-      allow create: if isOwner(request.resource.data.userId)
-                    && request.resource.data.status == 'pending';
-                    
-      // Only Admins can update bets (to settle them).
-      allow update: if isAdmin();
+    // Payment Methods Collection Rules
+    match /paymentMethods/{methodId} {
+      // Any authenticated user can read payment methods.
+      allow read: if request.auth.uid != null;
+      // Only admins can write payment methods.
+      allow write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin';
     }
   }
 }
