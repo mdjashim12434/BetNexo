@@ -1,16 +1,13 @@
 
 import type { 
-    ProcessedLiveScore, 
     SportmonksV3Fixture,
     SportmonksV3FixturesResponse,
     ProcessedFixture, 
     SportmonksSingleV3FixtureResponse,
-    SportmonksFootballLiveResponse,
-    SportmonksFootballLiveScore,
     SportmonksState,
     SportmonksOdd,
+    FootballEvent,
 } from '@/types/sportmonks';
-import { format } from 'date-fns';
 
 // Define the base URL for API calls. For production, this should come from an environment variable.
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:9002';
@@ -94,7 +91,7 @@ const processV3FixtureData = (fixtures: SportmonksV3Fixture[], sportKey: 'footba
             extra_minute: comment.extra_minute,
             is_goal: comment.is_goal,
         })).sort((a, b) => b.minute - a.minute) || [];
-
+        
         // Helper to find the best odd for a given market label from all available bookmakers
         const getBestOdd = (marketId: number, originalLabel: string, point?: string): SportmonksOdd | undefined => {
             let marketOdds = fixture.odds?.filter(o => 
@@ -115,7 +112,6 @@ const processV3FixtureData = (fixtures: SportmonksV3Fixture[], sportKey: 'footba
         const drawOdd = getBestOdd(1, 'Draw');
         const awayOdd = getBestOdd(1, '2');
 
-        // Find the main Over/Under point (e.g., '2.5') by finding the most frequent one
         const overUnderOddsAll = fixture.odds?.filter(o => o.market_id === 10) || [];
         const mainOverUnderPoint = overUnderOddsAll.length > 0
             ? overUnderOddsAll.reduce((a, b) => 
@@ -135,7 +131,6 @@ const processV3FixtureData = (fixtures: SportmonksV3Fixture[], sportKey: 'footba
         const dc1XOdd = getBestOdd(9, '1X');
         const dcX2Odd = getBestOdd(9, 'X2');
         const dc12Odd = getBestOdd(9, '12');
-
 
         let mainOfficialName: string | undefined;
         if (fixture.referee) {
@@ -173,19 +168,33 @@ const processV3FixtureData = (fixtures: SportmonksV3Fixture[], sportKey: 'footba
                 awayScore = formatScore(awayTeam?.id);
             }
         }
+
+        const findLatestEvent = (events?: FootballEvent[], comments?: any[]): {text: string, isGoal: boolean} | undefined => {
+            if (sportKey !== 'football') return undefined; // Only football has detailed events and comments for now
         
-        if (comments.length > 0) {
-            const firstComment = comments[0];
-            latestEvent = {
-                text: `${firstComment.minute}' - ${firstComment.comment}`,
-                isGoal: firstComment.is_goal,
-            };
-        } else if (isLive && state.name !== 'Live') {
-            latestEvent = {
-                text: state.name,
-                isGoal: false,
-            };
+            const lastComment = (comments && comments.length > 0) ? comments.sort((a,b) => b.minute - a.minute)[0] : null;
+            const lastEvent = (events && events.length > 0) ? events.sort((a,b) => b.minute - a.minute)[0] : null;
+
+            if (lastComment) {
+                 return {
+                    text: `${lastComment.minute}' - ${lastComment.comment}`,
+                    isGoal: lastComment.is_goal,
+                };
+            }
+            if(lastEvent) {
+                return {
+                    text: `${lastEvent.minute}' - ${lastEvent.type.name}`,
+                    isGoal: lastEvent.type.code === 'GOAL',
+                };
+            }
+            if (isLive && state.name !== 'Live') {
+                return { text: state.name, isGoal: false };
+            }
+        
+            return undefined;
         }
+
+        latestEvent = findLatestEvent(fixture.events, fixture.comments);
 
         return {
             id: fixture.id,

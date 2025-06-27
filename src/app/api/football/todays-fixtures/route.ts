@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     const todayDate = getTodayDateString();
 
     // Includes all necessary data for display and sorting, with odds.bookmaker
-    const includes = "participants;league.country;state;odds.bookmaker;scores;periods";
+    const includes = "participants;league.country;state;odds.bookmaker;scores;periods;events";
     
     let baseUrl = `${SPORTMONKS_FOOTBALL_API_URL}/fixtures/date/${todayDate}?api_token=${apiKey}&include=${includes}&tz=UTC`;
     

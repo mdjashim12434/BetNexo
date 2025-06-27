@@ -2,7 +2,6 @@
 import {
   fetchAllTodaysFootballFixtures,
 } from '@/services/sportmonksAPI';
-import type { ProcessedFixture } from '@/types/sportmonks';
 import HomeClientPage from './HomeClientPage';
 
 async function getHomePageMatches() {

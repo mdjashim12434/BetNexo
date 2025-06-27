@@ -122,7 +122,7 @@ export interface SportmonksV3Fixture {
     name: string;
     starting_at: string;
     league_id: number;
-    state: SportmonksState;
+    state?: SportmonksState; // Made optional for robustness
     participants: SportmonksParticipant[];
     odds?: SportmonksOdd[];
     league?: SportmonksLeague;
@@ -149,40 +149,7 @@ export interface SportmonksSingleV3FixtureResponse {
     data: SportmonksV3Fixture;
 }
 
-// Deprecated, but kept for reference if needed for other routes.
-export interface SportmonksFootballLiveScore {
-    id: number;
-    name: string;
-    starting_at: string;
-    league: SportmonksLeague;
-    state: SportmonksState;
-    participants: SportmonksParticipant[];
-    scores: FootballScore[];
-    periods: FootballPeriod[] | null;
-    events: FootballEvent[];
-}
-
-export interface SportmonksFootballLiveResponse {
-    data: SportmonksFootballLiveScore[];
-    pagination?: SportmonksPagination;
-}
-
-
 // --- PROCESSED TYPES FOR UI COMPONENTS ---
-
-// This type is kept for potential future use but is largely superseded by ProcessedFixture
-export interface ProcessedLiveScore {
-    id: number;
-    name: string;
-    homeTeam: { name: string; score: string }; // Score as "runs/wickets (overs)"
-    awayTeam: { name: string; score: string };
-    leagueName: string;
-    countryName: string;
-    startTime: string;
-    status: string;
-    note: string;
-    latestEvent?: string;
-}
 
 export interface ProcessedComment {
     id: number;
