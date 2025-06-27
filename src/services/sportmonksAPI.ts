@@ -14,7 +14,7 @@ interface TheOddsApiBookmaker {
   key: string;
   title: string;
   markets: {
-    key: 'h2h' | 'totals';
+    key: 'h2h' | 'totals' | 'spreads';
     outcomes: {
       name: string; // Team name or "Draw", "Over", "Under"
       price: number;
@@ -119,19 +119,23 @@ const processV3FootballFixtures = (fixtures: SportmonksV3Fixture[], theOddsApiDa
 
         // Find a matching odd from The Odds API data using team names and start time
         const matchedOdd = theOddsApiData.find(odd => {
-          const oddsTime = new Date(odd.commence_time);
-          const timeDiff = Math.abs(fixtureTime.getTime() - oddsTime.getTime());
-          
           const smHomeName = normalizeTeamName(homeTeam?.name || '');
           const smAwayName = normalizeTeamName(awayTeam?.name || '');
           const oddsHomeName = normalizeTeamName(odd.home_team);
           const oddsAwayName = normalizeTeamName(odd.away_team);
-
-          // Both team names must match and time must be within a 2-hour window
-          const namesMatch = smHomeName === oddsHomeName && smAwayName === oddsAwayName;
-          const timeIsClose = timeDiff < 2 * 60 * 60 * 1000;
           
-          return namesMatch && timeIsClose;
+          const namesMatch = smHomeName === oddsHomeName && smAwayName === oddsAwayName;
+          
+          if (!namesMatch) {
+            return false;
+          }
+
+          // Compare time up to the minute to avoid mismatches due to seconds
+          const smStartTime = fixtureTime.toISOString().slice(0, 16); // YYYY-MM-DDTHH:MM
+          const oddsStartTime = new Date(odd.commence_time).toISOString().slice(0, 16);
+          const timeMatches = smStartTime === oddsStartTime;
+          
+          return timeMatches;
         });
         
         let finalOdds: ProcessedFixture['odds'] = {};

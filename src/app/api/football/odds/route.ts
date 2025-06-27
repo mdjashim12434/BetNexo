@@ -13,7 +13,7 @@ export async function GET() {
   // Fetching for a few popular European leagues. 
   // The free plan has a request limit. You can expand this list as needed per The Odds API docs.
   const regions = 'eu'; // Regions: uk, eu, au, us
-  const markets = 'h2h,totals'; // h2h is moneyline, totals is over/under
+  const markets = 'h2h,spreads,totals'; // h2h is moneyline, spreads, and totals is over/under
   const oddsFormat = 'decimal';
   // A comma-separated string of sport_keys from The Odds API
   const sportKeys = 'soccer_epl,soccer_spain_la_liga,soccer_italy_serie_a,soccer_germany_bundesliga,soccer_france_ligue_one';
