@@ -119,7 +119,11 @@ const processCricketV2ApiResponse = (fixtures: SportmonksV2Fixture[]): Processed
         let homeScore: string | number | undefined;
         let awayScore: string | number | undefined;
 
-        if (state.state && (state.state.includes('Innings') || state.state === 'Live' || state.state === 'Finished')) {
+        // Use a more comprehensive check to decide when to calculate scores.
+        // If a match has any "live-like" or finished status, it should have a score.
+        const scoreRelevantStates: (SportmonksState['state'])[] = ['Live', '1st Innings', '2nd Innings', 'Innings Break', 'Super Over', 'Finished', 'Cancelled', 'DELAYED', 'TOSS'];
+
+        if (state.state && scoreRelevantStates.includes(state.state)) {
              if (fixture.localteam?.id) {
                 homeScore = formatScore(fixture.localteam.id);
              }

@@ -47,24 +47,31 @@ export default function SportsCategoryClientContent({
   const { user, loadingAuth } = useAuth();
   const { toast } = useToast();
 
-  // Data is now passed via props, so we just initialize state with it.
   const [matches, setMatches] = useState<ProcessedFixture[]>(initialMatches);
   const [fetchError, setFetchError] = useState<string | null>(initialError);
   
   const [searchTerm, setSearchTerm] = useState('');
   
-  // State for all-sports leagues remains client-side as it's a different page.
   const [leagues, setLeagues] = useState<CombinedLeague[]>([]);
   const [loadingLeagues, setLoadingLeagues] = useState(false);
 
   const showTabs = categorySlug === 'football' || categorySlug === 'cricket';
+
+  // --- Comprehensive State Definitions ---
+  const liveStates = useMemo(() => ['INPLAY', 'HT', 'ET', 'PEN_LIVE', 'BREAK', 'Live', '1st Innings', '2nd Innings', 'Innings Break', 'Super Over', 'TOSS', 'DELAYED'], []);
+  const finishedStates = useMemo(() => ['Finished', 'FT', 'AET', 'POSTP', 'CANCL', 'ABAN', 'SUSP', 'AWARDED', 'DELETED', 'WO', 'AU'], []);
   
-  const liveCount = useMemo(() => matches.filter(m => m.state?.state === 'INPLAY' || m.state?.state === 'Live').length, [matches]);
-  const upcomingCount = useMemo(() => matches.filter(m => m.state?.state !== 'INPLAY' && m.state?.state !== 'Live' && m.state?.state !== 'Finished' && m.state?.state !== 'FT').length, [matches]);
+  const liveCount = useMemo(() => matches.filter(m => m.state?.state && liveStates.includes(m.state.state as any)).length, [matches, liveStates]);
+  
+  const upcomingCount = useMemo(() => {
+    return matches.filter(m => {
+      if (!m.state?.state) return true; // Default to upcoming if no state
+      return !liveStates.includes(m.state.state as any) && !finishedStates.includes(m.state.state as any);
+    }).length;
+  }, [matches, liveStates, finishedStates]);
 
   const [activeTab, setActiveTab] = useState('all');
 
-  // Fetch leagues if on the all-sports page
   useEffect(() => {
     if (categorySlug === 'all-sports') {
       setLoadingLeagues(true);
@@ -93,7 +100,6 @@ export default function SportsCategoryClientContent({
     return categoryName;
   }, [leagueId, matches, categoryName]);
   
-  // Filtered leagues for search
   const filteredLeagues = useMemo(() => {
     if (!searchTerm) return leagues;
     return leagues.filter(league =>
@@ -106,9 +112,12 @@ export default function SportsCategoryClientContent({
 
     if (showTabs) {
       if (activeTab === 'live') {
-        currentMatches = currentMatches.filter(m => m.state?.state === 'INPLAY' || m.state?.state === 'Live');
+        currentMatches = currentMatches.filter(m => m.state?.state && liveStates.includes(m.state.state as any));
       } else if (activeTab === 'upcoming') {
-        currentMatches = currentMatches.filter(m => m.state?.state !== 'INPLAY' && m.state?.state !== 'Live' && m.state?.state !== 'Finished' && m.state?.state !== 'FT');
+        currentMatches = currentMatches.filter(m => {
+            if (!m.state?.state) return true;
+            return !liveStates.includes(m.state.state as any) && !finishedStates.includes(m.state.state as any);
+        });
       }
     }
     
@@ -119,7 +128,7 @@ export default function SportsCategoryClientContent({
       );
     }
     return currentMatches;
-  }, [matches, searchTerm, showTabs, activeTab]);
+  }, [matches, searchTerm, showTabs, activeTab, liveStates, finishedStates]);
 
   useEffect(() => {
     if (!loadingAuth && !user) {
@@ -179,7 +188,6 @@ export default function SportsCategoryClientContent({
     </>
   );
 
-  // Render leagues for 'all-sports' page
   if (categorySlug === 'all-sports') {
     return (
       <div className="space-y-6">
@@ -221,7 +229,6 @@ export default function SportsCategoryClientContent({
     );
   }
 
-  // Render matches for other categories
   return (
     <div className="space-y-6">
       {sharedHeader}
