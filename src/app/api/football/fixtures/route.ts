@@ -20,8 +20,9 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'A fixtureId must be provided to get match details.' }, { status: 400 });
     }
 
-    // Includes for comprehensive details, adding odds.bookmaker, odds.market, and periods as requested.
-    const includes = "odds.bookmaker;odds.market;participants;league.country;comments;venue;referee;state;scores;events;periods;statistics;sidelined;weatherReport";
+    // Includes for comprehensive details. Odds-related includes have been removed to prevent API errors on certain plans.
+    // The app will now rely on The Odds API for betting odds data.
+    const includes = "participants;league.country;comments;venue;referee;state;scores;events;periods";
 
     const url = `${SPORTMONKS_FOOTBALL_API_URL}/fixtures/${fixtureId}?api_token=${apiKey}&include=${includes}&tz=UTC`;
     
