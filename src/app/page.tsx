@@ -1,3 +1,4 @@
+
 import {
   fetchLiveFootballFixtures,
   fetchUpcomingFootballFixtures,
@@ -25,7 +26,7 @@ async function getHomePageMatches() {
     // Use a Map to store unique matches by ID.
     const uniqueMatches = new Map<number, ProcessedFixture>();
 
-    // Combine all matches, with live matches coming last to ensure they overwrite upcoming ones.
+    // Combine all matches, with upcoming matches first so that live data can overwrite them.
     const allFetchedMatches = [
       ...upcomingFootball,
       ...upcomingCricket,
@@ -43,8 +44,11 @@ async function getHomePageMatches() {
 
     const distinctMatches = Array.from(uniqueMatches.values());
 
+    // Filter out finished matches before sorting
+    const activeMatches = distinctMatches.filter(match => !match.isFinished);
+
     // Sort the combined list: live matches first, then by start time
-    distinctMatches.sort((a, b) => {
+    activeMatches.sort((a, b) => {
       if (a.isLive && !b.isLive) return -1; // a (live) comes before b (not live)
       if (!a.isLive && b.isLive) return 1;  // b (live) comes before a (not live)
 
@@ -53,7 +57,7 @@ async function getHomePageMatches() {
     });
 
     // Return a slice of the top matches to keep the homepage clean
-    return { matches: distinctMatches.slice(0, 20), error: null };
+    return { matches: activeMatches.slice(0, 20), error: null };
     
   } catch (error) {
     console.error('Error fetching matches for home page:', error);

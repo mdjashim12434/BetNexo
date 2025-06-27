@@ -250,53 +250,6 @@ const processV3FixtureData = (fixtures: SportmonksV3Fixture[], sportKey: 'footba
     });
 };
 
-const processLiveFootballFixtures = (fixtures: SportmonksFootballLiveScore[]): ProcessedFixture[] => {
-    if (!Array.isArray(fixtures)) return [];
-    return fixtures.map(fixture => {
-        const homeTeam = fixture.participants?.find(p => p.meta.location === 'home');
-        const awayTeam = fixture.participants?.find(p => p.meta.location === 'away');
-        const getScore = (participantId: number): number => {
-            const score = fixture.scores?.find(s => s.participant_id === participantId && s.description === 'CURRENT');
-            return score ? score.score.goals : 0;
-        };
-
-        let latestEventString;
-        if (fixture.events && fixture.events.length > 0) {
-            const latestEvent = fixture.events.filter(e => e.type && e.type.name.toLowerCase() !== 'period start').sort((a, b) => b.id - a.id)[0];
-            if (latestEvent) {
-                const participantName = latestEvent.participant?.name;
-                latestEventString = `${latestEvent.minute}' - ${latestEvent.type.name}`;
-                if (participantName && (latestEvent.type.name.toLowerCase().includes('goal') || latestEvent.type.name.toLowerCase().includes('card'))) {
-                    latestEventString += ` (${participantName})`;
-                }
-            }
-        }
-        
-        const isoStartingAt = parseSportmonksDateStringToISO(fixture.starting_at);
-        const isLive = LIVE_STATES.includes(fixture.state.state);
-        const isFinished = FINISHED_STATES.includes(fixture.state.state);
-
-        return {
-            id: fixture.id,
-            sportKey: 'football',
-            name: fixture.name,
-            startingAt: isoStartingAt,
-            state: fixture.state,
-            isLive: isLive,
-            isFinished: isFinished,
-            league: { id: fixture.league?.id || 0, name: fixture.league?.name || 'N/A', countryName: fixture.league?.country?.name || 'N/A' },
-            homeTeam: { id: homeTeam?.id || 0, name: homeTeam?.name || 'Home', image_path: homeTeam?.image_path },
-            awayTeam: { id: awayTeam?.id || 0, name: awayTeam?.name || 'Away', image_path: awayTeam?.image_path },
-            odds: {}, // Live football endpoint doesn't provide odds
-            comments: [],
-            homeScore: homeTeam ? getScore(homeTeam.id) : 0,
-            awayScore: awayTeam ? getScore(awayTeam.id) : 0,
-            minute: fixture.periods?.find(p => p.ticking)?.minutes,
-            latestEvent: latestEventString,
-        };
-    });
-};
-
 
 // --- Public Fetching Functions ---
 
@@ -304,8 +257,13 @@ export async function fetchLiveFootballFixtures(leagueId?: number): Promise<Proc
   try {
     const url = leagueId ? `/api/football/live-scores?leagueId=${leagueId}` : '/api/football/live-scores';
     const response = await fetch(`${API_BASE_URL}${url}`, { cache: 'no-store' });
-    const responseData: SportmonksFootballLiveResponse = await handleApiResponse(response);
-    return processLiveFootballFixtures(responseData?.data || []);
+    const responseData: SportmonksV3FixturesResponse = await handleApiResponse(response);
+    
+    // The API route now returns all of today's fixtures. We process them all...
+    const allTodaysFixtures = processV3FixtureData(responseData?.data || [], 'football');
+    
+    // ... and then filter for the ones that are actually live.
+    return allTodaysFixtures.filter(fixture => fixture.isLive);
   } catch (error) {
     console.error('Error in fetchLiveFootballFixtures service:', error);
     throw error;
@@ -317,7 +275,12 @@ export async function fetchLiveCricketFixtures(leagueId?: number): Promise<Proce
     const url = leagueId ? `/api/cricket/live-scores?leagueId=${leagueId}` : '/api/cricket/live-scores';
     const response = await fetch(`${API_BASE_URL}${url}`, { cache: 'no-store' });
     const responseData: SportmonksV2ApiResponse = await handleApiResponse(response);
-    return processCricketV2ApiResponse(responseData?.data || []);
+
+    // The API route now returns all of today's fixtures. We process them all...
+    const allTodaysFixtures = processCricketV2ApiResponse(responseData?.data || []);
+
+    // ... and then filter for the ones that are actually live.
+    return allTodaysFixtures.filter(fixture => fixture.isLive);
   } catch (error) {
     console.error('Error in fetchLiveCricketFixtures (V2) service:', error);
     throw error;
