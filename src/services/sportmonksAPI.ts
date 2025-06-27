@@ -145,18 +145,14 @@ const processV2CricketFixtures = (fixtures: SportmonksV2Fixture[]): ProcessedFix
 
 // --- Public Fetching Functions ---
 
-export async function fetchLiveFootballFixtures(leagueId?: number): Promise<ProcessedFixture[]> {
-    // This now uses the reliable "todays-fixtures" endpoint and filters for live matches,
-    // as the "/livescores" endpoint seems to be restricted on the user's plan.
-    const allTodaysFixtures = await fetchTodaysFootballFixtures();
-    let liveFixtures = allTodaysFixtures.filter(fixture => fixture.isLive);
-
-    // If a leagueId is provided, filter the live fixtures by that league.
-    if (leagueId) {
-        liveFixtures = liveFixtures.filter(fixture => fixture.league.id === leagueId);
+export async function fetchLiveFootballFixtures(leagueId?: number, firstPageOnly = false): Promise<ProcessedFixture[]> {
+    let url = leagueId ? `/api/football/live-scores?leagueId=${leagueId}` : '/api/football/live-scores';
+     if (firstPageOnly) {
+        url += url.includes('?') ? '&firstPageOnly=true' : '?firstPageOnly=true';
     }
-  
-    return liveFixtures;
+    const response = await fetch(`${API_BASE_URL}${url}`, { cache: 'no-store' });
+    const data: SportmonksV3FixturesResponse = await handleApiResponse(response);
+    return processV3FootballFixtures(data?.data || []);
 }
 
 export async function fetchUpcomingFootballFixtures(leagueId?: number, firstPageOnly = false): Promise<ProcessedFixture[]> {
@@ -167,12 +163,6 @@ export async function fetchUpcomingFootballFixtures(leagueId?: number, firstPage
     const response = await fetch(`${API_BASE_URL}${url}`, { cache: 'no-store' });
     const data: SportmonksV3FixturesResponse = await handleApiResponse(response);
     return processV3FootballFixtures(data?.data || []);
-}
-
-export async function fetchTodaysFootballFixtures(): Promise<ProcessedFixture[]> {
-  const response = await fetch(`${API_BASE_URL}/api/football/todays-fixtures`, { cache: 'no-store' });
-  const data: SportmonksV3FixturesResponse = await handleApiResponse(response);
-  return processV3FootballFixtures(data?.data || []);
 }
 
 export async function fetchLiveCricketFixtures(leagueId?: number): Promise<ProcessedFixture[]> {
