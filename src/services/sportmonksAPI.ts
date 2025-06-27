@@ -48,7 +48,7 @@ const processCricketV2ApiResponse = (fixtures: SportmonksV2Fixture[]): Processed
         // Find Pre-Match odds for 1/2 market
         let homeOddValue: number | undefined;
         let awayOddValue: number | undefined;
-        const preMatchOdds = fixture.odds?.data.find(o => o.name === '2-Way');
+        const preMatchOdds = fixture.odds?.data?.find(o => o.name === '2-Way');
         if (preMatchOdds) {
             // Find a bookmaker that has odds, e.g., 'bet365' or just the first one
             const bookmaker = preMatchOdds.bookmaker?.data?.[0];
@@ -118,7 +118,7 @@ const processCricketV2ApiResponse = (fixtures: SportmonksV2Fixture[]): Processed
                 home: homeOddValue,
                 away: awayOddValue,
             },
-            comments: fixture.comments?.data.map(c => ({...c})), // V2 comments are nested
+            comments: fixture.comments?.data?.map(c => ({...c})), // V2 comments are nested, also adding optional chaining for data
             venue: fixture.venue ? { name: fixture.venue.name, city: fixture.venue.city || '' } : undefined,
             referee: fixture.officials?.data?.[0] ? { name: fixture.officials.data[0].fullname } : undefined,
             homeScore: homeScore,
