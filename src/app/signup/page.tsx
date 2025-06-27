@@ -31,7 +31,7 @@ const signupSchema = z.object({
   password: z.string().min(6, { message: 'Password must be at least 6 characters' }),
   confirmPassword: z.string().min(6, { message: 'Please confirm your password' }),
   currency: z.string().min(1, { message: 'Please select a currency' }),
-  country: z.string().min(2, { message: 'Country is required' }),
+  country: z.string().min(1, { message: 'Please select a country' }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ['confirmPassword'],
@@ -40,11 +40,30 @@ const signupSchema = z.object({
 type SignupFormValues = z.infer<typeof signupSchema>;
 type AuthMethod = 'email' | 'phone' | 'sms' | 'social';
 
+// --- New interfaces for country data ---
+interface Country {
+    id: number;
+    name: string;
+}
+
+interface Continent {
+    id: number;
+    name: string;
+    countries: {
+        data: Country[];
+    }
+}
+
+
 export default function SignupPage() {
   const { login: loginToAppContext, user: appUser, loadingAuth } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [activeMethod, setActiveMethod] = useState<AuthMethod>('email');
+
+  // --- New state for countries ---
+  const [countries, setCountries] = useState<Country[]>([]);
+  const [loadingCountries, setLoadingCountries] = useState(true);
 
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
@@ -58,6 +77,36 @@ export default function SignupPage() {
     },
   });
   
+  // --- New useEffect to fetch countries ---
+  useEffect(() => {
+    async function fetchCountries() {
+        setLoadingCountries(true);
+        try {
+            const response = await fetch('/api/core/continents');
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to fetch countries');
+            }
+            const data: { data: Continent[] } = await response.json();
+            const allCountries = data.data.flatMap(continent => continent.countries.data);
+            const sortedCountries = allCountries.sort((a, b) => a.name.localeCompare(b.name));
+            setCountries(sortedCountries);
+        } catch (error: any) {
+            console.error("Error fetching countries:", error);
+            toast({
+                title: "Could not load countries",
+                description: "There was an error fetching the list of countries. Please try again later.",
+                variant: "destructive"
+            });
+        } finally {
+            setLoadingCountries(false);
+        }
+    }
+
+    fetchCountries();
+  }, [toast]);
+
+
   useEffect(() => {
     if (!loadingAuth && appUser && appUser.emailVerified) {
       router.push('/');
@@ -222,9 +271,24 @@ export default function SignupPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-white/80">Country*</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Your Country" {...field} className="bg-white/5 border-white/20 focus:border-primary text-white placeholder:text-slate-300" />
-                        </FormControl>
+                        <Select onValueChange={field.onChange} defaultValue={field.value} disabled={loadingCountries}>
+                          <FormControl>
+                            <SelectTrigger className="bg-white/5 border-white/20 focus:border-primary text-white">
+                              <SelectValue placeholder={loadingCountries ? "Loading countries..." : "Select your country"} />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {countries.length > 0 ? (
+                                countries.map((country) => (
+                                    <SelectItem key={country.id} value={country.name}>
+                                        {country.name}
+                                    </SelectItem>
+                                ))
+                            ) : (
+                                !loadingCountries && <SelectItem value="none" disabled>No countries found</SelectItem>
+                            )}
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
