@@ -1,6 +1,7 @@
 
 
 
+
 // --- Common Types ---
 export interface SportmonksOdd {
     id: number;
@@ -251,4 +252,86 @@ export interface ProcessedFixture {
     awayScore?: string | number;
     minute?: number;
     latestEvent?: string;
+}
+
+
+// --- V2 Specific Types for Cricket ---
+export interface SportmonksV2Team {
+    id: number;
+    name: string;
+    code: string;
+    image_path: string;
+}
+
+export interface SportmonksV2League {
+    id: number;
+    name: string;
+    code: string;
+    country?: { id: number; name: string; }; // This might be from an include
+}
+
+export interface SportmonksV2Run {
+    fixture_id: number;
+    team_id: number;
+    inning: number;
+    score: number;
+    wickets: number;
+    overs: number;
+}
+
+export interface SportmonksV2OddData {
+    id: number;
+    name: string; // e.g., '2-Way'
+    suspended: boolean;
+    bookmaker: {
+        data: {
+            id: number;
+            name: string;
+            odds: {
+                data: {
+                    label: string; // e.g., '1', '2'
+                    value: string;
+                    winning: boolean | null;
+                    handicap: string | null;
+                }[];
+            };
+        }[];
+    };
+}
+
+
+export interface SportmonksV2Fixture {
+    id: number;
+    league_id: number;
+    localteam_id: number;
+    visitorteam_id: number;
+    starting_at: string;
+    status: string; // "NS", "Finished", etc.
+    note: string;
+    live: boolean;
+    localteam: SportmonksV2Team;
+    visitorteam: SportmonksV2Team;
+    league: SportmonksV2League;
+    runs: SportmonksV2Run[];
+    venue?: SportmonksVenue;
+    odds?: { data: SportmonksV2OddData[] };
+    officials?: { data: SportmonksReferee[] };
+    comments?: { data: SportmonksComment[] }; // v2 comments are nested
+}
+
+export interface SportmonksV2ApiResponse {
+    data: SportmonksV2Fixture[];
+    meta?: {
+        pagination: {
+            total: number;
+            count: number;
+            per_page: number;
+            current_page: number;
+            total_pages: number;
+        }
+    };
+}
+
+export interface SportmonksSingleV2FixtureResponse {
+    data: SportmonksV2Fixture;
 }

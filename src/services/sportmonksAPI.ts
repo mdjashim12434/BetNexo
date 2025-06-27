@@ -7,7 +7,10 @@ import type {
     SportmonksSingleV3FixtureResponse,
     SportmonksFootballLiveResponse,
     SportmonksFootballLiveScore,
-    SportmonksState
+    SportmonksState,
+    SportmonksV2Fixture,
+    SportmonksV2ApiResponse,
+    SportmonksSingleV2FixtureResponse,
 } from '@/types/sportmonks';
 
 // Define the base URL for API calls. For production, this should come from an environment variable.
@@ -38,39 +41,85 @@ const handleApiResponse = async (response: Response) => {
 };
 
 
-// --- Cricket V3 Live Score Processor ---
-const processCricketV3LiveScoresApiResponse = (data: SportmonksV3Fixture[]): ProcessedLiveScore[] => {
-    if (!Array.isArray(data)) return [];
-    return data.map((match: SportmonksV3Fixture) => {
-        const homeTeam = match.participants.find(p => p.meta.location === 'home');
-        const awayTeam = match.participants.find(p => p.meta.location === 'away');
+// --- V2 Cricket Processor ---
+const processCricketV2ApiResponse = (fixtures: SportmonksV2Fixture[]): ProcessedFixture[] => {
+    if (!Array.isArray(fixtures)) return [];
+    return fixtures.map((fixture: SportmonksV2Fixture) => {
+        // Find Pre-Match odds for 1/2 market
+        let homeOddValue: number | undefined;
+        let awayOddValue: number | undefined;
+        const preMatchOdds = fixture.odds?.data.find(o => o.name === '2-Way');
+        if (preMatchOdds) {
+            // Find a bookmaker that has odds, e.g., 'bet365' or just the first one
+            const bookmaker = preMatchOdds.bookmaker?.data?.[0];
+            if (bookmaker?.odds?.data) {
+                const homeOdd = bookmaker.odds.data.find(o => o.label === '1');
+                const awayOdd = bookmaker.odds.data.find(o => o.label === '2');
+                homeOddValue = homeOdd ? parseFloat(homeOdd.value) : undefined;
+                awayOddValue = awayOdd ? parseFloat(awayOdd.value) : undefined;
+            }
+        }
+        
+        // Convert v2 status to v3-like state object
+        const state: SportmonksState = {
+            id: 0, // V2 doesn't provide state ID
+            state: fixture.status as SportmonksState['state'], // Type assertion
+            name: fixture.note || fixture.status,
+            short_name: fixture.status,
+            developer_name: fixture.status.toUpperCase(),
+        };
 
-        const formatScore = (participantId?: number) => {
-            if (!participantId || !match.runs || match.runs.length === 0) return "Yet to bat";
-            // In V3, runs can be an array of innings. We'll find the latest one.
-            const participantRuns = match.runs
-                .filter(r => r.participant_id === participantId)
-                .sort((a, b) => b.inning - a.inning);
-            
-            if (participantRuns.length === 0) return "Yet to bat";
-            const currentInning = participantRuns[0];
-            return `${currentInning.score}/${currentInning.wickets} (${currentInning.overs})`;
+        const formatScore = (teamId: number) => {
+             if (!fixture.runs || fixture.runs.length === 0) return "Yet to bat";
+             const teamRuns = fixture.runs.filter(r => r.team_id === teamId).sort((a,b) => b.inning - a.inning);
+             if (teamRuns.length === 0) return "Yet to bat";
+             const latestInning = teamRuns[0];
+             return `${latestInning.score}/${latestInning.wickets} (${latestInning.overs})`;
         };
         
+        let homeScore: string | number | undefined;
+        let awayScore: string | number | undefined;
+
+        if (state.state.includes('Innings') || state.state === 'Live' || state.state === 'Finished') {
+             homeScore = formatScore(fixture.localteam.id);
+             awayScore = formatScore(fixture.visitorteam.id);
+        }
+
         return {
-            id: match.id,
-            name: match.name,
-            homeTeam: { name: homeTeam?.name || 'Team 1', score: formatScore(homeTeam?.id) },
-            awayTeam: { name: awayTeam?.name || 'Team 2', score: formatScore(awayTeam?.id) },
-            leagueName: match.league?.name ?? 'N/A',
-            countryName: match.league?.country?.name || 'N/A',
-            startTime: match.starting_at, // Ensure UTC format
-            status: match.state.name,
-            note: match.state.name, // v3 doesn't have a simple 'note' field like v2
-            latestEvent: match.state.name,
+            id: fixture.id,
+            sportKey: 'cricket',
+            name: `${fixture.localteam.name} vs ${fixture.visitorteam.name}`,
+            startingAt: fixture.starting_at,
+            state: state,
+            league: {
+                id: fixture.league.id,
+                name: fixture.league.name,
+                countryName: fixture.league.country?.name || 'N/A'
+            },
+            homeTeam: {
+                id: fixture.localteam.id,
+                name: fixture.localteam.name,
+                image_path: fixture.localteam.image_path,
+            },
+            awayTeam: {
+                id: fixture.visitorteam.id,
+                name: fixture.visitorteam.name,
+                image_path: fixture.visitorteam.image_path,
+            },
+            odds: {
+                home: homeOddValue,
+                away: awayOddValue,
+            },
+            comments: fixture.comments?.data.map(c => ({...c})), // V2 comments are nested
+            venue: fixture.venue ? { name: fixture.venue.name, city: fixture.venue.city || '' } : undefined,
+            referee: fixture.officials?.data?.[0] ? { name: fixture.officials.data[0].fullname } : undefined,
+            homeScore: homeScore,
+            awayScore: awayScore,
+            latestEvent: fixture.note,
         };
     });
 };
+
 
 // --- Football & V3 Cricket Processing (V3) ---
 
@@ -245,15 +294,13 @@ export async function fetchLiveFootballFixtures(leagueId?: number): Promise<Proc
 }
 
 export async function fetchLiveCricketFixtures(leagueId?: number): Promise<ProcessedFixture[]> {
-  // This function is being kept but will likely fail due to API plan.
-  // The UI layer is now responsible for not calling it or handling the error.
   try {
     const url = leagueId ? `/api/cricket/live-scores?leagueId=${leagueId}` : '/api/cricket/live-scores';
     const response = await fetch(`${API_BASE_URL}${url}`);
-    const responseData: SportmonksV3FixturesResponse = await handleApiResponse(response);
-    return processV3FixtureData(responseData?.data || [], 'cricket');
+    const responseData: SportmonksV2ApiResponse = await handleApiResponse(response);
+    return processCricketV2ApiResponse(responseData?.data || []);
   } catch (error) {
-    console.error('Error in fetchLiveCricketFixtures (V3) service:', error);
+    console.error('Error in fetchLiveCricketFixtures (V2) service:', error);
     throw error;
   }
 }
@@ -274,10 +321,10 @@ export async function fetchUpcomingCricketFixtures(leagueId?: number): Promise<P
     try {
         const url = leagueId ? `/api/cricket/upcoming-fixtures?leagueId=${leagueId}` : '/api/cricket/upcoming-fixtures';
         const response = await fetch(`${API_BASE_URL}${url}`);
-        const rawData: SportmonksV3FixturesResponse = await handleApiResponse(response);
-        return processV3FixtureData(rawData?.data || [], 'cricket');
+        const rawData: SportmonksV2ApiResponse = await handleApiResponse(response);
+        return processCricketV2ApiResponse(rawData?.data || []);
     } catch (error) {
-        console.error('Error in fetchUpcomingCricketFixtures (V3) service:', error);
+        console.error('Error in fetchUpcomingCricketFixtures (V2) service:', error);
         throw error;
     }
 }
@@ -293,13 +340,13 @@ async function fetchFootballFixtureById(fixtureId: number): Promise<SportmonksV3
     }
 }
 
-async function fetchCricketFixtureById(fixtureId: number): Promise<SportmonksV3Fixture> {
+async function fetchCricketFixtureById(fixtureId: number): Promise<SportmonksV2Fixture> {
     try {
         const response = await fetch(`${API_BASE_URL}/api/cricket/fixtures?fixtureId=${fixtureId}`);
-        const fixtureResponse: SportmonksSingleV3FixtureResponse = await handleApiResponse(response);
+        const fixtureResponse: SportmonksSingleV2FixtureResponse = await handleApiResponse(response);
         return fixtureResponse.data;
     } catch (error) {
-        console.error('Error in fetchCricketFixtureById (V3) service:', error);
+        console.error('Error in fetchCricketFixtureById (V2) service:', error);
         throw error;
     }
 }
@@ -311,7 +358,7 @@ export async function fetchFixtureDetails(fixtureId: number, sport: 'football' |
             return processV3FixtureData([rawFixture], 'football')[0];
         } else if (sport === 'cricket') {
             const rawFixture = await fetchCricketFixtureById(fixtureId);
-            return processV3FixtureData([rawFixture], 'cricket')[0];
+            return processCricketV2ApiResponse([rawFixture])[0];
         }
         throw new Error(`Unsupported sport type for fetchFixtureDetails: ${sport}`);
     } catch (error) {
