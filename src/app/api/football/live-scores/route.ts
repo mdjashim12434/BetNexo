@@ -2,7 +2,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
 // Football v3 endpoint for live scores
-const SPORTMONKS_API_BASE_URL = "https://api.sportmonks.com/v3/football/livescores/inplay";
+const SPORTMONKS_API_BASE_URL = "https://api.sportmonks.com/v3/football/livescores";
 
 // API key is loaded from environment variables for security.
 const apiKey = process.env.SPORTMONKS_API_KEY;
