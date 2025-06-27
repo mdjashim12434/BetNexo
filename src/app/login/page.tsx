@@ -49,17 +49,6 @@ export default function LoginPage() {
     },
   });
 
-  // Effect to redirect if user is already logged in
-  useEffect(() => {
-    if (!loadingAuth && appUser) {
-      if (appUser.role === 'Admin') {
-        router.push('/admin');
-      } else {
-        router.push('/');
-      }
-    }
-  }, [appUser, loadingAuth, router]);
-
   async function onSubmit(data: LoginFormValues) {
     form.clearErrors();
     setShowVerificationMessage(false);
@@ -102,9 +91,6 @@ export default function LoginPage() {
         return; 
       }
       
-      // Call the central login function from the context.
-      // This will handle fetching user docs and setting the global state.
-      // The useEffect hook will then handle the redirection.
       await login({ id: fbUser.uid, email: fbUser.email, emailVerified: fbUser.emailVerified });
       
       toast({ title: "Login Successful", description: "Welcome back! Redirecting..." });
@@ -140,10 +126,11 @@ export default function LoginPage() {
   };
 
 
-  // The global loader from AuthContext handles the main loading state.
-  // This page should not render anything until loading is complete and there's no user.
+  // If auth state is loading, or a user is already logged in,
+  // the AuthProvider will show a loader or handle the redirect.
+  // This component should render nothing to prevent a flash of content.
   if (loadingAuth || appUser) {
-    return null; // Return null because the GlobalLoader or a redirect will happen.
+    return null;
   }
 
   return (

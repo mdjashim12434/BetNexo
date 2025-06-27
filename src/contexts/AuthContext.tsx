@@ -4,6 +4,7 @@
 import type React from 'react';
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { db, doc, getDoc, setDoc, updateDoc, serverTimestamp, auth, signOut, onAuthStateChanged, type FirebaseUserType } from '@/lib/firebase';
+import { useRouter, usePathname } from 'next/navigation';
 
 export interface User {
   id: string; // Firebase UID
@@ -34,7 +35,7 @@ interface AuthContextType {
 }
 
 const GlobalLoader = () => (
-  <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-background text-primary">
+  <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm text-primary">
     <div className="flex flex-col items-center justify-center gap-6">
       {/* Logo */}
       <h1 className="text-5xl font-headline font-bold text-primary tracking-wider animate-pulse">
@@ -58,6 +59,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [currency, setLocalCurrency] = useState<string>('USD'); // Default currency
   const [loadingAuth, setLoadingAuth] = useState(true);
 
+  const router = useRouter();
+  const pathname = usePathname();
+
   const fetchUserDocument = useCallback(async (uid: string): Promise<User | null> => {
     if (!uid) return null;
     const userDocRef = doc(db, "users", uid);
@@ -66,17 +70,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (userDocSnap.exists()) {
         const firestoreData = userDocSnap.data();
 
-        // If user exists but doesn't have a customUserId, generate and save one.
         if (!firestoreData.customUserId) {
           const newCustomUserId = Math.floor(100000000 + Math.random() * 900000000);
-          console.log(`AuthContext: User ${uid} is missing customUserId. Generating and saving new ID: ${newCustomUserId}`);
           await updateDoc(userDocRef, { customUserId: newCustomUserId });
-          firestoreData.customUserId = newCustomUserId; // Update local data to avoid re-fetch
+          firestoreData.customUserId = newCustomUserId;
         }
         
-        const ensuredRole = firestoreData.role || 'User'; // Default to 'User'
-        
-        console.log(`AuthContext: UID ${uid} - Firestore role found: '${firestoreData.role}', Final role set: '${ensuredRole}'`);
+        const ensuredRole = firestoreData.role || 'User';
         
         return {
           id: uid,
@@ -86,90 +86,94 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           role: ensuredRole
         } as User;
       }
-      console.warn("AuthContext: User document not found in Firestore for UID:", uid);
       return null;
     } catch (error) {
       console.error("AuthContext: Error fetching user document for UID " + uid + ":", error);
-      // Re-throw the error so the calling function can handle it, especially for permissions issues.
       throw error;
     }
   }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
-      // Keep loadingAuth true initially. It will be set to false at the end.
+      setLoadingAuth(true); // Start loading on any auth change
       try {
         if (fbUser) {
           setFirebaseUser(fbUser);
           const firestoreUser = await fetchUserDocument(fbUser.uid);
           
           if (firestoreUser) {
-            // Case 1: User is an Admin. Log them in regardless of email verification.
-            if (firestoreUser.role === 'Admin') {
-              setUser({ ...firestoreUser, emailVerified: fbUser.emailVerified });
-              setLocalCurrency(firestoreUser.currency || 'USD');
-              setLocalBalance(firestoreUser.balance || 0);
-              localStorage.setItem('betbabu-user-uid', fbUser.uid);
-              console.log("AuthContext: Admin user session SET for UID:", fbUser.uid, "Email verification status:", fbUser.emailVerified);
-            } 
-            // Case 2: User is NOT an Admin. They MUST have a verified email.
-            else if (fbUser.emailVerified) {
-              setUser({ ...firestoreUser, emailVerified: fbUser.emailVerified });
-              setLocalCurrency(firestoreUser.currency || 'USD');
-              setLocalBalance(firestoreUser.balance || 0);
-              localStorage.setItem('betbabu-user-uid', fbUser.uid);
-              console.log("AuthContext: Verified non-admin user session SET for UID:", fbUser.uid);
-            }
-            // Case 3: User is NOT an Admin and email is NOT verified. Do not log them in.
-            else {
-              setUser(null);
-              localStorage.removeItem('betbabu-user-uid');
-              console.log("AuthContext: Non-admin user email NOT verified. Session CLEARED for UID:", fbUser.uid);
+            const finalUser = { ...firestoreUser, emailVerified: fbUser.emailVerified };
+            if (finalUser.role === 'Admin' || fbUser.emailVerified) {
+              setUser(finalUser);
+              setLocalCurrency(finalUser.currency || 'USD');
+              setLocalBalance(finalUser.balance || 0);
+            } else {
+              setUser(null); // Not an admin and email not verified
             }
           } else {
-            // No Firestore document, no session.
             setUser(null);
-            localStorage.removeItem('betbabu-user-uid');
-            console.warn("AuthContext: Firestore document MISSING for authenticated Firebase user:", fbUser.uid, "Session CLEARED.");
           }
         } else {
-          // No Firebase user, no session.
           setUser(null);
           setFirebaseUser(null);
-          localStorage.removeItem('betbabu-user-uid');
-          console.log("AuthContext: No Firebase user. Session CLEARED.");
         }
       } catch (error) {
         console.error("AuthContext: Error in onAuthStateChanged listener:", error);
         setUser(null);
         setFirebaseUser(null);
-        localStorage.removeItem('betbabu-user-uid');
       } finally {
         setLoadingAuth(false);
-        console.log("AuthContext: onAuthStateChanged finished, loadingAuth set to false.");
       }
     });
 
     return () => unsubscribe();
   }, [fetchUserDocument]);
 
+
+  useEffect(() => {
+    if (loadingAuth) {
+        return; // Wait until authentication state is determined
+    }
+
+    const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/signup');
+    const isAdminPage = pathname.startsWith('/admin');
+    const protectedRoutes = ['/profile', '/wallet', '/deposit', '/withdraw', '/bet-slip', '/user-dashboard', '/admin'];
+
+    if (user) {
+        // User is logged in
+        if (user.role === 'Admin') {
+            if (!isAdminPage) {
+                router.push('/admin');
+            }
+        } else { // Regular user
+            if (isAuthPage) {
+                router.push('/');
+            }
+        }
+    } else {
+        // User is not logged in
+        const isProtectedRoute = protectedRoutes.some(p => pathname.startsWith(p));
+        if (isProtectedRoute) {
+             router.push('/login');
+        }
+    }
+  }, [user, loadingAuth, pathname, router]);
+
   const login = async (userDataFromAuth: { id: string; email?: string; phone?: string; name?: string; currency?: string; country?: string; emailVerified?: boolean, role?: 'Admin' | 'User' | 'Agent', customUserId?: number }, isNewUser: boolean = false): Promise<User | null> => {
     setLoadingAuth(true);
-    console.log("AuthContext: Login function called. isNewUser:", isNewUser, "UID:", userDataFromAuth.id);
     try {
       let finalUserData: User | null = null;
       const uid = userDataFromAuth.id;
       const currentFbUser = auth.currentUser;
 
       const defaultCurrency = userDataFromAuth.currency || 'USD';
-      const defaultRoleFromInput = userDataFromAuth.role; // Might be undefined
+      const defaultRoleFromInput = userDataFromAuth.role;
       const defaultName = userDataFromAuth.name || currentFbUser?.displayName || (currentFbUser?.email ? currentFbUser.email.split('@')[0] : 'User');
       const defaultEmail = userDataFromAuth.email || currentFbUser?.email || '';
       const defaultPhone = userDataFromAuth.phone || currentFbUser?.phoneNumber || '';
       const emailVerifiedStatus = userDataFromAuth.emailVerified ?? currentFbUser?.emailVerified ?? false;
 
       if (isNewUser) {
-        console.log("AuthContext: Handling as NEW user for UID:", uid);
         const userDocRef = doc(db, "users", uid);
         const initialBalance = 0;
         const newUserDocData: Omit<User, 'id' | 'emailVerified' | 'avatarUrl' | 'isVerified'> & { createdAt: any, isVerified: boolean, role: 'Admin' | 'User' | 'Agent', currency: string, customUserId: number } = {
@@ -182,26 +186,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           balance: initialBalance,
           isVerified: false,
           createdAt: serverTimestamp(),
-          role: defaultRoleFromInput || 'User', // If role provided in signup, use it, else 'User'
+          role: defaultRoleFromInput || 'User',
         };
         await setDoc(userDocRef, newUserDocData);
-        console.log("AuthContext: NEW user document created in Firestore for UID:", uid, "with role:", newUserDocData.role);
         finalUserData = {
           ...newUserDocData,
           id: uid,
           emailVerified: emailVerifiedStatus,
         };
       } else {
-        console.log("AuthContext: Handling as EXISTING user for UID:", uid);
         let firestoreUser = await fetchUserDocument(uid);
         if (firestoreUser) {
-           console.log("AuthContext: Existing user document FOUND in Firestore for UID:", uid, "Fetched role:", firestoreUser.role);
           finalUserData = { ...firestoreUser, id: uid, emailVerified: emailVerifiedStatus };
         } else {
-          console.warn(`AuthContext login: Firestore document NOT FOUND for existing Firebase user ${uid}. Creating one with defaults.`);
           const userDocRef = doc(db, "users", uid);
           const docDataToSet: Omit<User, 'id' | 'emailVerified' | 'avatarUrl' | 'isVerified'> & { createdAt: any, isVerified: boolean, role: 'Admin' | 'User' | 'Agent', currency: string, customUserId: number } = {
-            customUserId: Math.floor(100000000 + Math.random() * 900000000), // Fallback custom ID
+            customUserId: Math.floor(100000000 + Math.random() * 900000000),
             name: defaultName,
             email: defaultEmail,
             phone: defaultPhone,
@@ -210,10 +210,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             balance: 0,
             isVerified: false,
             createdAt: serverTimestamp(),
-            role: defaultRoleFromInput || 'User', // For an existing Firebase user without Firestore doc, default to 'User' unless a role is passed (unlikely for login)
+            role: defaultRoleFromInput || 'User',
           };
           await setDoc(userDocRef, docDataToSet);
-          console.log("AuthContext: Firestore document CREATED for existing Firebase user UID:", uid, "with role:", docDataToSet.role);
           finalUserData = {
             ...docDataToSet,
             id: uid,
@@ -222,55 +221,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
 
-      if (finalUserData) {
-        // Ensure role in finalUserData is what was intended (especially from Firestore or new user creation)
-        console.log("AuthContext: Final user data for app state:", finalUserData);
-        if (!emailVerifiedStatus && finalUserData.role === 'Admin') {
-            console.warn(`AuthContext: Admin user ${uid} email is not verified. They might not be able to access admin functionalities until email is verified.`);
-        }
-
-        setUser(finalUserData);
-        setLocalCurrency(finalUserData.currency || 'USD');
-        setLocalBalance(finalUserData.balance || 0);
-        
-        // Let onAuthStateChanged handle localStorage based on its own logic (which now includes admin role check)
-        // This keeps the logic consistent.
-        
-        console.log("AuthContext: App user state updated after login function for UID:", uid, "Role:", finalUserData.role, "EmailVerified:", emailVerifiedStatus);
-        return finalUserData;
-      } else {
-        console.error("AuthContext: Login function - finalUserData is null, failed to establish user session. UID:", uid);
-        throw new Error("Failed to establish user session in app context.");
-      }
+      // The onAuthStateChanged listener will handle setting the user state.
+      // This function just ensures the Firestore doc is present.
+      return finalUserData;
 
     } catch (error) {
       console.error("AuthContext: Error during app context login/signup for UID:", userDataFromAuth.id, error);
-      setUser(null);
-      setLocalBalance(0);
-      setLocalCurrency('USD');
-      localStorage.removeItem('betbabu-user-uid');
+      // Let onAuthStateChanged handle clearing state.
       throw error;
     } finally {
-      setLoadingAuth(false);
-      console.log("AuthContext: Login function finished, loadingAuth set to false for UID:", userDataFromAuth.id);
+      // Don't set loading to false here, let the listeners do it to prevent race conditions.
     }
   };
 
   const logout = async () => {
     setLoadingAuth(true);
-    console.log("AuthContext: Logout function called.");
     try {
       await signOut(auth);
       // State will be cleared by onAuthStateChanged
     } catch (error) {
       console.error("AuthContext: Firebase signOut error:", error);
-      // Force clear state if signOut fails before onAuthStateChanged can react
       setUser(null);
       setFirebaseUser(null);
-      setLocalBalance(0);
-      setLocalCurrency('USD');
-      localStorage.removeItem('betbabu-user-uid');
-      setLoadingAuth(false); // Ensure loading is false if error occurs here
+      setLoadingAuth(false);
     }
   };
 
