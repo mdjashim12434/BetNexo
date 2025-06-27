@@ -26,8 +26,10 @@ export async function GET(request: NextRequest) {
     
     // Includes for comprehensive details, but excluding odds to keep it light.
     const includes = "participants;league.country;state";
+    // State ID 1 is for 'Not Started' (NS). This ensures we only get truly upcoming matches from the API.
+    const statesToFetch = "1";
     
-    let baseUrl = `${SPORTMONKS_FOOTBALL_API_URL}/fixtures/between/${today}/${nextWeek}?api_token=${apiKey}&include=${includes}&tz=UTC`;
+    let baseUrl = `${SPORTMONKS_FOOTBALL_API_URL}/fixtures/between/${today}/${nextWeek}?api_token=${apiKey}&include=${includes}&tz=UTC&filter[states]=${statesToFetch}`;
     
     if (leagueId) {
         baseUrl += `&leagues=${leagueId}`;
