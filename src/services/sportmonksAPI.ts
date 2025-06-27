@@ -16,6 +16,16 @@ import type {
 // Define the base URL for API calls. For production, this should come from an environment variable.
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:9002';
 
+// --- Centralized State Definitions ---
+const LIVE_STATES: SportmonksState['state'][] = [
+    'INPLAY', 'HT', 'ET', 'PEN_LIVE', 'BREAK', 
+    'Live', '1st Innings', '2nd Innings', 'Innings Break', 'Super Over', 'TOSS', 'DELAYED'
+];
+const FINISHED_STATES: SportmonksState['state'][] = [
+    'FT', 'AET', 'Finished', 'POSTP', 'CANCL', 'ABAN', 'SUSP', 'AWARDED', 'DELETED', 'WO', 'AU'
+];
+
+
 // Helper to generate user-friendly error messages based on HTTP status
 const handleApiResponse = async (response: Response) => {
     if (response.ok) {
@@ -43,37 +53,15 @@ const handleApiResponse = async (response: Response) => {
 // Helper function to robustly parse date strings from the API into a standard ISO format.
 const parseSportmonksDateStringToISO = (dateString: string): string => {
     if (!dateString) {
-        console.warn(`Invalid or null date string received: '${dateString}'. Returning current time as a fallback to prevent crashes.`);
         return new Date().toISOString();
     }
-
-    // Try to match a standard date format like YYYY-MM-DD HH:MM:SS or YYYY-MM-DDTHH:MM:SS
-    const parts = dateString.match(/(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}):(\d{2}):(\d{2})/);
-    
-    if (parts) {
-        // parts[0] is the full match, parts[1] is year, etc.
-        const year = parseInt(parts[1], 10);
-        const month = parseInt(parts[2], 10) - 1; // JS months are 0-indexed
-        const day = parseInt(parts[3], 10);
-        const hours = parseInt(parts[4], 10);
-        const minutes = parseInt(parts[5], 10);
-        const seconds = parseInt(parts[6], 10);
-        
-        // Create a date object assuming the parts are in UTC
-        const date = new Date(Date.UTC(year, month, day, hours, minutes, seconds));
-        
-        if (!isNaN(date.getTime())) {
-            return date.toISOString(); // Returns a standardized ISO string e.g., "2024-06-28T12:00:00.000Z"
-        }
-    }
-
-    // Fallback for if the regex doesn't match, though it's less safe.
-    console.warn(`Could not parse date string with regex: '${dateString}'. Using fallback parsing.`);
+    // Handles formats like "YYYY-MM-DD HH:MM:SS" and "YYYY-MM-DDTHH:MM:SS"
     const normalizedDateString = dateString.replace(' ', 'T');
     const finalDateString = normalizedDateString.endsWith('Z') ? normalizedDateString : normalizedDateString + 'Z';
     const date = new Date(finalDateString);
+
     if (isNaN(date.getTime())) {
-        console.warn(`Could not parse date string: '${dateString}'. Final string: '${finalDateString}'. Returning current time as fallback.`);
+        console.warn(`Could not parse date string: '${dateString}'. Using current time as fallback.`);
         return new Date().toISOString();
     }
     return date.toISOString();
@@ -84,7 +72,6 @@ const parseSportmonksDateStringToISO = (dateString: string): string => {
 const processCricketV2ApiResponse = (fixtures: SportmonksV2Fixture[]): ProcessedFixture[] => {
     if (!Array.isArray(fixtures)) return [];
     return fixtures.map((fixture: SportmonksV2Fixture) => {
-        // Find Pre-Match odds for 1/2 market
         let homeOddValue: number | undefined;
         let awayOddValue: number | undefined;
         
@@ -99,7 +86,6 @@ const processCricketV2ApiResponse = (fixtures: SportmonksV2Fixture[]): Processed
             }
         }
         
-        // Convert v2 status to v3-like state object
         const state: SportmonksState = {
             id: 0, 
             state: fixture.status as SportmonksState['state'], 
@@ -108,28 +94,22 @@ const processCricketV2ApiResponse = (fixtures: SportmonksV2Fixture[]): Processed
             developer_name: (fixture.status || 'NS').toUpperCase(),
         };
 
-        const formatScore = (teamId: number) => {
-             if (!fixture.runs || fixture.runs.length === 0) return "Yet to bat";
-             const teamRuns = fixture.runs.filter(r => r.team_id === teamId).sort((a,b) => b.inning - a.inning);
-             if (teamRuns.length === 0) return "Yet to bat";
-             const latestInning = teamRuns[0];
-             return `${latestInning.score}/${latestInning.wickets} (${latestInning.overs})`;
-        };
-        
+        const isLive = LIVE_STATES.includes(state.state);
+        const isFinished = FINISHED_STATES.includes(state.state);
+
         let homeScore: string | number | undefined;
         let awayScore: string | number | undefined;
 
-        // Use a more comprehensive check to decide when to calculate scores.
-        // If a match has any "live-like" or finished status, it should have a score.
-        const scoreRelevantStates: (SportmonksState['state'])[] = ['Live', '1st Innings', '2nd Innings', 'Innings Break', 'Super Over', 'Finished', 'Cancelled', 'DELAYED', 'TOSS'];
-
-        if (state.state && scoreRelevantStates.includes(state.state)) {
-             if (fixture.localteam?.id) {
-                homeScore = formatScore(fixture.localteam.id);
-             }
-             if (fixture.visitorteam?.id) {
-                awayScore = formatScore(fixture.visitorteam.id);
-             }
+        if (isLive || isFinished) {
+            const formatScore = (teamId: number) => {
+                 if (!fixture.runs || fixture.runs.length === 0) return "0/0 (0.0)";
+                 const teamRuns = fixture.runs.filter(r => r.team_id === teamId).sort((a,b) => b.inning - a.inning);
+                 if (teamRuns.length === 0) return "Yet to bat";
+                 const latestInning = teamRuns[0];
+                 return `${latestInning.score}/${latestInning.wickets} (${latestInning.overs})`;
+            };
+            if (fixture.localteam?.id) homeScore = formatScore(fixture.localteam.id);
+            if (fixture.visitorteam?.id) awayScore = formatScore(fixture.visitorteam.id);
         }
 
         const isoStartingAt = parseSportmonksDateStringToISO(fixture.starting_at);
@@ -142,25 +122,16 @@ const processCricketV2ApiResponse = (fixtures: SportmonksV2Fixture[]): Processed
             name: `${homeTeamName} vs ${awayTeamName}`,
             startingAt: isoStartingAt,
             state: state,
+            isLive: isLive,
+            isFinished: isFinished,
             league: {
                 id: fixture.league?.id || 0,
                 name: fixture.league?.name || 'N/A',
                 countryName: fixture.league?.country?.name || 'N/A'
             },
-            homeTeam: {
-                id: fixture.localteam?.id || 0,
-                name: homeTeamName,
-                image_path: fixture.localteam?.image_path,
-            },
-            awayTeam: {
-                id: fixture.visitorteam?.id || 0,
-                name: awayTeamName,
-                image_path: fixture.visitorteam?.image_path,
-            },
-            odds: {
-                home: homeOddValue,
-                away: awayOddValue,
-            },
+            homeTeam: { id: fixture.localteam?.id || 0, name: homeTeamName, image_path: fixture.localteam?.image_path },
+            awayTeam: { id: fixture.visitorteam?.id || 0, name: awayTeamName, image_path: fixture.visitorteam?.image_path },
+            odds: { home: homeOddValue, away: awayOddValue },
             comments: fixture.comments?.data?.map(c => ({...c})),
             venue: fixture.venue ? { name: fixture.venue.name, city: fixture.venue.city || '' } : undefined,
             referee: fixture.officials?.data?.[0] ? { name: fixture.officials.data[0].fullname } : undefined,
@@ -179,6 +150,10 @@ const processV3FixtureData = (fixtures: SportmonksV3Fixture[], sportKey: 'footba
     return fixtures.map(fixture => {
         const homeTeam = fixture.participants?.find(p => p.meta.location === 'home');
         const awayTeam = fixture.participants?.find(p => p.meta.location === 'away');
+        
+        const isLive = LIVE_STATES.includes(fixture.state.state);
+        const isFinished = FINISHED_STATES.includes(fixture.state.state);
+        
         const comments = fixture.comments?.map(comment => ({
             id: comment.id,
             comment: comment.comment,
@@ -187,63 +162,65 @@ const processV3FixtureData = (fixtures: SportmonksV3Fixture[], sportKey: 'footba
             is_goal: comment.is_goal,
         })).sort((a, b) => b.minute - a.minute) || [];
 
-        // H2H Odds (Market ID: 1)
         const h2hOdds = fixture.odds?.filter(o => o.market_id === 1) || [];
         const homeOdd = h2hOdds.find(o => o.original_label === '1');
         const drawOdd = h2hOdds.find(o => o.original_label === 'Draw');
         const awayOdd = h2hOdds.find(o => o.original_label === '2');
-
-        // Over/Under 2.5 Odds (Market ID: 10, Label: '2.5')
         const overUnderOdds = fixture.odds?.filter(o => o.market_id === 10 && o.label === '2.5') || [];
         const overOdd = overUnderOdds.find(o => o.original_label === 'Over');
         const underOdd = overUnderOdds.find(o => o.original_label === 'Under');
-
-        // BTTS Odds (Market ID: 12)
         const bttsOdds = fixture.odds?.filter(o => o.market_id === 12) || [];
         const bttsYesOdd = bttsOdds.find(o => o.original_label === 'Yes');
         const bttsNoOdd = bttsOdds.find(o => o.original_label === 'No');
-        
-        // Draw No Bet (Market ID: 8)
         const dnbOdds = fixture.odds?.filter(o => o.market_id === 8) || [];
         const dnbHomeOdd = dnbOdds.find(o => o.original_label === '1');
         const dnbAwayOdd = dnbOdds.find(o => o.original_label === '2');
-
-        // Double Chance (Market ID: 9)
         const dcOdds = fixture.odds?.filter(o => o.market_id === 9) || [];
         const dc1XOdd = dcOdds.find(o => o.original_label === '1X');
         const dcX2Odd = dcOdds.find(o => o.original_label === 'X2');
         const dc12Odd = dcOdds.find(o => o.original_label === '12');
 
-        // Handle different official/referee structures
         let mainOfficialName: string | undefined;
-        if (fixture.referee) { // Football V3
-            mainOfficialName = fixture.referee.fullname;
-        } else if (fixture.officials?.data) { // Cricket V3
+        if (fixture.referee) mainOfficialName = fixture.referee.fullname;
+        else if (fixture.officials?.data) {
              const umpire = fixture.officials.data.find(o => o.type.name === 'Umpire');
              if (umpire) mainOfficialName = umpire.fullname;
         }
 
         let homeScore: string | number | undefined;
         let awayScore: string | number | undefined;
+        let minute: number | undefined;
         let latestEvent: string | undefined;
 
-        if (sportKey === 'cricket' && fixture.state?.state && (fixture.state.state.includes('Innings') || fixture.state.state === 'Live')) {
-            const formatScore = (participantId?: number) => {
-                if (!participantId || !fixture.runs || fixture.runs.length === 0) return "Yet to bat";
-                const participantRuns = fixture.runs
-                    .filter(r => r.participant_id === participantId)
-                    .sort((a, b) => b.inning - a.inning);
-                if (participantRuns.length === 0) return "Yet to bat";
-                const currentInning = participantRuns[0];
-                return `${currentInning.score}/${currentInning.wickets} (${currentInning.overs})`;
-            };
-            homeScore = formatScore(homeTeam?.id);
-            awayScore = formatScore(awayTeam?.id);
+        if (isLive || isFinished) {
+            if (sportKey === 'football') {
+                const getScore = (participantId: number): number => {
+                    const score = fixture.scores?.find(s => s.participant_id === participantId && s.description === 'CURRENT');
+                    return score ? score.score.goals : 0;
+                };
+                if (homeTeam) homeScore = getScore(homeTeam.id);
+                if (awayTeam) awayScore = getScore(awayTeam.id);
+                minute = fixture.periods?.find(p => p.ticking)?.minutes;
+            } else if (sportKey === 'cricket') {
+                const formatScore = (participantId?: number) => {
+                    if (!participantId || !fixture.runs || fixture.runs.length === 0) return "0/0 (0.0)";
+                    const participantRuns = fixture.runs.filter(r => r.participant_id === participantId).sort((a, b) => b.inning - a.inning);
+                    if (participantRuns.length === 0) return "Yet to bat";
+                    const currentInning = participantRuns[0];
+                    return `${currentInning.score}/${currentInning.wickets} (${currentInning.overs})`;
+                };
+                homeScore = formatScore(homeTeam?.id);
+                awayScore = formatScore(awayTeam?.id);
+            }
+        }
+        
+        if (comments.length > 0) {
+            latestEvent = `${comments[0].minute}' - ${comments[0].comment}`;
+        } else if (isLive) {
             latestEvent = fixture.state.name;
         }
 
         const isoStartingAt = parseSportmonksDateStringToISO(fixture.starting_at);
-
 
         return {
             id: fixture.id,
@@ -251,6 +228,8 @@ const processV3FixtureData = (fixtures: SportmonksV3Fixture[], sportKey: 'footba
             name: fixture.name,
             startingAt: isoStartingAt,
             state: fixture.state,
+            isLive: isLive,
+            isFinished: isFinished,
             league: { id: fixture.league_id, name: fixture.league?.name || 'N/A', countryName: fixture.league?.country?.name || 'N/A' },
             homeTeam: { id: homeTeam?.id || 0, name: homeTeam?.name || 'Home', image_path: homeTeam?.image_path },
             awayTeam: { id: awayTeam?.id || 0, name: awayTeam?.name || 'Away', image_path: awayTeam?.image_path },
@@ -258,31 +237,15 @@ const processV3FixtureData = (fixtures: SportmonksV3Fixture[], sportKey: 'footba
                 home: homeOdd ? parseFloat(homeOdd.value) : undefined,
                 draw: drawOdd ? parseFloat(drawOdd.value) : undefined,
                 away: awayOdd ? parseFloat(awayOdd.value) : undefined,
-                overUnder: {
-                    over: overOdd ? parseFloat(overOdd.value) : undefined,
-                    under: underOdd ? parseFloat(underOdd.value) : undefined,
-                    point: overOdd || underOdd ? 2.5 : undefined,
-                },
-                btts: {
-                    yes: bttsYesOdd ? parseFloat(bttsYesOdd.value) : undefined,
-                    no: bttsNoOdd ? parseFloat(bttsNoOdd.value) : undefined,
-                },
-                dnb: {
-                    home: dnbHomeOdd ? parseFloat(dnbHomeOdd.value) : undefined,
-                    away: dnbAwayOdd ? parseFloat(dnbAwayOdd.value) : undefined,
-                },
-                dc: {
-                    homeOrDraw: dc1XOdd ? parseFloat(dc1XOdd.value) : undefined,
-                    awayOrDraw: dcX2Odd ? parseFloat(dcX2Odd.value) : undefined,
-                    homeOrAway: dc12Odd ? parseFloat(dc12Odd.value) : undefined,
-                }
+                overUnder: { over: overOdd ? parseFloat(overOdd.value) : undefined, under: underOdd ? parseFloat(underOdd.value) : undefined, point: overOdd || underOdd ? 2.5 : undefined },
+                btts: { yes: bttsYesOdd ? parseFloat(bttsYesOdd.value) : undefined, no: bttsNoOdd ? parseFloat(bttsNoOdd.value) : undefined },
+                dnb: { home: dnbHomeOdd ? parseFloat(dnbHomeOdd.value) : undefined, away: dnbAwayOdd ? parseFloat(dnbAwayOdd.value) : undefined },
+                dc: { homeOrDraw: dc1XOdd ? parseFloat(dc1XOdd.value) : undefined, awayOrDraw: dcX2Odd ? parseFloat(dcX2Odd.value) : undefined, homeOrAway: dc12Odd ? parseFloat(dc12Odd.value) : undefined }
             },
             comments: comments,
             venue: fixture.venue ? { name: fixture.venue.name, city: fixture.venue.city_name || fixture.venue.city || '' } : undefined,
             referee: mainOfficialName ? { name: mainOfficialName } : undefined,
-            homeScore,
-            awayScore,
-            latestEvent,
+            homeScore, awayScore, minute, latestEvent,
         };
     });
 };
@@ -299,10 +262,7 @@ const processLiveFootballFixtures = (fixtures: SportmonksFootballLiveScore[]): P
 
         let latestEventString;
         if (fixture.events && fixture.events.length > 0) {
-            const latestEvent = fixture.events
-                .filter(e => e.type && e.type.name.toLowerCase() !== 'period start')
-                .sort((a, b) => b.id - a.id)[0];
-            
+            const latestEvent = fixture.events.filter(e => e.type && e.type.name.toLowerCase() !== 'period start').sort((a, b) => b.id - a.id)[0];
             if (latestEvent) {
                 const participantName = latestEvent.participant?.name;
                 latestEventString = `${latestEvent.minute}' - ${latestEvent.type.name}`;
@@ -313,6 +273,8 @@ const processLiveFootballFixtures = (fixtures: SportmonksFootballLiveScore[]): P
         }
         
         const isoStartingAt = parseSportmonksDateStringToISO(fixture.starting_at);
+        const isLive = LIVE_STATES.includes(fixture.state.state);
+        const isFinished = FINISHED_STATES.includes(fixture.state.state);
 
         return {
             id: fixture.id,
@@ -320,6 +282,8 @@ const processLiveFootballFixtures = (fixtures: SportmonksFootballLiveScore[]): P
             name: fixture.name,
             startingAt: isoStartingAt,
             state: fixture.state,
+            isLive: isLive,
+            isFinished: isFinished,
             league: { id: fixture.league?.id || 0, name: fixture.league?.name || 'N/A', countryName: fixture.league?.country?.name || 'N/A' },
             homeTeam: { id: homeTeam?.id || 0, name: homeTeam?.name || 'Home', image_path: homeTeam?.image_path },
             awayTeam: { id: awayTeam?.id || 0, name: awayTeam?.name || 'Away', image_path: awayTeam?.image_path },

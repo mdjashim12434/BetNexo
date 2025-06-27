@@ -13,44 +13,13 @@ interface HomeMatchesDisplayProps {
   error?: string;
 }
 
-const isLive = (match: ProcessedFixture): boolean => {
-    if (!match?.state) return false;
-    // A more comprehensive list of states that are considered "live"
-    const liveStates = [
-      'INPLAY',      // Football
-      'HT',          // Football - Half-Time
-      'ET',          // Football - Extra Time
-      'PEN_LIVE',    // Football - Penalties
-      'BREAK',       // General break state
-      'Live',        // Cricket
-      '1st Innings', // Cricket
-      '2nd Innings', // Cricket
-      'Innings Break',// Cricket
-      'Super Over',  // Cricket
-      'TOSS',        // Cricket - just before start
-      'DELAYED',     // Match is live but delayed
-    ];
-    return liveStates.includes(match.state.state);
-}
-
-// Any match that is not live AND not finished, is upcoming for the purpose of this display.
-const isUpcoming = (match: ProcessedFixture): boolean => {
-    if (!match?.state) return true; // Default to upcoming if state is missing
-    const finishedStates = ['Finished', 'FT', 'AET', 'POSTP', 'CANCL', 'ABAN', 'SUSP', 'AWARDED', 'DELETED', 'WO', 'AU'];
-    if (finishedStates.includes(match.state.state)) {
-        return false;
-    }
-    // If it's not finished, and not live, it's upcoming
-    return !isLive(match);
-}
-
 export default function HomeMatchesDisplay({
   matches = [],
   error,
 }: HomeMatchesDisplayProps) {
 
-  const liveMatches = matches.filter(isLive);
-  const upcomingFixtures = matches.filter(isUpcoming);
+  const liveMatches = matches.filter(m => m.isLive);
+  const upcomingFixtures = matches.filter(m => !m.isLive && !m.isFinished);
 
   const hasLiveMatches = liveMatches.length > 0;
   const hasUpcomingMatches = upcomingFixtures.length > 0;

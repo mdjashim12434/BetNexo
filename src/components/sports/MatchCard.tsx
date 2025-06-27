@@ -13,12 +13,7 @@ interface MatchCardProps {
 }
 
 const MatchCard: FC<MatchCardProps> = ({ match }) => {
-  const liveStates = ['INPLAY', 'HT', 'ET', 'PEN_LIVE', 'BREAK', 'Live', '1st Innings', '2nd Innings', 'Innings Break', 'Super Over', 'TOSS', 'DELAYED'];
-  const finishedStates = ['Finished', 'FT', 'AET', 'POSTP', 'CANCL', 'ABAN', 'SUSP', 'AWARDED', 'DELETED', 'WO', 'AU'];
-
-  const isLive = liveStates.includes(match.state?.state);
-  const isFinished = finishedStates.includes(match.state?.state);
-  const isUpcoming = !isLive && !isFinished;
+  const isUpcoming = !match.isLive && !match.isFinished;
 
   return (
     <Card className="overflow-hidden shadow-lg hover:shadow-primary/20 transition-shadow duration-300 flex flex-col">
@@ -28,13 +23,13 @@ const MatchCard: FC<MatchCardProps> = ({ match }) => {
             <CardTitle className="font-headline text-lg truncate">{match.name}</CardTitle>
             <CardDescription>{match.league.name}</CardDescription>
           </div>
-          {isLive && (
+          {match.isLive && (
             <Badge variant="destructive" className="animate-pulse">LIVE</Badge>
           )}
         </div>
       </CardHeader>
       <CardContent className="flex-grow space-y-3">
-        {isLive ? (
+        {match.isLive ? (
           <div className="space-y-1">
             <div className="flex justify-between items-center text-lg font-semibold">
                 <span className="truncate pr-2">{match.homeTeam.name}</span>

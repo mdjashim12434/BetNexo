@@ -2,6 +2,7 @@
 
 
 
+
 // --- Common Types ---
 export interface SportmonksOdd {
     id: number;
@@ -20,7 +21,7 @@ export interface SportmonksOdd {
 
 export interface SportmonksState {
     id: number;
-    state: 'NS' | 'INPLAY' | 'HT' | 'FT' | 'ET' | 'PEN_LIVE' | 'AET' | 'BREAK' | 'POSTP' | 'CANCL' | 'ABAN' | 'SUSP' | 'AWARDED' | 'DELETED' | 'TBA' | 'WO' | 'AU' | 'Finished' | 'Live' | '1st Innings' | '2nd Innings' | 'Innings Break' | 'Cancelled'; // Common states, added more cricket states
+    state: 'NS' | 'INPLAY' | 'HT' | 'FT' | 'ET' | 'PEN_LIVE' | 'AET' | 'BREAK' | 'POSTP' | 'CANCL' | 'ABAN' | 'SUSP' | 'AWARDED' | 'DELETED' | 'TBA' | 'WO' | 'AU' | 'Finished' | 'Live' | '1st Innings' | '2nd Innings' | 'Innings Break' | 'Cancelled' | 'TOSS' | 'DELAYED';
     name: string;
     short_name: string;
     developer_name: string;
@@ -89,6 +90,18 @@ export interface SportmonksV3Run {
     overs: number;
 }
 
+export interface FootballPeriod {
+    id: number;
+    fixture_id: number;
+    type_id: number;
+    started: number;
+    ended: number;
+    counts_from: number;
+    ticking: boolean;
+    minutes?: number; // Current minute in the period
+}
+
+
 export interface SportmonksV3Fixture {
     id: number;
     name: string;
@@ -105,6 +118,7 @@ export interface SportmonksV3Fixture {
     runs?: SportmonksV3Run[]; // Cricket V3 runs
     scores?: FootballScore[];
     events?: FootballEvent[];
+    periods?: FootballPeriod[];
     statistics?: any[];
     sidelined?: any;
     weatherReport?: any;
@@ -131,17 +145,6 @@ export interface FootballScore {
         participant?: 'home' | 'away';
     };
     description: string;
-}
-
-export interface FootballPeriod {
-    id: number;
-    fixture_id: number;
-    type_id: number;
-    started: number;
-    ended: number;
-    counts_from: number;
-    ticking: boolean;
-    minutes?: number; // Current minute in the period
 }
 
 export interface FootballEvent {
@@ -206,6 +209,8 @@ export interface ProcessedFixture {
     name: string;
     startingAt: string;
     state: SportmonksState;
+    isLive: boolean;
+    isFinished: boolean;
     league: {
         id: number;
         name: string;
