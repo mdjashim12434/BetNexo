@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
         while (hasMore) {
             const url = `${baseUrl}&page=${currentPage}`;
             const response = await fetch(url, {
-                next: { revalidate: 60 } // Cache for 1 minute
+                cache: 'no-store' // Fetch fresh data
             });
 
             if (!response.ok) {

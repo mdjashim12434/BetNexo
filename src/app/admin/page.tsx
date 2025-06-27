@@ -11,6 +11,7 @@ import TransactionsLogTab from "@/components/admin/TransactionsLogTab";
 import DashboardTab from "@/components/admin/DashboardTab";
 import BetHistoryTab from "@/components/admin/BetHistoryTab";
 import PaymentMethodsManagementTab from "@/components/admin/PaymentMethodsManagementTab";
+import { Button } from "@/components/ui/button";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
@@ -134,6 +135,10 @@ export default function AdminPage() {
                 <SidebarTrigger />
                 <h2 className="font-headline text-lg font-semibold">{activeSectionLabel}</h2>
               </div>
+              <Button variant="ghost" size="icon" onClick={handleLogout} className="text-muted-foreground">
+                  <LogOut className="h-5 w-5" />
+                  <span className="sr-only">Logout</span>
+              </Button>
             </header>
             <div className="p-4 md:p-6 lg:p-8">
               {ActiveComponent === DashboardTab ? (

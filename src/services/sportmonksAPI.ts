@@ -42,23 +42,40 @@ const handleApiResponse = async (response: Response) => {
 
 // Helper function to robustly parse date strings from the API into a standard ISO format.
 const parseSportmonksDateStringToISO = (dateString: string): string => {
-    // The API returns dates in UTC. Format can be "YYYY-MM-DD HH:MM:SS" or "YYYY-MM-DDTHH:MM:SS".
-    // We parse this manually to create a UTC date, then get ISO string.
-    // This avoids JS Date constructor quirks with ambiguous formats.
     if (!dateString) {
         console.warn(`Invalid or null date string received: '${dateString}'. Returning current time as a fallback to prevent crashes.`);
         return new Date().toISOString();
     }
-    
-    // Replace space with 'T' and add 'Z' to explicitly mark it as UTC
-    const normalizedDateString = dateString.replace(' ', 'T') + 'Z';
-    const date = new Date(normalizedDateString);
 
+    // Try to match a standard date format like YYYY-MM-DD HH:MM:SS or YYYY-MM-DDTHH:MM:SS
+    const parts = dateString.match(/(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}):(\d{2}):(\d{2})/);
+    
+    if (parts) {
+        // parts[0] is the full match, parts[1] is year, etc.
+        const year = parseInt(parts[1], 10);
+        const month = parseInt(parts[2], 10) - 1; // JS months are 0-indexed
+        const day = parseInt(parts[3], 10);
+        const hours = parseInt(parts[4], 10);
+        const minutes = parseInt(parts[5], 10);
+        const seconds = parseInt(parts[6], 10);
+        
+        // Create a date object assuming the parts are in UTC
+        const date = new Date(Date.UTC(year, month, day, hours, minutes, seconds));
+        
+        if (!isNaN(date.getTime())) {
+            return date.toISOString(); // Returns a standardized ISO string e.g., "2024-06-28T12:00:00.000Z"
+        }
+    }
+
+    // Fallback for if the regex doesn't match, though it's less safe.
+    console.warn(`Could not parse date string with regex: '${dateString}'. Using fallback parsing.`);
+    const normalizedDateString = dateString.replace(' ', 'T');
+    const finalDateString = normalizedDateString.endsWith('Z') ? normalizedDateString : normalizedDateString + 'Z';
+    const date = new Date(finalDateString);
     if (isNaN(date.getTime())) {
-        console.warn(`Could not parse date string: '${dateString}'. Normalized to: '${normalizedDateString}'. Returning current time as fallback.`);
+        console.warn(`Could not parse date string: '${dateString}'. Final string: '${finalDateString}'. Returning current time as fallback.`);
         return new Date().toISOString();
     }
-    
     return date.toISOString();
 };
 

@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const apiResponse = await fetch(url, {
-        next: { revalidate: 60 * 5 } // Cache for 5 minutes
+        cache: 'no-store' // Fetch fresh data
     });
 
     if (!apiResponse.ok) {
