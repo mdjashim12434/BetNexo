@@ -201,15 +201,11 @@ export async function fetchAllTodaysFootballFixtures(): Promise<ProcessedFixture
 
 export async function fetchLiveFootballFixtures(leagueId?: number): Promise<ProcessedFixture[]> {
   try {
-    const url = '/api/football/todays-fixtures'; // Changed from livescores to a more reliable endpoint
+    const url = leagueId ? `/api/football/live-scores?leagueId=${leagueId}` : '/api/football/live-scores';
     const response = await fetch(`${API_BASE_URL}${url}`, { cache: 'no-store' });
     const responseData: SportmonksV3FixturesResponse = await handleApiResponse(response);
     
-    // Process all of today's fixtures from the API response
-    const allTodaysFixtures = processV3FixtureData(responseData?.data || [], 'football');
-    
-    // Filter to return only the fixtures that are currently live
-    return allTodaysFixtures.filter(fixture => fixture.isLive);
+    return processV3FixtureData(responseData?.data || [], 'football');
   } catch (error) {
     console.error('Error in fetchLiveFootballFixtures service:', error);
     throw error;
