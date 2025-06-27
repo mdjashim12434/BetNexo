@@ -49,6 +49,7 @@ const handleApiResponse = async (response: Response) => {
         case 403: userFriendlyMessage = `Forbidden: Your current API plan does not allow access to this data.`; break;
         case 404: userFriendlyMessage = `Not Found: The requested match or endpoint could not be found.`; break;
         case 422: userFriendlyMessage = `Unprocessable Content: The API request had invalid parameters (e.g., bad date format).`; break;
+        case 400: userFriendlyMessage = `Bad Request: The API request was malformed. Check parameters.`; break;
         case 429: userFriendlyMessage = `Too Many Requests: The hourly API limit has been reached.`; break;
         default: userFriendlyMessage = `An unexpected API error occurred. Status: ${response.status}, Message: ${apiMessage}`; break;
     }
@@ -83,7 +84,16 @@ async function fetchTheOddsApiData(): Promise<TheOddsApiOdd[]> {
 const processV3FootballFixtures = (fixtures: SportmonksV3Fixture[], theOddsApiData: TheOddsApiOdd[] = []): ProcessedFixture[] => {
     if (!Array.isArray(fixtures)) return [];
 
-    const normalizeTeamName = (name: string) => (name || '').toLowerCase().replace(/ fc$| afc$| sc$| cf$/, '').trim();
+    // More robust normalization for team names
+    const normalizeTeamName = (name: string) => {
+        if (!name) return '';
+        return name
+            .toLowerCase()
+            .replace(/&/g, 'and')
+            .replace(/[.,]/g, '')
+            .replace(/\s(fc|afc|sc|cf)$/, '')
+            .trim();
+    };
 
     return fixtures.map(fixture => {
         const homeTeam = fixture.participants?.find(p => p.meta.location === 'home');
@@ -107,20 +117,21 @@ const processV3FootballFixtures = (fixtures: SportmonksV3Fixture[], theOddsApiDa
         
         const fixtureTime = new Date(parseSportmonksDateStringToISO(fixture.starting_at));
 
-        // Find a matching odd from The Odds API data
+        // Find a matching odd from The Odds API data using team names and start time
         const matchedOdd = theOddsApiData.find(odd => {
           const oddsTime = new Date(odd.commence_time);
           const timeDiff = Math.abs(fixtureTime.getTime() - oddsTime.getTime());
           
-          const homeTeamName = homeTeam?.name || '';
-          const awayTeamName = awayTeam?.name || '';
+          const smHomeName = normalizeTeamName(homeTeam?.name || '');
+          const smAwayName = normalizeTeamName(awayTeam?.name || '');
+          const oddsHomeName = normalizeTeamName(odd.home_team);
+          const oddsAwayName = normalizeTeamName(odd.away_team);
 
-          const namesMatch = 
-            normalizeTeamName(odd.home_team) === normalizeTeamName(homeTeamName) &&
-            normalizeTeamName(odd.away_team) === normalizeTeamName(awayTeamName);
+          // Both team names must match and time must be within a 2-hour window
+          const namesMatch = smHomeName === oddsHomeName && smAwayName === oddsAwayName;
+          const timeIsClose = timeDiff < 2 * 60 * 60 * 1000;
           
-          // Match if names are similar and time is within a 2-hour window
-          return namesMatch && timeDiff < 2 * 60 * 60 * 1000;
+          return namesMatch && timeIsClose;
         });
         
         let finalOdds: ProcessedFixture['odds'] = {};
