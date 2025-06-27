@@ -8,8 +8,23 @@ import type { ProcessedFixture } from '@/types/sportmonks';
 import HomeClientPage from './HomeClientPage';
 
 const isLive = (match: ProcessedFixture): boolean => {
-  const liveStates = ['INPLAY', 'Live', '1st Innings', '2nd Innings', 'Innings Break'];
-  return !!match.state && liveStates.includes(match.state.state);
+  if (!match?.state) return false;
+  // A more comprehensive list of states that are considered "live"
+  const liveStates = [
+    'INPLAY',      // Football
+    'HT',          // Football - Half-Time
+    'ET',          // Football - Extra Time
+    'PEN_LIVE',    // Football - Penalties
+    'BREAK',       // General break state
+    'Live',        // Cricket
+    '1st Innings', // Cricket
+    '2nd Innings', // Cricket
+    'Innings Break',// Cricket
+    'Super Over',  // Cricket
+    'TOSS',        // Cricket - just before start
+    'DELAYED',     // Match is live but delayed
+  ];
+  return liveStates.includes(match.state.state);
 }
 
 async function getHomePageMatches() {
@@ -27,20 +42,21 @@ async function getHomePageMatches() {
       fetchUpcomingCricketFixtures().catch(e => { console.error("Error fetching upcoming cricket:", e.message); return []; }),
     ]);
 
-    // Use a Map to store unique matches by ID, ensuring live matches replace upcoming ones
+    // Use a Map to store unique matches by ID.
     const uniqueMatches = new Map<number, ProcessedFixture>();
-    
+
+    // Combine all matches, with live matches coming last to ensure they overwrite upcoming ones.
     const allFetchedMatches = [
-      ...liveFootball,
-      ...liveCricket,
       ...upcomingFootball,
       ...upcomingCricket,
+      ...liveFootball,
+      ...liveCricket,
     ];
 
+    // Populate the map. If a key (match.id) already exists, its value will be overwritten by the later entry.
+    // This ensures that live data always takes precedence over upcoming data for the same match.
     allFetchedMatches.forEach(match => {
-      const existing = uniqueMatches.get(match.id);
-      // Add if not present, or replace if the new one is live and the existing one isn't
-      if (!existing || (isLive(match) && !isLive(existing))) {
+      if (match && match.id) { // Ensure match and match.id are valid
         uniqueMatches.set(match.id, match);
       }
     });
@@ -60,7 +76,7 @@ async function getHomePageMatches() {
     });
 
     // Return a slice of the top matches to keep the homepage clean
-    return { matches: distinctMatches.slice(0, 15), error: null };
+    return { matches: distinctMatches.slice(0, 20), error: null };
     
   } catch (error) {
     console.error('Error fetching matches for home page:', error);

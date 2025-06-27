@@ -15,7 +15,21 @@ interface HomeMatchesDisplayProps {
 
 const isLive = (match: ProcessedFixture): boolean => {
     if (!match?.state) return false;
-    const liveStates = ['INPLAY', 'Live', '1st Innings', '2nd Innings', 'Innings Break'];
+    // A more comprehensive list of states that are considered "live"
+    const liveStates = [
+      'INPLAY',      // Football
+      'HT',          // Football - Half-Time
+      'ET',          // Football - Extra Time
+      'PEN_LIVE',    // Football - Penalties
+      'BREAK',       // General break state
+      'Live',        // Cricket
+      '1st Innings', // Cricket
+      '2nd Innings', // Cricket
+      'Innings Break',// Cricket
+      'Super Over',  // Cricket
+      'TOSS',        // Cricket - just before start
+      'DELAYED',     // Match is live but delayed
+    ];
     return liveStates.includes(match.state.state);
 }
 
