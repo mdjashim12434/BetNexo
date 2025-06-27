@@ -45,21 +45,21 @@ const parseSportmonksDateStringToISO = (dateString: string): string => {
     // The API returns dates in UTC. Format can be "YYYY-MM-DD HH:MM:SS" or "YYYY-MM-DDTHH:MM:SS".
     // We parse this manually to create a UTC date, then get ISO string.
     // This avoids JS Date constructor quirks with ambiguous formats.
-    const parts = dateString.match(/(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2}):(\d{2})/);
-    if (!parts) {
+    if (!dateString) {
         console.warn(`Invalid or null date string received: '${dateString}'. Returning current time as a fallback to prevent crashes.`);
         return new Date().toISOString();
     }
     
-    const year = parseInt(parts[1], 10);
-    const month = parseInt(parts[2], 10) - 1; // JS months are 0-indexed
-    const day = parseInt(parts[3], 10);
-    const hours = parseInt(parts[4], 10);
-    const minutes = parseInt(parts[5], 10);
-    const seconds = parseInt(parts[6], 10);
+    // Replace space with 'T' and add 'Z' to explicitly mark it as UTC
+    const normalizedDateString = dateString.replace(' ', 'T') + 'Z';
+    const date = new Date(normalizedDateString);
 
-    const utcDate = new Date(Date.UTC(year, month, day, hours, minutes, seconds));
-    return utcDate.toISOString();
+    if (isNaN(date.getTime())) {
+        console.warn(`Could not parse date string: '${dateString}'. Normalized to: '${normalizedDateString}'. Returning current time as fallback.`);
+        return new Date().toISOString();
+    }
+    
+    return date.toISOString();
 };
 
 
@@ -70,7 +70,7 @@ const processCricketV2ApiResponse = (fixtures: SportmonksV2Fixture[]): Processed
         // Find Pre-Match odds for 1/2 market
         let homeOddValue: number | undefined;
         let awayOddValue: number | undefined;
-        // Safely check if odds and its nested properties exist
+        
         const preMatchOdds = fixture.odds?.data?.find(o => o.name === '2-Way');
         if (preMatchOdds && preMatchOdds.bookmaker?.data?.length > 0) {
             const bookmaker = preMatchOdds.bookmaker?.data?.[0];
@@ -84,11 +84,11 @@ const processCricketV2ApiResponse = (fixtures: SportmonksV2Fixture[]): Processed
         
         // Convert v2 status to v3-like state object
         const state: SportmonksState = {
-            id: 0, // V2 doesn't provide state ID
-            state: fixture.status as SportmonksState['state'], // Type assertion
+            id: 0, 
+            state: fixture.status as SportmonksState['state'], 
             name: fixture.note || fixture.status,
             short_name: fixture.status,
-            developer_name: fixture.status.toUpperCase(),
+            developer_name: (fixture.status || 'NS').toUpperCase(),
         };
 
         const formatScore = (teamId: number) => {
@@ -103,39 +103,42 @@ const processCricketV2ApiResponse = (fixtures: SportmonksV2Fixture[]): Processed
         let awayScore: string | number | undefined;
 
         if (state.state && (state.state.includes('Innings') || state.state === 'Live' || state.state === 'Finished')) {
-             homeScore = formatScore(fixture.localteam.id);
-             awayScore = formatScore(fixture.visitorteam.id);
+             if (fixture.localteam?.id) {
+                homeScore = formatScore(fixture.localteam.id);
+             }
+             if (fixture.visitorteam?.id) {
+                awayScore = formatScore(fixture.visitorteam.id);
+             }
         }
 
         const isoStartingAt = parseSportmonksDateStringToISO(fixture.starting_at);
 
-
         return {
             id: fixture.id,
             sportKey: 'cricket',
-            name: `${fixture.localteam.name} vs ${fixture.visitorteam.name}`,
-            startingAt: isoStartingAt, // Use the corrected ISO string
+            name: `${fixture.localteam?.name || 'Home'} vs ${fixture.visitorteam?.name || 'Away'}`,
+            startingAt: isoStartingAt,
             state: state,
             league: {
-                id: fixture.league.id,
-                name: fixture.league.name,
-                countryName: fixture.league.country?.name || 'N/A'
+                id: fixture.league?.id || 0,
+                name: fixture.league?.name || 'N/A',
+                countryName: fixture.league?.country?.name || 'N/A'
             },
             homeTeam: {
-                id: fixture.localteam.id,
-                name: fixture.localteam.name,
-                image_path: fixture.localteam.image_path,
+                id: fixture.localteam?.id || 0,
+                name: fixture.localteam?.name || 'Home',
+                image_path: fixture.localteam?.image_path,
             },
             awayTeam: {
-                id: fixture.visitorteam.id,
-                name: fixture.visitorteam.name,
-                image_path: fixture.visitorteam.image_path,
+                id: fixture.visitorteam?.id || 0,
+                name: fixture.visitorteam?.name || 'Away',
+                image_path: fixture.visitorteam?.image_path,
             },
             odds: {
                 home: homeOddValue,
                 away: awayOddValue,
             },
-            comments: fixture.comments?.data?.map(c => ({...c})), // V2 comments are nested, also adding optional chaining for data
+            comments: fixture.comments?.data?.map(c => ({...c})),
             venue: fixture.venue ? { name: fixture.venue.name, city: fixture.venue.city || '' } : undefined,
             referee: fixture.officials?.data?.[0] ? { name: fixture.officials.data[0].fullname } : undefined,
             homeScore: homeScore,
