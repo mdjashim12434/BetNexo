@@ -33,6 +33,19 @@ interface AuthContextType {
   firebaseUser: FirebaseUserType | null;
 }
 
+const GlobalLoader = () => (
+  <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-background text-primary">
+    <div className="relative flex items-center justify-center">
+      <div className="absolute h-24 w-24 animate-spin rounded-full border-4 border-dashed border-primary/50"></div>
+      <div className="absolute h-32 w-32 animate-spin rounded-full border-4 border-dotted border-primary/50 [animation-delay:-0.2s]"></div>
+      <h1 className="text-4xl font-headline font-bold tracking-wider text-primary">
+        BETBABU
+      </h1>
+    </div>
+    <p className="mt-4 text-sm text-muted-foreground animate-pulse">Loading Platform...</p>
+  </div>
+);
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -81,7 +94,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
-      setLoadingAuth(true);
+      // Keep loadingAuth true initially. It will be set to false at the end.
       try {
         if (fbUser) {
           setFirebaseUser(fbUser);
@@ -293,6 +306,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
   };
+
+  if (loadingAuth) {
+    return <GlobalLoader />;
+  }
 
   return (
     <AuthContext.Provider value={{ user, firebaseUser, login, logout, balance, currency, setCurrency, updateBalance, loadingAuth }}>

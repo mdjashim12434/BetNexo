@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
     do {
         const url = `${baseUrl}&page=${currentPage}`;
         const apiResponse = await fetch(url, {
-            next: { revalidate: 600 } // Cache for 10 minutes
+            next: { revalidate: 60 } // Cache for 1 minute
         });
 
         if (!apiResponse.ok) {
