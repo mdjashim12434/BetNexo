@@ -20,17 +20,20 @@ async function getHomePageMatches() {
       })
     ]);
 
-    // Create a Set of live match IDs for efficient lookup to avoid duplicates.
-    const liveMatchIds = new Set(liveMatches.map(match => match.id));
+    // Combine all matches into one list. Put live matches first to give them priority.
+    const allMatchesCombined = [...liveMatches, ...allTodaysMatches];
 
-    // Filter today's matches to get only the ones that are NOT live and NOT finished.
-    // This gives us a clean list of upcoming matches.
-    const upcomingMatches = allTodaysMatches.filter(match => 
-      !liveMatchIds.has(match.id) && !match.isFinished
-    );
+    // Use a Map to de-duplicate, ensuring we only keep the first occurrence of each match ID.
+    // Since liveMatches are first in the array, they will be the ones kept if duplicates exist.
+    const uniqueMatchesMap = new Map<number, ProcessedFixture>();
+    allMatchesCombined.forEach(match => {
+        if (!uniqueMatchesMap.has(match.id)) {
+            uniqueMatchesMap.set(match.id, match);
+        }
+    });
 
-    // Combine the two lists. Live matches will naturally come first.
-    const activeMatches = [...liveMatches, ...upcomingMatches];
+    // Filter out finished matches from the unique list
+    const activeMatches = Array.from(uniqueMatchesMap.values()).filter(match => !match.isFinished);
     
     // Sort the list to ensure live matches are always first, followed by upcoming matches sorted by time.
     activeMatches.sort((a, b) => {

@@ -126,7 +126,7 @@ const processV3FixtureData = (fixtures: SportmonksV3Fixture[], sportKey: 'footba
         let homeScore: string | number | undefined;
         let awayScore: string | number | undefined;
         let minute: number | undefined;
-        let latestEvent: string | undefined;
+        let latestEvent: { text: string; isGoal: boolean; } | undefined;
 
         if (isLive || isFinished) {
             if (sportKey === 'football') {
@@ -151,9 +151,16 @@ const processV3FixtureData = (fixtures: SportmonksV3Fixture[], sportKey: 'footba
         }
         
         if (comments.length > 0) {
-            latestEvent = `${comments[0].minute}' - ${comments[0].comment}`;
-        } else if (isLive) {
-            latestEvent = state.name;
+            const firstComment = comments[0];
+            latestEvent = {
+                text: `${firstComment.minute}' - ${firstComment.comment}`,
+                isGoal: firstComment.is_goal,
+            };
+        } else if (isLive && state.name !== 'Live') {
+            latestEvent = {
+                text: state.name,
+                isGoal: false,
+            };
         }
 
         return {

@@ -1,8 +1,9 @@
+
 'use client';
 
 import type { ProcessedFixture } from '@/types/sportmonks';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle, Info, Goal, Calendar, Flame } from 'lucide-react';
+import { AlertTriangle, Info, Goal, Calendar, Flame, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { format } from 'date-fns';
@@ -83,8 +84,8 @@ export default function HomeMatchesDisplay({
                 </div>
                 {match.latestEvent && (
                   <p className="text-xs text-center pt-2 text-accent-foreground font-medium flex items-center justify-center gap-1.5">
-                    <Goal className="h-3 w-3" />
-                    {match.latestEvent}
+                    {match.latestEvent.isGoal ? <Goal className="h-3 w-3 text-green-500" /> : <Clock className="h-3 w-3 text-muted-foreground" />}
+                    {match.latestEvent.text}
                   </p>
                 )}
               </a>

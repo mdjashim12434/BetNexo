@@ -246,5 +246,8 @@ export interface ProcessedFixture {
     homeScore?: string | number;
     awayScore?: string | number;
     minute?: number;
-    latestEvent?: string;
+    latestEvent?: {
+        text: string;
+        isGoal: boolean;
+    };
 }
