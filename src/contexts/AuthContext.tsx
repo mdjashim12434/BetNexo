@@ -58,6 +58,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [balance, setLocalBalance] = useState<number>(0);
   const [currency, setLocalCurrency] = useState<string>('USD'); // Default currency
   const [loadingAuth, setLoadingAuth] = useState(true);
+  const [isRedirecting, setIsRedirecting] = useState(false); // New state for handling redirects
 
   const router = useRouter();
   const pathname = usePathname();
@@ -129,7 +130,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => unsubscribe();
   }, [fetchUserDocument]);
 
+  // This effect resets the redirecting state once the new page has loaded.
+  useEffect(() => {
+    setIsRedirecting(false);
+  }, [pathname]);
 
+  // This effect handles all redirection logic.
   useEffect(() => {
     if (loadingAuth) {
         return; // Wait until authentication state is determined
@@ -138,29 +144,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/signup');
     const isAdminPage = pathname.startsWith('/admin');
     const protectedRoutes = ['/profile', '/wallet', '/deposit', '/withdraw', '/bet-slip', '/user-dashboard', '/admin'];
+    const isProtectedRoute = protectedRoutes.some(p => pathname.startsWith(p));
+    
+    let shouldRedirect = false;
+    let targetPath = '';
 
     if (user) {
         // User is logged in
         if (user.role === 'Admin') {
             if (!isAdminPage) {
-                router.push('/admin');
+                shouldRedirect = true;
+                targetPath = '/admin';
             }
         } else { // Regular user
             if (isAuthPage) {
-                router.push('/');
+                shouldRedirect = true;
+                targetPath = '/';
             }
         }
     } else {
         // User is not logged in
-        const isProtectedRoute = protectedRoutes.some(p => pathname.startsWith(p));
         if (isProtectedRoute) {
-             router.push('/login');
+             shouldRedirect = true;
+             targetPath = '/login';
         }
+    }
+
+    if (shouldRedirect && targetPath && pathname !== targetPath) {
+        setIsRedirecting(true); // Show loader BEFORE redirecting
+        router.push(targetPath);
     }
   }, [user, loadingAuth, pathname, router]);
 
   const login = async (userDataFromAuth: { id: string; email?: string; phone?: string; name?: string; currency?: string; country?: string; emailVerified?: boolean, role?: 'Admin' | 'User' | 'Agent', customUserId?: number }, isNewUser: boolean = false): Promise<User | null> => {
-    setLoadingAuth(true);
+    // setLoadingAuth(true); // Let onAuthStateChanged handle the master loading state.
     try {
       let finalUserData: User | null = null;
       const uid = userDataFromAuth.id;
@@ -229,8 +246,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error("AuthContext: Error during app context login/signup for UID:", userDataFromAuth.id, error);
       // Let onAuthStateChanged handle clearing state.
       throw error;
-    } finally {
-      // Don't set loading to false here, let the listeners do it to prevent race conditions.
     }
   };
 
@@ -283,7 +298,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  if (loadingAuth) {
+  // The main render logic. If either initial auth is loading OR we are actively redirecting, show the loader.
+  if (loadingAuth || isRedirecting) {
     return <GlobalLoader />;
   }
 
