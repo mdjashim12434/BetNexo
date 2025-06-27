@@ -22,7 +22,8 @@ export async function GET(request: NextRequest) {
 
     // Includes for comprehensive details. Odds-related includes have been removed to prevent API errors on certain plans.
     // The app will now rely on The Odds API for betting odds data.
-    const includes = "participants;league.country;comments;venue;referee;state;scores;events;periods";
+    // Simplified includes to ensure compatibility with all plans and prevent 400/422 errors.
+    const includes = "participants;league.country;state;scores;periods";
 
     const url = `${SPORTMONKS_FOOTBALL_API_URL}/fixtures/${fixtureId}?api_token=${apiKey}&include=${includes}&tz=UTC`;
     

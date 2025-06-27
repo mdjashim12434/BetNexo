@@ -92,6 +92,9 @@ export default function MatchDetailPage() {
      return (
       <AppLayout>
         <div className="container py-6">
+          <Button variant="outline" onClick={() => router.back()} className="self-start mb-6">
+              <ArrowLeft className="mr-2 h-4 w-4" /> Back to Matches
+          </Button>
           <div className="text-center p-10">
             <h1 className="text-2xl font-bold mb-4">Match Not Found</h1>
             <p className="text-muted-foreground">Could not find details for match ID: {matchId}.</p>

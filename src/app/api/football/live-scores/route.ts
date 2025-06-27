@@ -14,11 +14,9 @@ export async function GET(request: NextRequest) {
   const leagueId = searchParams.get('leagueId');
   
   // Directly targeting the livescores endpoint.
-  // This endpoint is optimized for speed and does not support the 'odds' or 'odds.bookmaker' include.
-  // Removing it fixes the issue of live matches not appearing on the home page.
-  // Odds are still fetched for upcoming fixtures and on the detailed match page.
-  // Added 'periods' to get the live minute of the match.
-  const includes = "participants;scores;league.country;state;events;periods";
+  // This endpoint is optimized for speed and does not support complex includes like 'events' on all plans.
+  // Removing 'events' to prevent API errors. 'periods' is kept for the live minute.
+  const includes = "participants;scores;league.country;state;periods";
   let baseUrl = `${SPORTMONKS_FOOTBALL_API_URL}/livescores?api_token=${apiKey}&include=${includes}&tz=UTC`;
 
   if (leagueId) {
