@@ -50,12 +50,13 @@ const handleApiResponse = async (response: Response) => {
 // Helper function to robustly parse date strings from the API into a standard ISO format.
 const parseSportmonksDateStringToISO = (dateString: string): string => {
     if (!dateString) {
+        console.warn('Received an empty date string. Using current time as fallback.');
         return new Date().toISOString();
     }
-    // Handles formats like "YYYY-MM-DD HH:MM:SS" and "YYYY-MM-DDTHH:MM:SS"
-    const normalizedDateString = dateString.replace(' ', 'T');
-    const finalDateString = normalizedDateString.endsWith('Z') ? normalizedDateString : normalizedDateString + 'Z';
-    const date = new Date(finalDateString);
+    // The API returns a UTC datetime string like '2024-07-06 18:00:00'.
+    // To ensure it's parsed as UTC by all browsers, we format it to ISO 8601 standard by adding 'Z'.
+    const isoString = dateString.replace(' ', 'T') + 'Z';
+    const date = new Date(isoString);
 
     if (isNaN(date.getTime())) {
         console.warn(`Could not parse date string: '${dateString}'. Using current time as fallback.`);
@@ -142,13 +143,11 @@ const processV3FixtureData = (fixtures: SportmonksV3Fixture[], sportKey: 'footba
             latestEvent = fixture.state.name;
         }
 
-        const isoStartingAt = parseSportmonksDateStringToISO(fixture.starting_at);
-
         return {
             id: fixture.id,
             sportKey: sportKey,
             name: fixture.name,
-            startingAt: isoStartingAt,
+            startingAt: parseSportmonksDateStringToISO(fixture.starting_at),
             state: fixture.state,
             isLive: isLive,
             isFinished: isFinished,
@@ -180,12 +179,8 @@ export async function fetchLiveFootballFixtures(leagueId?: number): Promise<Proc
     const url = leagueId ? `/api/football/live-scores?leagueId=${leagueId}` : '/api/football/live-scores';
     const response = await fetch(`${API_BASE_URL}${url}`, { cache: 'no-store' });
     const responseData: SportmonksV3FixturesResponse = await handleApiResponse(response);
-    
-    // The API route now returns all of today's fixtures. We process them all...
-    const allTodaysFixtures = processV3FixtureData(responseData?.data || [], 'football');
-    
-    // ... and then filter for the ones that are actually live.
-    return allTodaysFixtures.filter(fixture => fixture.isLive);
+    // The '/api/football/live-scores' route now reliably returns only live fixtures, so no extra filtering is needed here.
+    return processV3FixtureData(responseData?.data || [], 'football');
   } catch (error) {
     console.error('Error in fetchLiveFootballFixtures service:', error);
     throw error;

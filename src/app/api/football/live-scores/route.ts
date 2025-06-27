@@ -14,8 +14,9 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const leagueId = searchParams.get('leagueId');
 
-  // Includes for comprehensive details to determine live status and scores
-  const includes = "participants;scores;periods;league.country;state;events";
+  // Includes for comprehensive details to determine live status and scores.
+  // IMPORTANT: 'events' was removed as it may cause errors on some API plans.
+  const includes = "participants;scores;periods;league.country;state";
   
   // Using the dedicated /livescores endpoint as it's the most direct way to get live matches.
   let baseUrl = `${SPORTMONKS_FOOTBALL_API_URL}/livescores?api_token=${apiKey}&include=${includes}&tz=UTC`;
@@ -38,7 +39,12 @@ export async function GET(request: NextRequest) {
       if (!apiResponse.ok) {
         const errorData = await apiResponse.json().catch(() => ({}));
         console.error(`Error from Sportmonks Football LiveScores API:`, apiResponse.status, errorData);
-        const message = errorData.message || `Failed to fetch football data. Status: ${apiResponse.status}`;
+        let message = `Failed to fetch football data. Status: ${apiResponse.status}`;
+         if (apiResponse.status === 403 || (errorData.message && errorData.message.toLowerCase().includes("plan"))) {
+            message = `Forbidden: Your current API plan may not allow access to this data or some of the 'includes' used.`;
+        } else if (errorData && errorData.message) {
+            message += ` - API Message: ${errorData.message}`;
+        }
         return NextResponse.json({ error: message }, { status: apiResponse.status });
       }
 
