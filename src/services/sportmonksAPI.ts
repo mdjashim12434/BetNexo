@@ -80,8 +80,12 @@ const processV3FixtureData = (fixtures: SportmonksV3Fixture[], sportKey: 'footba
         const homeTeam = fixture.participants?.find(p => p.meta.location === 'home');
         const awayTeam = fixture.participants?.find(p => p.meta.location === 'away');
         
-        const isLive = LIVE_STATES.includes(fixture.state.state);
-        const isFinished = FINISHED_STATES.includes(fixture.state.state);
+        // Provide a default state object if the API omits it. This prevents crashes.
+        const defaultState: SportmonksState = { id: 0, state: 'NS', name: 'Not Started', short_name: 'NS', developer_name: 'NOT_STARTED' };
+        const state = fixture.state || defaultState;
+
+        const isLive = LIVE_STATES.includes(state.state);
+        const isFinished = FINISHED_STATES.includes(state.state);
         
         const comments = fixture.comments?.map(comment => ({
             id: comment.id,
@@ -110,10 +114,13 @@ const processV3FixtureData = (fixtures: SportmonksV3Fixture[], sportKey: 'footba
         const dc12Odd = dcOdds.find(o => o.original_label === '12');
 
         let mainOfficialName: string | undefined;
-        if (fixture.referee) mainOfficialName = fixture.referee.fullname;
-        else if (fixture.officials?.data) {
+        if (fixture.referee) {
+            mainOfficialName = fixture.referee.fullname;
+        } else if (fixture.officials?.data) {
              const umpire = fixture.officials.data.find(o => o.type?.name === 'Umpire');
-             if (umpire) mainOfficialName = umpire.fullname;
+             if (umpire) {
+                 mainOfficialName = umpire.fullname;
+             }
         }
 
         let homeScore: string | number | undefined;
@@ -146,7 +153,7 @@ const processV3FixtureData = (fixtures: SportmonksV3Fixture[], sportKey: 'footba
         if (comments.length > 0) {
             latestEvent = `${comments[0].minute}' - ${comments[0].comment}`;
         } else if (isLive) {
-            latestEvent = fixture.state.name;
+            latestEvent = state.name;
         }
 
         return {
@@ -154,7 +161,7 @@ const processV3FixtureData = (fixtures: SportmonksV3Fixture[], sportKey: 'footba
             sportKey: sportKey,
             name: fixture.name,
             startingAt: parseSportmonksDateStringToISO(fixture.starting_at),
-            state: fixture.state,
+            state: state,
             isLive: isLive,
             isFinished: isFinished,
             league: { id: fixture.league_id, name: fixture.league?.name || 'N/A', countryName: fixture.league?.country?.name || 'N/A' },
@@ -194,7 +201,7 @@ export async function fetchAllTodaysFootballFixtures(): Promise<ProcessedFixture
 
 export async function fetchLiveFootballFixtures(leagueId?: number): Promise<ProcessedFixture[]> {
   try {
-    const url = leagueId ? `/api/football/live-scores?leagueId=${leagueId}` : '/api/football/live-scores';
+    const url = '/api/football/todays-fixtures'; // Changed from livescores to a more reliable endpoint
     const response = await fetch(`${API_BASE_URL}${url}`, { cache: 'no-store' });
     const responseData: SportmonksV3FixturesResponse = await handleApiResponse(response);
     
