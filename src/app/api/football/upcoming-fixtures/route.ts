@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     const startDate = formatDate(today);
     const endDate = formatDate(futureDate);
 
-    const includes = "participants;league.country;state;odds";
+    const includes = "participants;league.country;state;odds.bookmaker";
     
     let baseUrl = `${SPORTMONKS_FOOTBALL_API_URL}/fixtures/between/${startDate}/${endDate}?api_token=${apiKey}&include=${includes}&tz=UTC`;
     

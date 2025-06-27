@@ -8,6 +8,7 @@ import type {
     SportmonksFootballLiveResponse,
     SportmonksFootballLiveScore,
     SportmonksState,
+    SportmonksOdd,
 } from '@/types/sportmonks';
 import { format } from 'date-fns';
 
@@ -80,7 +81,6 @@ const processV3FixtureData = (fixtures: SportmonksV3Fixture[], sportKey: 'footba
         const homeTeam = fixture.participants?.find(p => p.meta.location === 'home');
         const awayTeam = fixture.participants?.find(p => p.meta.location === 'away');
         
-        // Provide a default state object if the API omits it. This prevents crashes.
         const defaultState: SportmonksState = { id: 0, state: 'NS', name: 'Not Started', short_name: 'NS', developer_name: 'NOT_STARTED' };
         const state = fixture.state || defaultState;
 
@@ -95,23 +95,47 @@ const processV3FixtureData = (fixtures: SportmonksV3Fixture[], sportKey: 'footba
             is_goal: comment.is_goal,
         })).sort((a, b) => b.minute - a.minute) || [];
 
-        const h2hOdds = fixture.odds?.filter(o => o.market_id === 1) || [];
-        const homeOdd = h2hOdds.find(o => o.original_label === '1');
-        const drawOdd = h2hOdds.find(o => o.original_label === 'Draw');
-        const awayOdd = h2hOdds.find(o => o.original_label === '2');
-        const overUnderOdds = fixture.odds?.filter(o => o.market_id === 10 && o.label === '2.5') || [];
-        const overOdd = overUnderOdds.find(o => o.original_label === 'Over');
-        const underOdd = overUnderOdds.find(o => o.original_label === 'Under');
-        const bttsOdds = fixture.odds?.filter(o => o.market_id === 12) || [];
-        const bttsYesOdd = bttsOdds.find(o => o.original_label === 'Yes');
-        const bttsNoOdd = bttsOdds.find(o => o.original_label === 'No');
-        const dnbOdds = fixture.odds?.filter(o => o.market_id === 8) || [];
-        const dnbHomeOdd = dnbOdds.find(o => o.original_label === '1');
-        const dnbAwayOdd = dnbOdds.find(o => o.original_label === '2');
-        const dcOdds = fixture.odds?.filter(o => o.market_id === 9) || [];
-        const dc1XOdd = dcOdds.find(o => o.original_label === '1X');
-        const dcX2Odd = dcOdds.find(o => o.original_label === 'X2');
-        const dc12Odd = dcOdds.find(o => o.original_label === '12');
+        // Helper to find the best odd for a given market label from all available bookmakers
+        const getBestOdd = (marketId: number, originalLabel: string, point?: string): SportmonksOdd | undefined => {
+            let marketOdds = fixture.odds?.filter(o => 
+                o.market_id === marketId && 
+                o.original_label === originalLabel
+            ) || [];
+
+            if (point) {
+                marketOdds = marketOdds.filter(o => o.label === point);
+            }
+
+            if (marketOdds.length === 0) return undefined;
+            // Find the odd with the highest value
+            return marketOdds.reduce((best, current) => parseFloat(current.value) > parseFloat(best.value) ? current : best);
+        };
+        
+        const homeOdd = getBestOdd(1, '1');
+        const drawOdd = getBestOdd(1, 'Draw');
+        const awayOdd = getBestOdd(1, '2');
+
+        // Find the main Over/Under point (e.g., '2.5') by finding the most frequent one
+        const overUnderOddsAll = fixture.odds?.filter(o => o.market_id === 10) || [];
+        const mainOverUnderPoint = overUnderOddsAll.length > 0
+            ? overUnderOddsAll.reduce((a, b) => 
+                (overUnderOddsAll.filter(v => v.label === a.label).length >= overUnderOddsAll.filter(v => v.label === b.label).length) ? a : b
+              ).label
+            : undefined;
+
+        const overOdd = mainOverUnderPoint ? getBestOdd(10, 'Over', mainOverUnderPoint) : undefined;
+        const underOdd = mainOverUnderPoint ? getBestOdd(10, 'Under', mainOverUnderPoint) : undefined;
+        
+        const bttsYesOdd = getBestOdd(12, 'Yes');
+        const bttsNoOdd = getBestOdd(12, 'No');
+        
+        const dnbHomeOdd = getBestOdd(8, '1');
+        const dnbAwayOdd = getBestOdd(8, '2');
+        
+        const dc1XOdd = getBestOdd(9, '1X');
+        const dcX2Odd = getBestOdd(9, 'X2');
+        const dc12Odd = getBestOdd(9, '12');
+
 
         let mainOfficialName: string | undefined;
         if (fixture.referee) {
@@ -178,7 +202,7 @@ const processV3FixtureData = (fixtures: SportmonksV3Fixture[], sportKey: 'footba
                 home: homeOdd ? parseFloat(homeOdd.value) : undefined,
                 draw: drawOdd ? parseFloat(drawOdd.value) : undefined,
                 away: awayOdd ? parseFloat(awayOdd.value) : undefined,
-                overUnder: { over: overOdd ? parseFloat(overOdd.value) : undefined, under: underOdd ? parseFloat(underOdd.value) : undefined, point: overOdd || underOdd ? 2.5 : undefined },
+                overUnder: { over: overOdd ? parseFloat(overOdd.value) : undefined, under: underOdd ? parseFloat(underOdd.value) : undefined, point: mainOverUnderPoint ? parseFloat(mainOverUnderPoint) : undefined },
                 btts: { yes: bttsYesOdd ? parseFloat(bttsYesOdd.value) : undefined, no: bttsNoOdd ? parseFloat(bttsNoOdd.value) : undefined },
                 dnb: { home: dnbHomeOdd ? parseFloat(dnbHomeOdd.value) : undefined, away: dnbAwayOdd ? parseFloat(dnbAwayOdd.value) : undefined },
                 dc: { homeOrDraw: dc1XOdd ? parseFloat(dc1XOdd.value) : undefined, awayOrDraw: dcX2Odd ? parseFloat(dcX2Odd.value) : undefined, homeOrAway: dc12Odd ? parseFloat(dc12Odd.value) : undefined }

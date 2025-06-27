@@ -14,8 +14,8 @@ export async function GET(request: NextRequest) {
   const leagueId = searchParams.get('leagueId');
   
   // Directly targeting the livescores endpoint.
-  // Including 'odds' to utilize the user's Odds Plan.
-  const includes = "participants;scores;league.country;state;odds";
+  // Including 'odds.bookmaker' to utilize the user's Odds Plan.
+  const includes = "participants;scores;league.country;state;odds.bookmaker";
   let baseUrl = `${SPORTMONKS_FOOTBALL_API_URL}/livescores?api_token=${apiKey}&include=${includes}&tz=UTC`;
 
   if (leagueId) {

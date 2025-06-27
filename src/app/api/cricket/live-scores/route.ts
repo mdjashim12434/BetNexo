@@ -25,8 +25,8 @@ export async function GET(request: NextRequest) {
   const leagueId = searchParams.get('leagueId');
   const todayDate = getTodayDateString();
 
-  // V3 includes, semicolon-separated. Added 'odds' to utilize Odds Plan.
-  const includes = "participants;runs;league.country;state;venue;stage;odds";
+  // V3 includes, semicolon-separated. Added 'odds.bookmaker' to utilize Odds Plan.
+  const includes = "participants;runs;league.country;state;venue;stage;odds.bookmaker";
   let baseUrl = `${SPORTMONKS_CRICKET_API_URL}/fixtures/date/${todayDate}?api_token=${apiKey}&include=${includes}&tz=UTC`;
 
   if (leagueId) {

@@ -29,8 +29,8 @@ export async function GET(request: NextRequest) {
   const startDate = formatDate(today);
   const endDate = formatDate(futureDate);
 
-  // V3 includes, semicolon-separated
-  const includes = "participants;runs;league.country;state;odds;venue;stage";
+  // V3 includes, semicolon-separated. Added odds.bookmaker.
+  const includes = "participants;runs;league.country;state;odds.bookmaker;venue;stage";
   
   let baseUrl = `${SPORTMONKS_CRICKET_API_URL}/fixtures/between/${startDate}/${endDate}?api_token=${apiKey}&include=${includes}&tz=UTC`;
 
