@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -16,6 +15,7 @@ import { Mail, User as UserIcon, Lock, Globe, Phone, MessageSquare, Users as Soc
 import { useToast } from '@/hooks/use-toast';
 import { auth, createUserWithEmailAndPassword, sendEmailVerification } from '@/lib/firebase';
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 
 const currencies = [
   { value: 'USD', label: 'USD - United States Dollar' },
@@ -110,10 +110,8 @@ export default function SignupPage() {
     }
   }
 
-  // The global loader from AuthContext handles the main loading state.
-  // This page should not render anything if loading or if user is already logged in.
   if (loadingAuth || (appUser && appUser.emailVerified)) {
-    return null; // Return null because the GlobalLoader or a redirect will happen.
+    return null; 
   }
 
   const AuthMethodButton = ({ method, icon: Icon, label }: { method: AuthMethod, icon: React.ElementType, label: string }) => (
@@ -121,8 +119,8 @@ export default function SignupPage() {
       type="button"
       variant={activeMethod === method ? 'default' : 'outline'}
       onClick={() => setActiveMethod(method)}
-      className={`flex-1 py-3 ${activeMethod === method ? 'bg-card text-foreground' : 'bg-background'}`}
-      disabled={method !== 'email'} // Only email is active
+      className={`flex-1 py-3 ${activeMethod === method ? 'bg-primary/80 text-white' : 'bg-white/10 border-white/20 text-white hover:bg-white/20'}`}
+      disabled={method !== 'email'}
     >
       <Icon className="mr-2 h-5 w-5" />
       {label}
@@ -130,145 +128,151 @@ export default function SignupPage() {
   );
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-muted p-4">
-      <header className="w-full max-w-lg rounded-t-lg bg-popover p-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-primary">BETBABU</h1>
-          <div className="space-x-2">
-            <Button variant="ghost" asChild className="px-3 py-2 rounded-md text-muted-foreground">
-                <Link href="/login">Log in</Link>
-            </Button>
-            <Button variant="ghost" className="text-accent font-semibold px-3 py-2 rounded-md">
-              Registration
-            </Button>
-          </div>
-        </div>
-      </header>
+    <div className="relative flex min-h-screen flex-col items-center justify-center p-4">
+       <Image
+        src="/__media__/942c75a0-0b61-4177-8c76-5a415a770020.png"
+        alt="Signup background with sports figures"
+        layout="fill"
+        objectFit="cover"
+        className="z-0"
+        data-ai-hint="sports collage"
+      />
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-900/70 via-black/60 to-purple-900/70 z-10" />
 
-      <Card className="w-full max-w-lg shadow-xl rounded-t-none rounded-b-lg">
-        <CardHeader className="bg-popover p-4">
-          <CardTitle className="text-lg text-center text-foreground">REGISTRATION</CardTitle>
-        </CardHeader>
-        <CardContent className="p-6 space-y-4">
-          <div className="flex space-x-2">
-            <AuthMethodButton method="email" icon={Mail} label="By email" />
-            <AuthMethodButton method="phone" icon={Phone} label="By phone" />
-          </div>
-
-          {activeMethod === 'email' && (
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-muted-foreground">Full Name*</FormLabel>
-                      <FormControl>
-                        <Input placeholder="John Doe" {...field} className="bg-background border-border focus:border-primary" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="emailOrPhone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-muted-foreground">Email*</FormLabel>
-                      <FormControl>
-                        <Input type="email" placeholder="your@email.com" {...field} className="bg-background border-border focus:border-primary" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-muted-foreground">Password*</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder="••••••••" {...field} className="bg-background border-border focus:border-primary" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="confirmPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-muted-foreground">Confirm Password*</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder="••••••••" {...field} className="bg-background border-border focus:border-primary" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="country"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-muted-foreground">Country*</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Your Country" {...field} className="bg-background border-border focus:border-primary" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="currency"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-muted-foreground">Preferred Currency*</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="bg-background border-border focus:border-primary text-foreground">
-                            <SelectValue placeholder="Select your currency" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {currencies.map((currency) => (
-                            <SelectItem key={currency.value} value={currency.value}>
-                              {currency.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button type="submit" className="w-full font-semibold bg-accent text-accent-foreground hover:bg-accent/90 py-3 text-base" disabled={form.formState.isSubmitting}>
-                  {form.formState.isSubmitting ? 'CREATING ACCOUNT...' : 'REGISTER'}
+      <div className="relative z-20 w-full max-w-lg">
+        <Card className="bg-card/10 backdrop-blur-lg border-white/20 text-white shadow-2xl rounded-lg">
+          <CardHeader className="p-4">
+             <div className="flex items-center justify-between">
+              <h1 className="text-2xl font-bold text-white">BETBABU</h1>
+              <div className="space-x-2">
+                <Button variant="ghost" asChild className="px-3 py-2 rounded-md text-white/70 hover:text-white hover:bg-white/10">
+                    <Link href="/login">Log in</Link>
                 </Button>
-              </form>
-            </Form>
-          )}
-          {activeMethod !== 'email' && (
-            <div className="text-center p-8 text-muted-foreground">
-              <p>{activeMethod.charAt(0).toUpperCase() + activeMethod.slice(1)} registration method is coming soon.</p>
+                <Button variant="ghost" className="text-white font-semibold px-3 py-2 rounded-md bg-white/20">
+                  Registration
+                </Button>
+              </div>
             </div>
-          )}
-          <div className="mt-4 text-center text-sm text-muted-foreground">
-            Already have an account?{' '}
-            <Button variant="link" className="p-0 text-primary h-auto font-semibold" asChild>
-              <Link href="/login">Login</Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-      <footer className="w-full max-w-lg bg-popover p-4 text-center text-sm text-muted-foreground rounded-b-lg mt-0 border-t border-border">
-        BETBABU Create your account
-      </footer>
+            <CardTitle className="text-lg text-center text-white/90 pt-4">REGISTRATION</CardTitle>
+          </CardHeader>
+          <CardContent className="p-6 space-y-4">
+            <div className="flex space-x-2">
+              <AuthMethodButton method="email" icon={Mail} label="By email" />
+              <AuthMethodButton method="phone" icon={Phone} label="By phone" />
+            </div>
+
+            {activeMethod === 'email' && (
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-white/80">Full Name*</FormLabel>
+                        <FormControl>
+                          <Input placeholder="John Doe" {...field} className="bg-white/5 border-white/20 focus:border-primary text-white placeholder:text-slate-300" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="emailOrPhone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-white/80">Email*</FormLabel>
+                        <FormControl>
+                          <Input type="email" placeholder="your@email.com" {...field} className="bg-white/5 border-white/20 focus:border-primary text-white placeholder:text-slate-300" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-white/80">Password*</FormLabel>
+                        <FormControl>
+                          <Input type="password" placeholder="••••••••" {...field} className="bg-white/5 border-white/20 focus:border-primary text-white placeholder:text-slate-300" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="confirmPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-white/80">Confirm Password*</FormLabel>
+                        <FormControl>
+                          <Input type="password" placeholder="••••••••" {...field} className="bg-white/5 border-white/20 focus:border-primary text-white placeholder:text-slate-300" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="country"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-white/80">Country*</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Your Country" {...field} className="bg-white/5 border-white/20 focus:border-primary text-white placeholder:text-slate-300" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="currency"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-white/80">Preferred Currency*</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger className="bg-white/5 border-white/20 focus:border-primary text-white">
+                              <SelectValue placeholder="Select your currency" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {currencies.map((currency) => (
+                              <SelectItem key={currency.value} value={currency.value}>
+                                {currency.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button type="submit" className="w-full font-semibold bg-primary/80 hover:bg-primary py-3 text-base" disabled={form.formState.isSubmitting}>
+                    {form.formState.isSubmitting ? 'CREATING ACCOUNT...' : 'REGISTER'}
+                  </Button>
+                </form>
+              </Form>
+            )}
+            {activeMethod !== 'email' && (
+              <div className="text-center p-8 text-white/70">
+                <p>{activeMethod.charAt(0).toUpperCase() + activeMethod.slice(1)} registration method is coming soon.</p>
+              </div>
+            )}
+            <div className="mt-4 text-center text-sm text-white/80">
+              Already have an account?{' '}
+              <Button variant="link" className="p-0 text-primary h-auto font-semibold" asChild>
+                <Link href="/login">Login</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
