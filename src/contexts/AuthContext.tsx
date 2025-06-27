@@ -152,11 +152,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (user) {
         // User is logged in
         if (user.role === 'Admin') {
-            if (!isAdminPage) {
+            // If an admin is NOT on an admin page AND not on an auth page, redirect to admin.
+            if (!isAdminPage && !isAuthPage) { 
                 shouldRedirect = true;
                 targetPath = '/admin';
             }
         } else { // Regular user
+            // If a regular user is on a login/signup page, redirect to home.
             if (isAuthPage) {
                 shouldRedirect = true;
                 targetPath = '/';
@@ -164,6 +166,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     } else {
         // User is not logged in
+        // If a logged out user is on a protected page, redirect to login.
         if (isProtectedRoute) {
              shouldRedirect = true;
              targetPath = '/login';
