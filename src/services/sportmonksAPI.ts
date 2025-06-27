@@ -40,6 +40,32 @@ const handleApiResponse = async (response: Response) => {
     throw new Error(userFriendlyMessage);
 };
 
+// Helper function to robustly parse date strings from the API into a standard ISO format.
+// This prevents timezone ambiguity by explicitly constructing a UTC date.
+const parseSportmonksDateStringToISO = (dateString: string): string => {
+    // Input format is "YYYY-MM-DD HH:MM:SS"
+    const parts = dateString.match(/(\d{4})-(\d{2})-(\d{2})\s(\d{2}):(\d{2}):(\d{2})/);
+    if (!parts) {
+        // Fallback for safety, though it might be incorrect if the format is unexpected
+        console.warn(`Could not parse date string: ${dateString}. Falling back to default parsing.`);
+        // The original fallback, kept for safety in edge cases.
+        return new Date(dateString.replace(' ', 'T') + 'Z').toISOString();
+    }
+
+    const year = parseInt(parts[1], 10);
+    const month = parseInt(parts[2], 10) - 1; // JS Date months are 0-indexed
+    const day = parseInt(parts[3], 10);
+    const hour = parseInt(parts[4], 10);
+    const minute = parseInt(parts[5], 10);
+    const second = parseInt(parts[6], 10);
+
+    // Date.UTC() returns milliseconds since epoch for a UTC date, avoiding local timezone interpretation.
+    const utcDate = new Date(Date.UTC(year, month, day, hour, minute, second));
+    
+    // toISOString() will return the date in the standard "YYYY-MM-DDTHH:mm:ss.sssZ" format.
+    return utcDate.toISOString();
+};
+
 
 // --- V2 Cricket Processor ---
 const processCricketV2ApiResponse = (fixtures: SportmonksV2Fixture[]): ProcessedFixture[] => {
@@ -48,7 +74,7 @@ const processCricketV2ApiResponse = (fixtures: SportmonksV2Fixture[]): Processed
         // Find Pre-Match odds for 1/2 market
         let homeOddValue: number | undefined;
         let awayOddValue: number | undefined;
-        const preMatchOdds = fixture.odds?.data.find(o => o.name === '2-Way');
+        const preMatchOdds = fixture.odds?.data?.find(o => o.name === '2-Way');
         if (preMatchOdds) {
             // Find a bookmaker that has odds, e.g., 'bet365' or just the first one
             const bookmaker = preMatchOdds.bookmaker?.data?.[0];
@@ -85,11 +111,7 @@ const processCricketV2ApiResponse = (fixtures: SportmonksV2Fixture[]): Processed
              awayScore = formatScore(fixture.visitorteam.id);
         }
 
-        // The V2 API returns a datetime string like "2024-06-27 18:30:00", which is assumed to be in UTC.
-        // To ensure it's parsed correctly as UTC across all environments, we reformat it to the ISO 8601 format
-        // by replacing the space with a 'T' and appending 'Z'. Example: "2024-06-27T18:30:00Z".
-        // This is a more robust way to handle timezone-naive strings.
-        const isoStartingAt = fixture.starting_at.replace(' ', 'T') + 'Z';
+        const isoStartingAt = parseSportmonksDateStringToISO(fixture.starting_at);
 
 
         return {
@@ -198,11 +220,7 @@ const processV3FixtureData = (fixtures: SportmonksV3Fixture[], sportKey: 'footba
             latestEvent = fixture.state.name;
         }
 
-        // The V3 API returns a datetime string like "2024-06-27 14:00:00", which is assumed to be in UTC.
-        // To ensure it's parsed correctly as UTC across all environments, we reformat it to the ISO 8601 format
-        // by replacing the space with a 'T' and appending 'Z'. Example: "2024-06-27T14:00:00Z".
-        // This is a more robust way to handle timezone-naive strings.
-        const isoStartingAt = fixture.starting_at.replace(' ', 'T') + 'Z';
+        const isoStartingAt = parseSportmonksDateStringToISO(fixture.starting_at);
 
 
         return {
@@ -272,11 +290,7 @@ const processLiveFootballFixtures = (fixtures: SportmonksFootballLiveScore[]): P
             }
         }
         
-        // The V3 API returns a datetime string like "2024-06-27 14:00:00", which is assumed to be in UTC.
-        // To ensure it's parsed correctly as UTC across all environments, we reformat it to the ISO 8601 format
-        // by replacing the space with a 'T' and appending 'Z'. Example: "2024-06-27T14:00:00Z".
-        // This is a more robust way to handle timezone-naive strings.
-        const isoStartingAt = fixture.starting_at.replace(' ', 'T') + 'Z';
+        const isoStartingAt = parseSportmonksDateStringToISO(fixture.starting_at);
 
         return {
             id: fixture.id,
