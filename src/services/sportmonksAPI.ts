@@ -69,8 +69,8 @@ const processV3FootballFixtures = (fixtures: SportmonksV3Fixture[]): ProcessedFi
         const findLatestEvent = (events?: FootballEvent[], comments?: any[]): {text: string, isGoal: boolean} | undefined => {
             const lastComment = (comments && comments.length > 0) ? comments[0] : null;
             if (lastComment) return { text: `${lastComment.minute}' - ${lastComment.comment}`, isGoal: lastComment.is_goal };
-            const lastEvent = (events && events.length > 0) ? events.sort((a,b) => b.minute - a.minute)[0] : null;
-            if (lastEvent) return { text: `${lastEvent.minute}' - ${lastEvent.type.name}`, isGoal: lastEvent.type.code === 'GOAL' };
+            const lastEvent = (events && events.length > 0) ? [...events].sort((a,b) => b.minute - a.minute)[0] : null;
+            if (lastEvent) return { text: `${lastEvent.minute}' - ${lastEvent.type?.name || 'Event'}`, isGoal: lastEvent.type?.code === 'GOAL' };
             if (isLive && state.name !== 'Live') return { text: state.name, isGoal: false };
             return undefined;
         };
@@ -91,7 +91,7 @@ const processV3FootballFixtures = (fixtures: SportmonksV3Fixture[]): ProcessedFi
                 dc: { homeOrDraw: parseFloat(getBestOdd(9, '1X')?.value || '0'), awayOrDraw: parseFloat(getBestOdd(9, 'X2')?.value || '0'), homeOrAway: parseFloat(getBestOdd(9, '12')?.value || '0') }
             },
             comments,
-            venue: fixture.venue ? { name: fixture.venue.name, city: fixture.venue.city_name || '' } : undefined,
+            venue: fixture.venue ? { name: fixture.venue.name, city: fixture.venue.city_name || fixture.venue.city || '' } : undefined,
             referee: fixture.referee ? { name: fixture.referee.fullname } : undefined,
             homeScore, awayScore, minute, latestEvent: findLatestEvent(fixture.events, comments),
         };
@@ -118,7 +118,7 @@ const processV2CricketFixtures = (fixtures: SportmonksV2Fixture[]): ProcessedFix
 
         const formatScore = (runs?: any[]) => {
             if (!runs || runs.length === 0) return "0/0 (0.0)";
-            const currentInning = runs.sort((a,b) => b.inning - a.inning)[0];
+            const currentInning = [...runs].sort((a,b) => b.inning - a.inning)[0];
             return `${currentInning.score}/${currentInning.wickets} (${currentInning.overs})`;
         };
         const homeScore = homeTeam ? formatScore(fixture.runs?.filter(r => r.team_id === homeTeam.id)) : "N/A";
@@ -160,6 +160,12 @@ export async function fetchUpcomingFootballFixtures(leagueId?: number, firstPage
     const response = await fetch(`${API_BASE_URL}${url}`, { cache: 'no-store' });
     const data: SportmonksV3FixturesResponse = await handleApiResponse(response);
     return processV3FootballFixtures(data?.data || []);
+}
+
+export async function fetchTodaysFootballFixtures(): Promise<ProcessedFixture[]> {
+  const response = await fetch(`${API_BASE_URL}/api/football/todays-fixtures`, { cache: 'no-store' });
+  const data: SportmonksV3FixturesResponse = await handleApiResponse(response);
+  return processV3FootballFixtures(data?.data || []);
 }
 
 export async function fetchLiveCricketFixtures(leagueId?: number): Promise<ProcessedFixture[]> {

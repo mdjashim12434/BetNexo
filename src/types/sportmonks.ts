@@ -82,7 +82,7 @@ export interface FootballScore {
 export interface FootballEvent {
     id: number;
     type_id: number;
-    type: { id: number; name: string; code: string; };
+    type?: { id: number; name: string; code: string; };
     minute: number;
 }
 

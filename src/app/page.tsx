@@ -1,7 +1,7 @@
 
 import {
   fetchLiveFootballFixtures,
-  fetchUpcomingFootballFixtures,
+  fetchTodaysFootballFixtures,
   fetchLiveCricketFixtures,
   fetchUpcomingCricketFixtures,
 } from '@/services/sportmonksAPI';
@@ -9,16 +9,15 @@ import HomeClientPage from './HomeClientPage';
 import type { ProcessedFixture } from '@/types/sportmonks';
 
 async function getHomePageMatches() {
-  // Fetch all four sets of data in parallel, honoring the "separate API calls" architecture
-  // Pass `true` to upcoming fixture fetches to only get the first page of results, preventing server timeouts.
+  // Fetch all data in parallel, using the new reliable 'todays-fixtures' endpoint
   const [
     liveFootballResult, 
-    upcomingFootballResult,
+    todaysFootballResult,
     liveCricketResult,
     upcomingCricketResult
   ] = await Promise.allSettled([
     fetchLiveFootballFixtures(),
-    fetchUpcomingFootballFixtures(undefined, true),
+    fetchTodaysFootballFixtures(), // Use the new reliable endpoint
     fetchLiveCricketFixtures(),
     fetchUpcomingCricketFixtures(undefined, true),
   ]);
@@ -40,13 +39,15 @@ async function getHomePageMatches() {
     errorMessages.push(liveCricketResult.reason?.message || 'Could not fetch live cricket matches.');
   }
 
-  // Combine all upcoming matches
+  // Process today's and upcoming matches
   let upcomingMatches: ProcessedFixture[] = [];
-   if (upcomingFootballResult.status === 'fulfilled') {
-    upcomingMatches = upcomingMatches.concat(upcomingFootballResult.value);
+   if (todaysFootballResult.status === 'fulfilled') {
+    // From all of today's matches, filter only those that are not live and not finished.
+    const todaysUpcoming = todaysFootballResult.value.filter(match => !match.isFinished && !match.isLive);
+    upcomingMatches = upcomingMatches.concat(todaysUpcoming);
   } else {
-    console.error("Home page: Failed to fetch upcoming football matches:", upcomingFootballResult.reason);
-    errorMessages.push(upcomingFootballResult.reason?.message || 'Could not fetch upcoming football matches.');
+    console.error("Home page: Failed to fetch today's football matches:", todaysFootballResult.reason);
+    errorMessages.push(todaysFootballResult.reason?.message || 'Could not fetch today\'s football matches.');
   }
   if (upcomingCricketResult.status === 'fulfilled') {
     upcomingMatches = upcomingMatches.concat(upcomingCricketResult.value);
@@ -56,9 +57,8 @@ async function getHomePageMatches() {
   }
 
   // De-duplicate: If a match is live, it must not appear in the upcoming list.
-  // Also, filter out any matches that are already finished from the upcoming list.
   const liveMatchIds = new Set(liveMatches.map(m => m.id));
-  const uniqueUpcomingMatches = upcomingMatches.filter(match => !liveMatchIds.has(match.id) && !match.isFinished);
+  const uniqueUpcomingMatches = upcomingMatches.filter(match => !liveMatchIds.has(match.id));
   
   // Sort both lists by their starting time for a consistent order.
   liveMatches.sort((a, b) => new Date(a.startingAt).getTime() - new Date(b.startingAt).getTime());
