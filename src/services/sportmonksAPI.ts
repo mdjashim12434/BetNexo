@@ -41,17 +41,25 @@ const handleApiResponse = async (response: Response) => {
 };
 
 // Helper function to robustly parse date strings from the API into a standard ISO format.
-// This is the most reliable way to handle timezone-less timestamps from an API.
 const parseSportmonksDateStringToISO = (dateString: string): string => {
-    // The API is configured to return dates in UTC.
-    // The format is "YYYY-MM-DD HH:MM:SS".
-    // We convert it to the ISO 8601 format "YYYY-MM-DDTHH:MM:SSZ"
-    // which is universally understood by JavaScript's Date object as UTC.
-    if (!dateString || !dateString.includes(' ')) {
+    // The API returns dates in UTC. Format can be "YYYY-MM-DD HH:MM:SS" or "YYYY-MM-DDTHH:MM:SS".
+    // We parse this manually to create a UTC date, then get ISO string.
+    // This avoids JS Date constructor quirks with ambiguous formats.
+    const parts = dateString.match(/(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2}):(\d{2})/);
+    if (!parts) {
         console.warn(`Invalid or null date string received: '${dateString}'. Returning current time as a fallback to prevent crashes.`);
-        return new Date().toISOString(); // Return a valid ISO string as a safe fallback
+        return new Date().toISOString();
     }
-    return dateString.replace(' ', 'T') + 'Z';
+    
+    const year = parseInt(parts[1], 10);
+    const month = parseInt(parts[2], 10) - 1; // JS months are 0-indexed
+    const day = parseInt(parts[3], 10);
+    const hours = parseInt(parts[4], 10);
+    const minutes = parseInt(parts[5], 10);
+    const seconds = parseInt(parts[6], 10);
+
+    const utcDate = new Date(Date.UTC(year, month, day, hours, minutes, seconds));
+    return utcDate.toISOString();
 };
 
 
@@ -64,7 +72,7 @@ const processCricketV2ApiResponse = (fixtures: SportmonksV2Fixture[]): Processed
         let awayOddValue: number | undefined;
         // Safely check if odds and its nested properties exist
         const preMatchOdds = fixture.odds?.data?.find(o => o.name === '2-Way');
-        if (preMatchOdds) {
+        if (preMatchOdds && preMatchOdds.bookmaker?.data?.length > 0) {
             const bookmaker = preMatchOdds.bookmaker?.data?.[0];
             if (bookmaker?.odds?.data) {
                 const homeOdd = bookmaker.odds.data.find(o => o.label === '1');
