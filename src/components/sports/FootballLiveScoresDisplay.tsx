@@ -2,17 +2,109 @@
 'use client';
 
 import type { ProcessedFixture } from '@/types/sportmonks';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle, Info, Goal, Calendar, Flame, Clock } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { AlertTriangle, Info, Goal, Bell, Star, Link as LinkIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { format } from 'date-fns';
+import Image from 'next/image';
 
-interface HomeMatchesDisplayProps {
-  liveMatches?: ProcessedFixture[];
-  upcomingMatches?: ProcessedFixture[];
-  error?: string;
-}
+const OddsButton = ({ label, value }: { label: string, value?: number }) => {
+  if (value === undefined || value === null) return null;
+  return (
+    <Button variant="outline" className="flex-1 bg-muted/50 h-auto py-1.5 px-2">
+      <div className="flex justify-between w-full text-xs">
+        <span className="text-muted-foreground">{label}</span>
+        <span className="font-bold text-foreground">{value.toFixed(3)}</span>
+      </div>
+    </Button>
+  );
+};
+
+const LiveMatchCard = ({ match }: { match: ProcessedFixture }) => (
+  <Link href={`/match/${match.id}`} passHref>
+    <Card as="a" className="p-3 transition-all hover:bg-muted/50 cursor-pointer">
+      <div className="flex justify-between items-center text-xs text-muted-foreground mb-3">
+        <div className="flex items-center gap-2">
+          <Goal className="h-4 w-4 text-primary" />
+          <span className="font-semibold truncate">{match.league.name}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <LinkIcon className="h-4 w-4" />
+          <Bell className="h-4 w-4" />
+          <Star className="h-4 w-4" />
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <div className="flex items-center gap-2 w-2/5 truncate">
+          <Image src={match.homeTeam.image_path || `https://placehold.co/40x40.png`} alt={match.homeTeam.name} width={24} height={24} className="rounded-full" data-ai-hint="team logo" />
+          <span className="font-semibold text-sm truncate">{match.homeTeam.name}</span>
+        </div>
+        <div className="text-xl font-bold text-center">
+          {match.homeScore} : {match.awayScore}
+        </div>
+        <div className="flex items-center gap-2 w-2/5 justify-end truncate">
+          <span className="font-semibold text-sm text-right truncate">{match.awayTeam.name}</span>
+          <Image src={match.awayTeam.image_path || `https://placehold.co/40x40.png`} alt={match.awayTeam.name} width={24} height={24} className="rounded-full" data-ai-hint="team logo" />
+        </div>
+      </div>
+      
+      {match.minute && <p className="text-center text-xs text-yellow-500 mb-3">{match.minute}' - {match.state.name}</p>}
+
+      <div className="space-y-1">
+        <p className="text-xs font-semibold text-muted-foreground">Team Wins</p>
+        <div className="flex gap-2">
+          <OddsButton label="W1" value={match.odds.home} />
+          <OddsButton label="W2" value={match.odds.away} />
+        </div>
+      </div>
+    </Card>
+  </Link>
+);
+
+
+const UpcomingMatchCard = ({ match }: { match: ProcessedFixture }) => (
+  <Link href={`/match/${match.id}`} passHref>
+    <Card as="a" className="p-3 transition-all hover:bg-muted/50 cursor-pointer">
+       <div className="flex justify-between items-center text-xs text-muted-foreground mb-3">
+        <div className="flex items-center gap-2">
+          <Goal className="h-4 w-4 text-primary" />
+          <span className="font-semibold truncate">{match.league.name}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Bell className="h-4 w-4" />
+          <Star className="h-4 w-4" />
+        </div>
+      </div>
+      
+       <div className="flex items-center justify-between gap-2 mb-2">
+        <div className="flex flex-col items-center gap-1 w-2/5 text-center">
+          <Image src={match.homeTeam.image_path || `https://placehold.co/40x40.png`} alt={match.homeTeam.name} width={32} height={32} className="rounded-full" data-ai-hint="team logo" />
+          <span className="font-semibold text-sm truncate">{match.homeTeam.name}</span>
+        </div>
+        <div className="text-xl font-bold text-muted-foreground">
+          VS
+        </div>
+        <div className="flex flex-col items-center gap-1 w-2/5 text-center">
+          <Image src={match.awayTeam.image_path || `https://placehold.co/40x40.png`} alt={match.awayTeam.name} width={32} height={32} className="rounded-full" data-ai-hint="team logo" />
+          <span className="font-semibold text-sm text-right truncate">{match.awayTeam.name}</span>
+        </div>
+      </div>
+      
+      <p className="text-center text-xs text-muted-foreground mb-3">{format(new Date(match.startingAt), "dd.MM.yy hh:mm a")}</p>
+      
+       <div className="space-y-1">
+        <p className="text-xs font-semibold text-muted-foreground">1X2</p>
+        <div className="flex gap-2">
+          <OddsButton label="W1" value={match.odds.home} />
+          <OddsButton label="X" value={match.odds.draw} />
+          <OddsButton label="W2" value={match.odds.away} />
+        </div>
+      </div>
+    </Card>
+  </Link>
+);
 
 export default function HomeMatchesDisplay({
   liveMatches = [],
@@ -22,93 +114,51 @@ export default function HomeMatchesDisplay({
 
   const hasLiveMatches = liveMatches.length > 0;
   const hasUpcomingMatches = upcomingMatches.length > 0;
-  
-  const sportIcon = (sportKey: 'football') => {
-      return <Goal className="mr-2 h-5 w-5 md:h-6 md:w-6 text-blue-500" />;
-  }
 
   return (
-    <Card className="my-6 shadow-xl bg-card border border-border/60">
-      <CardHeader className="flex flex-row justify-between items-center pb-4 border-b border-border/60">
-        <div>
-          <CardTitle className="font-headline text-xl md:text-2xl flex items-center text-primary">
-            {hasLiveMatches ? (
-              <><Flame className="mr-2 h-5 w-5 md:h-6 md:w-6 text-red-500" /> Live Matches</>
-            ) : (
-              <><Calendar className="mr-2 h-5 w-5 md:h-6 md:w-6 text-blue-500" /> Upcoming Matches</>
-            )}
-          </CardTitle>
-        </div>
-      </CardHeader>
-      <CardContent className="pt-4 px-2 sm:px-4">
-         {error && (
-          <div className="mb-4 p-3 rounded-md bg-destructive/10 text-destructive text-xs flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 shrink-0" />
-            <p>{error}</p>
+    <div className="space-y-6">
+       {error && (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="p-3 rounded-md bg-destructive/10 text-destructive text-xs flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 shrink-0" />
+              <p>{error}</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {hasLiveMatches && (
+        <section>
+          <div className="mb-2 flex justify-between items-center">
+            <h2 className="font-headline text-xl font-bold text-foreground">Top LIVE <Button variant="ghost" size="sm" className="ml-1 text-primary">Sport</Button></h2>
+            <Button variant="link" asChild><Link href="/sports/live">All</Link></Button>
           </div>
-        )}
-
-        {!hasLiveMatches && !hasUpcomingMatches && !error && (
-          <div className="text-center py-10 text-muted-foreground min-h-[150px] flex flex-col items-center justify-center">
-            <Info className="h-10 w-10 mb-3 text-primary/50" />
-            <p className="font-semibold">No live or upcoming matches found.</p>
-            <p className="text-sm">Please check back later.</p>
+          <div className="space-y-3">
+            {liveMatches.map((match) => <LiveMatchCard key={`live-${match.id}`} match={match} />)}
           </div>
-        )}
+        </section>
+      )}
+      
+      {hasUpcomingMatches && (
+         <section>
+          <div className="mb-2 flex justify-between items-center">
+            <h2 className="font-headline text-xl font-bold text-foreground">Top pre-match <Button variant="ghost" size="sm" className="ml-1 text-primary">Sport</Button></h2>
+            <Button variant="link" asChild><Link href="/sports/upcoming">All</Link></Button>
+          </div>
+          <div className="space-y-3">
+            {upcomingMatches.map((match) => <UpcomingMatchCard key={`upcoming-${match.id}`} match={match} />)}
+          </div>
+        </section>
+      )}
 
-        <div className="space-y-3">
-          {hasLiveMatches && liveMatches.map((match) => (
-            <Link key={`live-${match.id}`} href={`/match/${match.id}`} legacyBehavior passHref>
-              <a className="block p-3 sm:p-4 transition-all cursor-pointer bg-background border border-border/50 hover:border-primary/50 rounded-lg">
-                <div className="flex justify-between items-center mb-2">
-                    <p className="text-xs text-muted-foreground truncate flex items-center gap-1.5">
-                        {sportIcon(match.sportKey)} {match.league.name}
-                    </p>
-                    <div className="flex items-center gap-2">
-                        {match.minute && <span className="text-xs font-semibold text-yellow-500">{match.minute}'</span>}
-                        <Badge variant="destructive" className="animate-pulse">LIVE</Badge>
-                    </div>
-                </div>
-                <div className="flex justify-between items-center text-md font-semibold">
-                    <span className="truncate pr-2">{match.homeTeam.name}</span>
-                    <span className="font-bold text-primary text-sm">{match.homeScore}</span>
-                </div>
-                <div className="flex justify-between items-center text-md font-semibold">
-                    <span className="truncate pr-2">{match.awayTeam.name}</span>
-                    <span className="font-bold text-primary text-sm">{match.awayScore}</span>
-                </div>
-                {match.latestEvent && (
-                  <p className="text-xs text-center pt-2 text-accent-foreground font-medium flex items-center justify-center gap-1.5">
-                    {match.latestEvent.isGoal ? <Goal className="h-3 w-3 text-green-500" /> : <Clock className="h-3 w-3 text-muted-foreground" />}
-                    {match.latestEvent.text}
-                  </p>
-                )}
-              </a>
-            </Link>
-          ))}
-
-          {hasUpcomingMatches && upcomingMatches.map((match) => (
-             <Link key={`upcoming-${match.id}`} href={`/match/${match.id}`} legacyBehavior passHref>
-              <a className="block p-3 sm:p-4 transition-all cursor-pointer bg-background border border-border/50 hover:border-primary/50 rounded-lg">
-                <div className="flex justify-between items-center mb-2">
-                    <p className="text-xs text-muted-foreground truncate flex items-center gap-1.5">
-                        {sportIcon(match.sportKey)} {match.league.name}
-                    </p>
-                    <Badge variant="secondary" className="text-blue-500 border-blue-500/30">
-                        {format(new Date(match.startingAt), "MMM d, h:mm a")}
-                    </Badge>
-                </div>
-                <div className="flex items-center text-md font-semibold">
-                    <span className="truncate">{match.homeTeam.name}</span>
-                </div>
-                <div className="flex items-center text-md font-semibold mt-1">
-                    <span className="truncate">{match.awayTeam.name}</span>
-                </div>
-              </a>
-            </Link>
-          ))}
+      {!hasLiveMatches && !hasUpcomingMatches && !error && (
+        <div className="text-center py-10 text-muted-foreground min-h-[200px] flex flex-col items-center justify-center">
+          <Info className="h-10 w-10 mb-3 text-primary/50" />
+          <p className="font-semibold">No live or upcoming matches found.</p>
+          <p className="text-sm">Please check back later.</p>
         </div>
-      </CardContent>
-    </Card>
+      )}
+    </div>
   );
 }

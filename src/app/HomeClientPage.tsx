@@ -157,18 +157,12 @@ export default function HomeClientPage({
             <ScrollBar orientation="horizontal" className="hidden"/>
           </ScrollArea>
           
-          {/* Live Matches Section */}
-          <section className="pt-4">
-            <div className="mb-2 flex justify-between items-center">
-              <h2 className="font-headline text-xl font-bold text-foreground">Top LIVE <Button variant="ghost" size="sm" className="ml-1 text-primary">Sport</Button></h2>
-              <Button variant="link" asChild><Link href="/sports/live">All</Link></Button>
-            </div>
-            <HomeMatchesDisplay 
-              liveMatches={initialLiveMatches}
-              upcomingMatches={initialUpcomingMatches}
-              error={initialError || undefined}
-            />
-          </section>
+          {/* Live & Upcoming Matches Section */}
+          <HomeMatchesDisplay 
+            liveMatches={initialLiveMatches}
+            upcomingMatches={initialUpcomingMatches}
+            error={initialError || undefined}
+          />
 
         </div>
       </div>
