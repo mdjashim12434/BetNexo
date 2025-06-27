@@ -2,37 +2,53 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Users Collection Rules
+
+    // Helper functions
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      // Check if user is authenticated and if their role in the users collection is 'Admin'
+      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin';
+    }
+
+    // Users collection rules
     match /users/{userId} {
-      // A user can read or update their own document. Admins can do anything.
-      allow read, update: if request.auth.uid == userId;
-      allow write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin';
+      // Any authenticated user can create their own user document.
+      allow create: if isOwner(userId);
+      // Users can only read or update their own document. Admins can read any.
+      allow read, update: if isOwner(userId) || isAdmin();
+      // Only admins can delete users.
+      allow delete: if isAdmin();
     }
 
-    // Transactions Collection Rules
+    // Transactions collection rules
     match /transactions/{transactionId} {
-      // User can create a transaction for themselves.
-      allow create: if request.auth.uid != null && request.resource.data.userId == request.auth.uid;
-      // Admins can read/update any transaction (for approvals).
-      allow read, update: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin';
+      // A user must be authenticated AND creating a transaction for themselves.
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      // Users can read their own transactions. Admins can read any.
+      allow read: if isOwner(get(/databases/$(database)/documents/transactions/$(transactionId)).data.userId) || isAdmin();
+      // Only admins can update (approve/reject) or delete transactions.
+      allow update, delete: if isAdmin();
     }
 
-    // Bets Collection Rules
+    // Bets collection rules
     match /bets/{betId} {
-      // User can create a bet for themselves.
-      allow create: if request.auth.uid != null && request.resource.data.userId == request.auth.uid;
-      // User can read their own bets. Admins can read any bet.
-      allow read: if (request.auth.uid != null && resource.data.userId == request.auth.uid) ||
-                   (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin');
+        // A user must be authenticated AND creating a bet for themselves.
+        allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+        // Users can read their own bets. Admins can read any.
+        allow read: if isOwner(get(/databases/$(database)/documents/bets/$(betId)).data.userId) || isAdmin();
+        // Only admins can update or delete bets.
+        allow update, delete: if isAdmin();
     }
     
-    // Payment Methods Collection Rules
+    // PaymentMethods collection rules
     match /paymentMethods/{methodId} {
-      // Any authenticated user can read payment methods.
-      allow read: if request.auth.uid != null;
-      // Only admins can write payment methods.
-      allow write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin';
+      // Only Admins can create, update, or delete payment methods.
+      allow write: if isAdmin();
+      // Any authenticated user can read the available payment methods.
+      allow read: if request.auth != null;
     }
   }
 }
