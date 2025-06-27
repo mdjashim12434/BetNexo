@@ -8,9 +8,6 @@ import type {
     SportmonksFootballLiveResponse,
     SportmonksFootballLiveScore,
     SportmonksState,
-    SportmonksV2Fixture,
-    SportmonksV2ApiResponse,
-    SportmonksSingleV2FixtureResponse,
 } from '@/types/sportmonks';
 
 // Define the base URL for API calls. For production, this should come from an environment variable.
@@ -68,82 +65,7 @@ const parseSportmonksDateStringToISO = (dateString: string): string => {
 };
 
 
-// --- V2 Cricket Processor ---
-const processCricketV2ApiResponse = (fixtures: SportmonksV2Fixture[]): ProcessedFixture[] => {
-    if (!Array.isArray(fixtures)) return [];
-    return fixtures.map((fixture: SportmonksV2Fixture) => {
-        let homeOddValue: number | undefined;
-        let awayOddValue: number | undefined;
-        
-        const preMatchOdds = fixture.odds?.data?.find(o => o.name === '2-Way');
-        if (preMatchOdds && preMatchOdds.bookmaker?.data?.length > 0) {
-            const bookmaker = preMatchOdds.bookmaker?.data?.[0];
-            if (bookmaker?.odds?.data) {
-                const homeOdd = bookmaker.odds.data.find(o => o.label === '1');
-                const awayOdd = bookmaker.odds.data.find(o => o.label === '2');
-                homeOddValue = homeOdd ? parseFloat(homeOdd.value) : undefined;
-                awayOddValue = awayOdd ? parseFloat(awayOdd.value) : undefined;
-            }
-        }
-        
-        const state: SportmonksState = {
-            id: 0, 
-            state: fixture.status as SportmonksState['state'], 
-            name: fixture.note || fixture.status,
-            short_name: fixture.status,
-            developer_name: (fixture.status || 'NS').toUpperCase(),
-        };
-
-        const isLive = LIVE_STATES.includes(state.state);
-        const isFinished = FINISHED_STATES.includes(state.state);
-
-        let homeScore: string | number | undefined;
-        let awayScore: string | number | undefined;
-
-        if (isLive || isFinished) {
-            const formatScore = (teamId: number) => {
-                 if (!fixture.runs || fixture.runs.length === 0) return "0/0 (0.0)";
-                 const teamRuns = fixture.runs.filter(r => r.team_id === teamId).sort((a,b) => b.inning - a.inning);
-                 if (teamRuns.length === 0) return "Yet to bat";
-                 const latestInning = teamRuns[0];
-                 return `${latestInning.score}/${latestInning.wickets} (${latestInning.overs})`;
-            };
-            if (fixture.localteam?.id) homeScore = formatScore(fixture.localteam.id);
-            if (fixture.visitorteam?.id) awayScore = formatScore(fixture.visitorteam.id);
-        }
-
-        const isoStartingAt = parseSportmonksDateStringToISO(fixture.starting_at);
-        const homeTeamName = fixture.localteam?.name || 'Home';
-        const awayTeamName = fixture.visitorteam?.name || 'Away';
-
-        return {
-            id: fixture.id,
-            sportKey: 'cricket',
-            name: `${homeTeamName} vs ${awayTeamName}`,
-            startingAt: isoStartingAt,
-            state: state,
-            isLive: isLive,
-            isFinished: isFinished,
-            league: {
-                id: fixture.league?.id || 0,
-                name: fixture.league?.name || 'N/A',
-                countryName: fixture.league?.country?.name || 'N/A'
-            },
-            homeTeam: { id: fixture.localteam?.id || 0, name: homeTeamName, image_path: fixture.localteam?.image_path },
-            awayTeam: { id: fixture.visitorteam?.id || 0, name: awayTeamName, image_path: fixture.visitorteam?.image_path },
-            odds: { home: homeOddValue, away: awayOddValue },
-            comments: fixture.comments?.data?.map(c => ({...c})),
-            venue: fixture.venue ? { name: fixture.venue.name, city: fixture.venue.city || '' } : undefined,
-            referee: fixture.officials?.data?.[0] ? { name: fixture.officials.data[0].fullname } : undefined,
-            homeScore: homeScore,
-            awayScore: awayScore,
-            latestEvent: fixture.note,
-        };
-    });
-};
-
-
-// --- Football & V3 Cricket Processing (V3) ---
+// --- Unified V3 Data Processor for Football & Cricket ---
 
 const processV3FixtureData = (fixtures: SportmonksV3Fixture[], sportKey: 'football' | 'cricket'): ProcessedFixture[] => {
     if (!Array.isArray(fixtures)) return [];
@@ -183,7 +105,7 @@ const processV3FixtureData = (fixtures: SportmonksV3Fixture[], sportKey: 'footba
         let mainOfficialName: string | undefined;
         if (fixture.referee) mainOfficialName = fixture.referee.fullname;
         else if (fixture.officials?.data) {
-             const umpire = fixture.officials.data.find(o => o.type.name === 'Umpire');
+             const umpire = fixture.officials.data.find(o => o.type?.name === 'Umpire');
              if (umpire) mainOfficialName = umpire.fullname;
         }
 
@@ -274,15 +196,15 @@ export async function fetchLiveCricketFixtures(leagueId?: number): Promise<Proce
   try {
     const url = leagueId ? `/api/cricket/live-scores?leagueId=${leagueId}` : '/api/cricket/live-scores';
     const response = await fetch(`${API_BASE_URL}${url}`, { cache: 'no-store' });
-    const responseData: SportmonksV2ApiResponse = await handleApiResponse(response);
+    const responseData: SportmonksV3FixturesResponse = await handleApiResponse(response);
 
     // The API route now returns all of today's fixtures. We process them all...
-    const allTodaysFixtures = processCricketV2ApiResponse(responseData?.data || []);
+    const allTodaysFixtures = processV3FixtureData(responseData?.data || [], 'cricket');
 
     // ... and then filter for the ones that are actually live.
     return allTodaysFixtures.filter(fixture => fixture.isLive);
   } catch (error) {
-    console.error('Error in fetchLiveCricketFixtures (V2) service:', error);
+    console.error('Error in fetchLiveCricketFixtures (V3) service:', error);
     throw error;
   }
 }
@@ -303,10 +225,10 @@ export async function fetchUpcomingCricketFixtures(leagueId?: number): Promise<P
     try {
         const url = leagueId ? `/api/cricket/upcoming-fixtures?leagueId=${leagueId}` : '/api/cricket/upcoming-fixtures';
         const response = await fetch(`${API_BASE_URL}${url}`, { cache: 'no-store' });
-        const rawData: SportmonksV2ApiResponse = await handleApiResponse(response);
-        return processCricketV2ApiResponse(rawData?.data || []);
+        const rawData: SportmonksV3FixturesResponse = await handleApiResponse(response);
+        return processV3FixtureData(rawData?.data || [], 'cricket');
     } catch (error) {
-        console.error('Error in fetchUpcomingCricketFixtures (V2) service:', error);
+        console.error('Error in fetchUpcomingCricketFixtures (V3) service:', error);
         throw error;
     }
 }
@@ -322,13 +244,13 @@ async function fetchFootballFixtureById(fixtureId: number): Promise<SportmonksV3
     }
 }
 
-async function fetchCricketFixtureById(fixtureId: number): Promise<SportmonksV2Fixture> {
+async function fetchCricketFixtureById(fixtureId: number): Promise<SportmonksV3Fixture> {
     try {
         const response = await fetch(`${API_BASE_URL}/api/cricket/fixtures?fixtureId=${fixtureId}`, { cache: 'no-store' });
-        const fixtureResponse: SportmonksSingleV2FixtureResponse = await handleApiResponse(response);
+        const fixtureResponse: SportmonksSingleV3FixtureResponse = await handleApiResponse(response);
         return fixtureResponse.data;
     } catch (error) {
-        console.error('Error in fetchCricketFixtureById (V2) service:', error);
+        console.error('Error in fetchCricketFixtureById (V3) service:', error);
         throw error;
     }
 }
@@ -340,7 +262,7 @@ export async function fetchFixtureDetails(fixtureId: number, sport: 'football' |
             return processV3FixtureData([rawFixture], 'football')[0];
         } else if (sport === 'cricket') {
             const rawFixture = await fetchCricketFixtureById(fixtureId);
-            return processCricketV2ApiResponse([rawFixture])[0];
+            return processV3FixtureData([rawFixture], 'cricket')[0];
         }
         throw new Error(`Unsupported sport type for fetchFixtureDetails: ${sport}`);
     } catch (error) {

@@ -1,9 +1,5 @@
 
-
-
-
-
-// --- Common Types ---
+// --- Common Types for V3 API ---
 export interface SportmonksOdd {
     id: number;
     fixture_id: number;
@@ -34,7 +30,7 @@ export interface SportmonksParticipant {
     meta: { location: 'home' | 'away'; };
 }
 
-export interface CricketLeague {
+export interface SportmonksLeague {
     id: number;
     name: string;
     code?: string;
@@ -44,32 +40,24 @@ export interface CricketLeague {
 export interface SportmonksVenue {
     id: number;
     name: string;
-    city_name?: string; // V3 field
-    city?: string; // V2 field
-    country_name: string;
+    city_name?: string;
+    city?: string; // Fallback
+    country_name?: string;
 }
 
 export interface SportmonksReferee {
     id: number;
     fullname: string;
-    type?: { name: string; }; // For Cricket officials
-}
-
-export interface SportmonksOfficial {
-    id: number;
-    fullname: string;
-    type: { name: string; };
+    type?: { name: string; };
 }
 
 export interface SportmonksPagination {
-    count: number;
-    per_page: number;
-    current_page: number;
-    next_page: string | null;
+    count?: number;
+    per_page?: number;
+    current_page?: number;
+    next_page?: string | null;
     has_more: boolean;
 }
-
-// --- Types for API V3 (Football & Cricket Details) ---
 
 export interface SportmonksComment {
     id: number;
@@ -79,6 +67,8 @@ export interface SportmonksComment {
     extra_minute: number | null;
     is_goal: boolean;
 }
+
+// --- Sport-Specific V3 Types ---
 
 export interface SportmonksV3Run {
     id: number;
@@ -100,40 +90,6 @@ export interface FootballPeriod {
     ticking: boolean;
     minutes?: number; // Current minute in the period
 }
-
-
-export interface SportmonksV3Fixture {
-    id: number;
-    name: string;
-    starting_at: string;
-    league_id: number;
-    state: SportmonksState;
-    participants: SportmonksParticipant[];
-    odds?: SportmonksOdd[];
-    league?: CricketLeague;
-    comments?: SportmonksComment[];
-    venue?: SportmonksVenue;
-    referee?: SportmonksReferee; // Football V3
-    officials?: { data: SportmonksReferee[] }; // Cricket V3
-    runs?: SportmonksV3Run[]; // Cricket V3 runs
-    scores?: FootballScore[];
-    events?: FootballEvent[];
-    periods?: FootballPeriod[];
-    statistics?: any[];
-    sidelined?: any;
-    weatherReport?: any;
-}
-
-export interface SportmonksV3FixturesResponse {
-    data: SportmonksV3Fixture[];
-    pagination?: SportmonksPagination;
-}
-
-export interface SportmonksSingleV3FixtureResponse {
-    data: SportmonksV3Fixture;
-}
-
-// --- Types for Football Live Scores (V3) ---
 
 export interface FootballScore {
     id: number;
@@ -159,17 +115,51 @@ export interface FootballEvent {
     participant?: SportmonksParticipant;
 }
 
+// --- Main Fixture and Response Types (V3) ---
+
+export interface SportmonksV3Fixture {
+    id: number;
+    name: string;
+    starting_at: string;
+    league_id: number;
+    state: SportmonksState;
+    participants: SportmonksParticipant[];
+    odds?: SportmonksOdd[];
+    league?: SportmonksLeague;
+    comments?: SportmonksComment[];
+    venue?: SportmonksVenue;
+    referee?: SportmonksReferee;
+    officials?: { data: SportmonksReferee[] };
+    // Sport specific data
+    runs?: SportmonksV3Run[]; // Cricket
+    scores?: FootballScore[]; // Football
+    events?: FootballEvent[]; // Football
+    periods?: FootballPeriod[]; // Football
+    statistics?: any[];
+    sidelined?: any;
+    weatherReport?: any;
+}
+
+export interface SportmonksV3FixturesResponse {
+    data: SportmonksV3Fixture[];
+    pagination?: SportmonksPagination;
+}
+
+export interface SportmonksSingleV3FixtureResponse {
+    data: SportmonksV3Fixture;
+}
+
+// Deprecated, but kept for reference if needed for other routes.
 export interface SportmonksFootballLiveScore {
     id: number;
     name: string;
     starting_at: string;
-    league: CricketLeague;
+    league: SportmonksLeague;
     state: SportmonksState;
     participants: SportmonksParticipant[];
     scores: FootballScore[];
     periods: FootballPeriod[] | null;
     events: FootballEvent[];
-    round?: any; // To support the new include parameter
 }
 
 export interface SportmonksFootballLiveResponse {
@@ -180,7 +170,7 @@ export interface SportmonksFootballLiveResponse {
 
 // --- PROCESSED TYPES FOR UI COMPONENTS ---
 
-// Processed type for homepage live cricket scores
+// This type is kept for potential future use but is largely superseded by ProcessedFixture
 export interface ProcessedLiveScore {
     id: number;
     name: string;
@@ -202,7 +192,7 @@ export interface ProcessedComment {
     is_goal: boolean;
 }
 
-// Generic processed type for match cards and match detail pages
+// The primary, unified, processed type for all matches (Football & Cricket)
 export interface ProcessedFixture {
     id: number;
     sportKey: 'football' | 'cricket';
@@ -252,91 +242,9 @@ export interface ProcessedFixture {
     comments?: ProcessedComment[];
     venue?: { name: string; city: string; };
     referee?: { name: string; };
-    // New fields for live scores
+    // Live score data
     homeScore?: string | number;
     awayScore?: string | number;
     minute?: number;
     latestEvent?: string;
-}
-
-
-// --- V2 Specific Types for Cricket ---
-export interface SportmonksV2Team {
-    id: number;
-    name: string;
-    code: string;
-    image_path: string;
-}
-
-export interface SportmonksV2League {
-    id: number;
-    name: string;
-    code: string;
-    country?: { id: number; name: string; }; // This might be from an include
-}
-
-export interface SportmonksV2Run {
-    fixture_id: number;
-    team_id: number;
-    inning: number;
-    score: number;
-    wickets: number;
-    overs: number;
-}
-
-export interface SportmonksV2OddData {
-    id: number;
-    name: string; // e.g., '2-Way'
-    suspended: boolean;
-    bookmaker: {
-        data: {
-            id: number;
-            name: string;
-            odds: {
-                data: {
-                    label: string; // e.g., '1', '2'
-                    value: string;
-                    winning: boolean | null;
-                    handicap: string | null;
-                }[];
-            };
-        }[];
-    };
-}
-
-
-export interface SportmonksV2Fixture {
-    id: number;
-    league_id: number;
-    localteam_id: number;
-    visitorteam_id: number;
-    starting_at: string;
-    status: string; // "NS", "Finished", etc.
-    note: string;
-    live: boolean;
-    localteam: SportmonksV2Team;
-    visitorteam: SportmonksV2Team;
-    league: SportmonksV2League;
-    runs: SportmonksV2Run[];
-    venue?: SportmonksVenue;
-    odds?: { data: SportmonksV2OddData[] };
-    officials?: { data: SportmonksReferee[] };
-    comments?: { data: SportmonksComment[] }; // v2 comments are nested
-}
-
-export interface SportmonksV2ApiResponse {
-    data: SportmonksV2Fixture[];
-    meta?: {
-        pagination: {
-            total: number;
-            count: number;
-            per_page: number;
-            current_page: number;
-            total_pages: number;
-        }
-    };
-}
-
-export interface SportmonksSingleV2FixtureResponse {
-    data: SportmonksV2Fixture;
 }

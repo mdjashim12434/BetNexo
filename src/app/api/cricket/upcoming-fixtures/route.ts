@@ -1,8 +1,8 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
 
-// Cricket API v2.0 endpoint
-const SPORTMONKS_CRICKET_API_URL = "https://cricket.sportmonks.com/api/v2.0";
+// Updated to V3 endpoint
+const SPORTMONKS_CRICKET_API_URL = "https://api.sportmonks.com/v3/cricket";
 const apiKey = process.env.SPORTMONKS_API_KEY;
 
 // Helper to format date to YYYY-MM-DD
@@ -29,21 +29,21 @@ export async function GET(request: NextRequest) {
   const startDate = formatDate(today);
   const endDate = formatDate(futureDate);
 
-  // v2 includes are comma-separated
-  const includes = "localteam,visitorteam,league,runs,venue,odds,stage";
+  // V3 includes, semicolon-separated
+  const includes = "participants;runs;league.country;state;odds;venue;stage";
   
-  let baseUrl = `${SPORTMONKS_CRICKET_API_URL}/fixtures?api_token=${apiKey}&filter[starts_between]=${startDate},${endDate}&include=${includes}&sort=starting_at&tz=UTC`;
+  let baseUrl = `${SPORTMONKS_CRICKET_API_URL}/fixtures/between/${startDate}/${endDate}?api_token=${apiKey}&include=${includes}&tz=UTC`;
 
   if (leagueId) {
-    baseUrl += `&league_id=${leagueId}`; // v2 uses league_id parameter
+    baseUrl += `&leagues=${leagueId}`; // V3 uses 'leagues' parameter
   }
 
   try {
     let allFixtures: any[] = [];
     let currentPage = 1;
-    let totalPages = 1;
+    let hasMore = true;
 
-    do {
+    while (hasMore) {
         const url = `${baseUrl}&page=${currentPage}`;
         const apiResponse = await fetch(url, {
             cache: 'no-store' // Fetch fresh data
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
 
         if (!apiResponse.ok) {
             const errorData = await apiResponse.json().catch(() => ({}));
-            console.error("Error from Sportmonks Cricket API (upcoming v2):", apiResponse.status, errorData);
+            console.error("Error from Sportmonks Cricket API (upcoming v3):", apiResponse.status, errorData);
             const message = errorData.message || `Failed to fetch upcoming cricket data. Status: ${apiResponse.status}`;
             return NextResponse.json({ error: message }, { status: apiResponse.status });
         }
@@ -61,19 +61,18 @@ export async function GET(request: NextRequest) {
             allFixtures = allFixtures.concat(data.data);
         }
 
-        if (data.meta && data.meta.pagination) {
-            totalPages = data.meta.pagination.total_pages;
+        // V3 pagination check
+        if (data.pagination && data.pagination.has_more) {
             currentPage++;
         } else {
-            // No pagination info, break loop
-            break;
+            hasMore = false;
         }
-    } while (currentPage <= totalPages)
+    }
     
     return NextResponse.json({ data: allFixtures });
 
   } catch (error: any) {
-    console.error("Error proxying request to Sportmonks Cricket API (upcoming v2):", error);
+    console.error("Error proxying request to Sportmonks Cricket API (upcoming v3):", error);
     return NextResponse.json({ error: 'An internal server error occurred while contacting the proxy API.' }, { status: 500 });
   }
 }
