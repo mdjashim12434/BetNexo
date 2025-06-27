@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
         let errorMessage = `Failed to fetch live football scores. Status: ${apiResponse.status}`;
         if (apiResponse.status === 403 || (errorData.message && errorData.message.includes("plan"))) {
             errorMessage = `Forbidden: Your current API plan does not allow access to this data.`;
-        } else if (errorData && errorData.message) {
+        } else if (errorData.message) {
             errorMessage += ` - Message: ${errorData.message}`;
         }
         return NextResponse.json({ error: errorMessage }, { status: apiResponse.status });

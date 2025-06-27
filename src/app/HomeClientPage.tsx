@@ -1,3 +1,4 @@
+
 'use client';
 
 import AppLayout from '@/components/AppLayout';
@@ -55,12 +56,14 @@ const casinoLinks = [
 ];
 
 interface HomeClientPageProps {
-  initialMatches: ProcessedFixture[];
+  initialLiveMatches: ProcessedFixture[];
+  initialUpcomingMatches: ProcessedFixture[];
   initialError: string | null;
 }
 
 export default function HomeClientPage({
-  initialMatches,
+  initialLiveMatches,
+  initialUpcomingMatches,
   initialError,
 }: HomeClientPageProps) {
   const { user, loadingAuth } = useAuth();
@@ -164,7 +167,8 @@ export default function HomeClientPage({
               <Button variant="link" asChild><Link href="/sports/live">All</Link></Button>
             </div>
             <HomeMatchesDisplay 
-              matches={initialMatches}
+              liveMatches={initialLiveMatches}
+              upcomingMatches={initialUpcomingMatches}
               error={initialError || undefined}
             />
           </section>

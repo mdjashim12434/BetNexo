@@ -10,20 +10,19 @@ import { format } from 'date-fns';
 import { CricketIcon } from '../icons/CricketIcon';
 
 interface HomeMatchesDisplayProps {
-  matches?: ProcessedFixture[];
+  liveMatches?: ProcessedFixture[];
+  upcomingMatches?: ProcessedFixture[];
   error?: string;
 }
 
 export default function HomeMatchesDisplay({
-  matches = [],
+  liveMatches = [],
+  upcomingMatches = [],
   error,
 }: HomeMatchesDisplayProps) {
 
-  const liveMatches = matches.filter(m => m.isLive);
-  const upcomingFixtures = matches.filter(m => !m.isLive && !m.isFinished);
-
   const hasLiveMatches = liveMatches.length > 0;
-  const hasUpcomingMatches = upcomingFixtures.length > 0;
+  const hasUpcomingMatches = upcomingMatches.length > 0;
   
   const sportIcon = (sportKey: 'football' | 'cricket') => {
       if (sportKey === 'football') {
@@ -92,7 +91,7 @@ export default function HomeMatchesDisplay({
             </Link>
           ))}
 
-          {hasUpcomingMatches && upcomingFixtures.map((match) => (
+          {hasUpcomingMatches && upcomingMatches.map((match) => (
              <Link key={`upcoming-${match.id}`} href={`/match/${match.id}?sport=${match.sportKey}`} legacyBehavior passHref>
               <a className="block p-3 sm:p-4 transition-all cursor-pointer bg-background border border-border/50 hover:border-primary/50 rounded-lg">
                 <div className="flex justify-between items-center mb-2">

@@ -30,58 +30,63 @@ interface SportCategoryPageProps {
 }
 
 async function getMatchesForCategory(categorySlug: string, leagueId?: number) {
-  let matchesForCategory: ProcessedFixture[] = [];
+  let liveMatchesPromise: Promise<ProcessedFixture[]> = Promise.resolve([]);
+  let upcomingMatchesPromise: Promise<ProcessedFixture[]> = Promise.resolve([]);
   const errorMessages: string[] = [];
 
-  const handleFetchError = (sport: string, type: string, e: any) => {
-    // Pass the specific error message from the API, not a generic one, for better debugging.
-    const message = e.message || `Unknown error fetching ${type} ${sport} fixtures.`;
-    console.error(`Failed to fetch ${type} ${sport} fixtures:`, message);
-    errorMessages.push(message);
-    return [];
-  };
-
-  try {
-    if (categorySlug === 'live') {
-      const [footballMatches, cricketMatches] = await Promise.all([
-        fetchLiveFootballFixtures(leagueId).catch((e) => handleFetchError('football', 'live', e)),
-        fetchLiveCricketFixtures(leagueId).catch((e) => handleFetchError('cricket', 'live', e)),
-      ]);
-      matchesForCategory = [...footballMatches, ...cricketMatches];
-    } else if (categorySlug === 'football') {
-      const [liveMatches, upcomingMatches] = await Promise.all([
-        fetchLiveFootballFixtures(leagueId).catch((e) => handleFetchError('football', 'live', e)),
-        fetchUpcomingFootballFixtures(leagueId).catch((e) => handleFetchError('football', 'upcoming', e)),
-      ]);
-      matchesForCategory = [...liveMatches, ...upcomingMatches];
-    } else if (categorySlug === 'cricket') {
-      const [liveMatches, upcomingMatches] = await Promise.all([
-        fetchLiveCricketFixtures(leagueId).catch((e) => handleFetchError('cricket', 'live', e)),
-        fetchUpcomingCricketFixtures(leagueId).catch((e) => handleFetchError('cricket', 'upcoming', e)),
-      ]);
-      matchesForCategory = [...liveMatches, ...upcomingMatches];
-    } else if (categorySlug === 'upcoming') {
-      const [footballMatches, cricketMatches] = await Promise.all([
-        fetchUpcomingFootballFixtures(leagueId).catch((e) => handleFetchError('football', 'upcoming', e)),
-        fetchUpcomingCricketFixtures(leagueId).catch((e) => handleFetchError('cricket', 'upcoming', e)),
-      ]);
-      matchesForCategory = [...footballMatches, ...cricketMatches];
-    }
-
-    matchesForCategory.sort((a, b) => {
-      const aIsLive = a.state?.state === 'INPLAY' || a.state?.state === 'Live';
-      const bIsLive = b.state?.state === 'INPLAY' || b.state?.state === 'Live';
-      if (aIsLive && !bIsLive) return -1;
-      if (!aIsLive && bIsLive) return 1;
-      return new Date(a.startingAt).getTime() - new Date(b.startingAt).getTime();
+  const handleFetch = <T,>(promise: Promise<T>): Promise<T | []> =>
+    promise.catch(e => {
+        const message = e instanceof Error ? e.message : String(e);
+        console.error(`Error in getMatchesForCategory for ${categorySlug}:`, message);
+        errorMessages.push(message);
+        return [];
     });
 
-    return { matches: matchesForCategory, error: errorMessages.length > 0 ? errorMessages.join('\n') : null };
-  } catch (error: any) {
-    console.error(`A top-level error occurred while fetching fixtures for ${categorySlug}:`, error);
-    return { matches: [], error: error.message || `An unknown error occurred while fetching matches for ${categorySlug}.` };
+  if (categorySlug === 'live') {
+    liveMatchesPromise = Promise.all([
+      handleFetch(fetchLiveFootballFixtures(leagueId)),
+      handleFetch(fetchLiveCricketFixtures(leagueId))
+    ]).then(results => results.flat());
+    // No upcoming matches for the 'live' page
+    upcomingMatchesPromise = Promise.resolve([]);
+
+  } else if (categorySlug === 'football') {
+    liveMatchesPromise = handleFetch(fetchLiveFootballFixtures(leagueId));
+    upcomingMatchesPromise = handleFetch(fetchUpcomingFootballFixtures(leagueId));
+
+  } else if (categorySlug === 'cricket') {
+    liveMatchesPromise = handleFetch(fetchLiveCricketFixtures(leagueId));
+    upcomingMatchesPromise = handleFetch(fetchUpcomingCricketFixtures(leagueId));
+
+  } else if (categorySlug === 'upcoming') {
+     // No live matches for the 'upcoming' page
+    liveMatchesPromise = Promise.resolve([]);
+    upcomingMatchesPromise = Promise.all([
+      handleFetch(fetchUpcomingFootballFixtures(leagueId)),
+      handleFetch(fetchUpcomingCricketFixtures(leagueId))
+    ]).then(results => results.flat());
   }
+
+  const [liveMatches, upcomingMatchesUnfiltered] = await Promise.all([
+    liveMatchesPromise,
+    upcomingMatchesPromise
+  ]);
+
+  // Ensure no duplicates: if a match is live, it shouldn't be in upcoming.
+  const liveMatchIds = new Set(liveMatches.map(m => m.id));
+  const upcomingMatches = upcomingMatchesUnfiltered.filter(m => !liveMatchIds.has(m.id));
+
+  // Sort each list individually
+  liveMatches.sort((a, b) => new Date(a.startingAt).getTime() - new Date(b.startingAt).getTime());
+  upcomingMatches.sort((a, b) => new Date(a.startingAt).getTime() - new Date(b.startingAt).getTime());
+
+  return { 
+    liveMatches, 
+    upcomingMatches, 
+    error: errorMessages.length > 0 ? errorMessages.join('\n') : null 
+  };
 }
+
 
 // This is a Server Component that fetches data and passes it to the client component.
 export default async function SportCategoryPage({ params, searchParams }: SportCategoryPageProps) {
@@ -90,7 +95,7 @@ export default async function SportCategoryPage({ params, searchParams }: SportC
   const leagueIdParam = searchParams.leagueId;
   const leagueId = leagueIdParam && typeof leagueIdParam === 'string' ? Number(leagueIdParam) : undefined;
   
-  const { matches, error } = await getMatchesForCategory(categorySlug, leagueId);
+  const { liveMatches, upcomingMatches, error } = await getMatchesForCategory(categorySlug, leagueId);
 
   return (
     <AppLayout>
@@ -98,7 +103,8 @@ export default async function SportCategoryPage({ params, searchParams }: SportC
         <SportsCategoryClientContent
           categorySlug={categorySlug}
           categoryName={categoryName}
-          initialMatches={matches}
+          initialLiveMatches={liveMatches}
+          initialUpcomingMatches={upcomingMatches}
           initialError={error}
           leagueId={leagueIdParam as string | undefined}
         />

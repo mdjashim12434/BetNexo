@@ -31,7 +31,8 @@ interface CombinedLeague {
 interface SportsCategoryClientContentProps {
   categorySlug: string;
   categoryName: string;
-  initialMatches: ProcessedFixture[];
+  initialLiveMatches: ProcessedFixture[];
+  initialUpcomingMatches: ProcessedFixture[];
   initialError: string | null;
   leagueId?: string;
 }
@@ -39,7 +40,8 @@ interface SportsCategoryClientContentProps {
 export default function SportsCategoryClientContent({
   categorySlug,
   categoryName,
-  initialMatches,
+  initialLiveMatches,
+  initialUpcomingMatches,
   initialError,
   leagueId,
 }: SportsCategoryClientContentProps) {
@@ -47,7 +49,9 @@ export default function SportsCategoryClientContent({
   const { user, loadingAuth } = useAuth();
   const { toast } = useToast();
 
-  const [matches, setMatches] = useState<ProcessedFixture[]>(initialMatches);
+  // Separate states for live and upcoming matches, as requested.
+  const [liveMatches, setLiveMatches] = useState<ProcessedFixture[]>(initialLiveMatches);
+  const [upcomingMatches, setUpcomingMatches] = useState<ProcessedFixture[]>(initialUpcomingMatches);
   const [fetchError, setFetchError] = useState<string | null>(initialError);
   
   const [searchTerm, setSearchTerm] = useState('');
@@ -55,12 +59,21 @@ export default function SportsCategoryClientContent({
   const [leagues, setLeagues] = useState<CombinedLeague[]>([]);
   const [loadingLeagues, setLoadingLeagues] = useState(false);
 
-  const showTabs = categorySlug === 'football' || categorySlug === 'cricket' || categorySlug === 'live';
+  const showTabs = categorySlug === 'football' || categorySlug === 'cricket' || categorySlug === 'live' || categorySlug === 'upcoming';
+  
+  // Default active tab logic
+  const getDefaultTab = () => {
+    if (categorySlug === 'live') return 'live';
+    if (categorySlug === 'upcoming') return 'upcoming';
+    return initialLiveMatches.length > 0 ? 'live' : 'upcoming';
+  };
+  const [activeTab, setActiveTab] = useState(getDefaultTab());
+   
+  // When category changes, reset the active tab appropriately
+  useEffect(() => {
+    setActiveTab(getDefaultTab());
+  }, [categorySlug, initialLiveMatches.length]);
 
-  const liveCount = useMemo(() => matches.filter(m => m.isLive).length, [matches]);
-  const upcomingCount = useMemo(() => matches.filter(m => !m.isLive && !m.isFinished).length, [matches]);
-
-  const [activeTab, setActiveTab] = useState('all');
 
   useEffect(() => {
     if (categorySlug === 'all-sports') {
@@ -81,18 +94,18 @@ export default function SportsCategoryClientContent({
         .catch(err => toast({ title: "Error Loading Leagues", description: err.message, variant: "destructive" }))
         .finally(() => setLoadingLeagues(false));
     }
-    // Set initial tab for 'live' category
-    if (categorySlug === 'live') {
-      setActiveTab('live');
-    }
   }, [categorySlug, toast]);
   
   const displayTitle = useMemo(() => {
-    if (leagueId && matches.length > 0) {
-      return matches[0].league.name;
+    if (leagueId) {
+        const allMatches = [...liveMatches, ...upcomingMatches];
+        const matchWithLeague = allMatches.find(m => m.league && m.league.name !== 'N/A');
+        if (matchWithLeague) {
+            return matchWithLeague.league.name;
+        }
     }
     return categoryName;
-  }, [leagueId, matches, categoryName]);
+  }, [leagueId, liveMatches, upcomingMatches, categoryName]);
   
   const filteredLeagues = useMemo(() => {
     if (!searchTerm) return leagues;
@@ -101,25 +114,28 @@ export default function SportsCategoryClientContent({
     );
   }, [leagues, searchTerm]);
 
+  // Refactored logic to handle separate states and filtering
   const filteredMatches = useMemo(() => {
-    let currentMatches = matches;
-
-    if (showTabs) {
-      if (activeTab === 'live') {
-        currentMatches = currentMatches.filter(m => m.isLive);
-      } else if (activeTab === 'upcoming') {
-        currentMatches = currentMatches.filter(m => !m.isLive && !m.isFinished);
-      }
+    let sourceMatches: ProcessedFixture[] = [];
+    
+    // Determine the source array based on the active tab
+    if (activeTab === 'live') {
+      sourceMatches = liveMatches;
+    } else if (activeTab === 'upcoming') {
+      sourceMatches = upcomingMatches;
     }
     
+    // Apply search filter if a search term exists
     if (searchTerm) {
-      return currentMatches.filter(match =>
-        match.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        match.league.name.toLowerCase().includes(searchTerm.toLowerCase())
+      const lowercasedSearchTerm = searchTerm.toLowerCase();
+      return sourceMatches.filter(match =>
+        match.name.toLowerCase().includes(lowercasedSearchTerm) ||
+        match.league.name.toLowerCase().includes(lowercasedSearchTerm)
       );
     }
-    return currentMatches;
-  }, [matches, searchTerm, showTabs, activeTab]);
+    
+    return sourceMatches;
+  }, [liveMatches, upcomingMatches, searchTerm, activeTab]);
 
   useEffect(() => {
     if (!loadingAuth && !user) {
@@ -226,15 +242,12 @@ export default function SportsCategoryClientContent({
       
       {showTabs && (
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="all" disabled={categorySlug === 'live'}>
-                  All <Badge variant="secondary" className="ml-2">{matches.length}</Badge>
-              </TabsTrigger>
-              <TabsTrigger value="live" >
-                  Live <Badge variant="destructive" className="ml-2 animate-pulse">{liveCount}</Badge>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="live" disabled={categorySlug === 'upcoming'}>
+                  Live <Badge variant="destructive" className="ml-2 animate-pulse">{liveMatches.length}</Badge>
               </TabsTrigger>
               <TabsTrigger value="upcoming" disabled={categorySlug === 'live'}>
-                  Upcoming <Badge variant="secondary" className="ml-2">{upcomingCount}</Badge>
+                  Upcoming <Badge variant="secondary" className="ml-2">{upcomingMatches.length}</Badge>
               </TabsTrigger>
             </TabsList>
         </Tabs>
@@ -259,7 +272,7 @@ export default function SportsCategoryClientContent({
         <div className="text-center text-muted-foreground py-10">
           <Frown className="mx-auto h-12 w-12 mb-4" />
           <p className="text-lg font-semibold">No Matches Found</p>
-          <p>No {activeTab !== 'all' ? activeTab : ''} matches for this selection were found at this time. Please check back later.</p>
+          <p>No {activeTab} matches for this selection were found at this time. Please check back later.</p>
         </div>
       )}
     </div>
