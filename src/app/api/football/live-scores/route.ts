@@ -17,7 +17,8 @@ export async function GET(request: NextRequest) {
   // This endpoint is optimized for speed and does not support the 'odds' or 'odds.bookmaker' include.
   // Removing it fixes the issue of live matches not appearing on the home page.
   // Odds are still fetched for upcoming fixtures and on the detailed match page.
-  const includes = "participants;scores;league.country;state;events";
+  // Added 'periods' to get the live minute of the match.
+  const includes = "participants;scores;league.country;state;events;periods";
   let baseUrl = `${SPORTMONKS_FOOTBALL_API_URL}/livescores?api_token=${apiKey}&include=${includes}&tz=UTC`;
 
   if (leagueId) {
