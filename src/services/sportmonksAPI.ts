@@ -152,8 +152,11 @@ export async function fetchLiveFootballFixtures(leagueId?: number): Promise<Proc
   return processV3FootballFixtures(data?.data || []);
 }
 
-export async function fetchUpcomingFootballFixtures(leagueId?: number): Promise<ProcessedFixture[]> {
-    const url = leagueId ? `/api/football/upcoming-fixtures?leagueId=${leagueId}` : '/api/football/upcoming-fixtures';
+export async function fetchUpcomingFootballFixtures(leagueId?: number, firstPageOnly = false): Promise<ProcessedFixture[]> {
+    let url = leagueId ? `/api/football/upcoming-fixtures?leagueId=${leagueId}` : '/api/football/upcoming-fixtures';
+    if (firstPageOnly) {
+        url += url.includes('?') ? '&firstPageOnly=true' : '?firstPageOnly=true';
+    }
     const response = await fetch(`${API_BASE_URL}${url}`, { cache: 'no-store' });
     const data: SportmonksV3FixturesResponse = await handleApiResponse(response);
     return processV3FootballFixtures(data?.data || []);
@@ -166,8 +169,11 @@ export async function fetchLiveCricketFixtures(leagueId?: number): Promise<Proce
   return processV2CricketFixtures(data?.data || []);
 }
 
-export async function fetchUpcomingCricketFixtures(leagueId?: number): Promise<ProcessedFixture[]> {
-    const url = leagueId ? `/api/cricket/upcoming-fixtures?leagueId=${leagueId}` : '/api/cricket/upcoming-fixtures';
+export async function fetchUpcomingCricketFixtures(leagueId?: number, firstPageOnly = false): Promise<ProcessedFixture[]> {
+    let url = leagueId ? `/api/cricket/upcoming-fixtures?leagueId=${leagueId}` : '/api/cricket/upcoming-fixtures';
+    if (firstPageOnly) {
+        url += url.includes('?') ? '&firstPageOnly=true' : '?firstPageOnly=true';
+    }
     const response = await fetch(`${API_BASE_URL}${url}`, { cache: 'no-store' });
     const data: SportmonksV2FixturesResponse = await handleApiResponse(response);
     return processV2CricketFixtures(data?.data || []);

@@ -13,6 +13,7 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
   const leagueId = searchParams.get('leagueId');
+  const firstPageOnly = searchParams.get('firstPageOnly') === 'true';
 
   // V2 includes, comma-separated. No odds needed for upcoming.
   const includes = "localteam,visitorteam,league,stage,venue";
@@ -25,6 +26,21 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    // Optimization for homepage to prevent timeouts by fetching only the first page.
+    if (firstPageOnly) {
+        const url = `${baseUrl}&page=1`;
+        const apiResponse = await fetch(url, { cache: 'no-store' });
+         if (!apiResponse.ok) {
+            const errorData = await apiResponse.json().catch(() => ({}));
+            console.error("Error from Sportmonks Cricket API (first page upcoming v2):", apiResponse.status, errorData);
+            const message = errorData.message || `Failed to fetch data. Status: ${apiResponse.status}`;
+            return NextResponse.json({ error: message }, { status: apiResponse.status });
+        }
+        const data = await apiResponse.json();
+        return NextResponse.json(data);
+    }
+    
+    // Default full pagination for dedicated sports pages
     let allFixtures: any[] = [];
     let currentPage = 1;
     let hasMore = true;

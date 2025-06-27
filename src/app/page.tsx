@@ -10,6 +10,7 @@ import type { ProcessedFixture } from '@/types/sportmonks';
 
 async function getHomePageMatches() {
   // Fetch all four sets of data in parallel, honoring the "separate API calls" architecture
+  // Pass `true` to upcoming fixture fetches to only get the first page of results, preventing server timeouts.
   const [
     liveFootballResult, 
     upcomingFootballResult,
@@ -17,9 +18,9 @@ async function getHomePageMatches() {
     upcomingCricketResult
   ] = await Promise.allSettled([
     fetchLiveFootballFixtures(),
-    fetchUpcomingFootballFixtures(),
+    fetchUpcomingFootballFixtures(undefined, true),
     fetchLiveCricketFixtures(),
-    fetchUpcomingCricketFixtures(),
+    fetchUpcomingCricketFixtures(undefined, true),
   ]);
 
   let errorMessages: string[] = [];
