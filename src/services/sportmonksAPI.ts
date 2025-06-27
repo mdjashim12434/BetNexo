@@ -112,11 +112,13 @@ const processCricketV2ApiResponse = (fixtures: SportmonksV2Fixture[]): Processed
         }
 
         const isoStartingAt = parseSportmonksDateStringToISO(fixture.starting_at);
+        const homeTeamName = fixture.localteam?.name || 'Home';
+        const awayTeamName = fixture.visitorteam?.name || 'Away';
 
         return {
             id: fixture.id,
             sportKey: 'cricket',
-            name: `${fixture.localteam?.name || 'Home'} vs ${fixture.visitorteam?.name || 'Away'}`,
+            name: `${homeTeamName} vs ${awayTeamName}`,
             startingAt: isoStartingAt,
             state: state,
             league: {
@@ -126,12 +128,12 @@ const processCricketV2ApiResponse = (fixtures: SportmonksV2Fixture[]): Processed
             },
             homeTeam: {
                 id: fixture.localteam?.id || 0,
-                name: fixture.localteam?.name || 'Home',
+                name: homeTeamName,
                 image_path: fixture.localteam?.image_path,
             },
             awayTeam: {
                 id: fixture.visitorteam?.id || 0,
-                name: fixture.visitorteam?.name || 'Away',
+                name: awayTeamName,
                 image_path: fixture.visitorteam?.image_path,
             },
             odds: {
@@ -316,7 +318,7 @@ const processLiveFootballFixtures = (fixtures: SportmonksFootballLiveScore[]): P
 export async function fetchLiveFootballFixtures(leagueId?: number): Promise<ProcessedFixture[]> {
   try {
     const url = leagueId ? `/api/football/live-scores?leagueId=${leagueId}` : '/api/football/live-scores';
-    const response = await fetch(`${API_BASE_URL}${url}`);
+    const response = await fetch(`${API_BASE_URL}${url}`, { cache: 'no-store' });
     const responseData: SportmonksFootballLiveResponse = await handleApiResponse(response);
     return processLiveFootballFixtures(responseData?.data || []);
   } catch (error) {
@@ -328,7 +330,7 @@ export async function fetchLiveFootballFixtures(leagueId?: number): Promise<Proc
 export async function fetchLiveCricketFixtures(leagueId?: number): Promise<ProcessedFixture[]> {
   try {
     const url = leagueId ? `/api/cricket/live-scores?leagueId=${leagueId}` : '/api/cricket/live-scores';
-    const response = await fetch(`${API_BASE_URL}${url}`);
+    const response = await fetch(`${API_BASE_URL}${url}`, { cache: 'no-store' });
     const responseData: SportmonksV2ApiResponse = await handleApiResponse(response);
     return processCricketV2ApiResponse(responseData?.data || []);
   } catch (error) {
@@ -340,7 +342,7 @@ export async function fetchLiveCricketFixtures(leagueId?: number): Promise<Proce
 export async function fetchUpcomingFootballFixtures(leagueId?: number): Promise<ProcessedFixture[]> {
     try {
         const url = leagueId ? `/api/football/upcoming-fixtures?leagueId=${leagueId}` : '/api/football/upcoming-fixtures';
-        const response = await fetch(`${API_BASE_URL}${url}`);
+        const response = await fetch(`${API_BASE_URL}${url}`, { cache: 'no-store' });
         const rawData: SportmonksV3FixturesResponse = await handleApiResponse(response);
         return processV3FixtureData(rawData?.data || [], 'football');
     } catch (error) {
@@ -352,7 +354,7 @@ export async function fetchUpcomingFootballFixtures(leagueId?: number): Promise<
 export async function fetchUpcomingCricketFixtures(leagueId?: number): Promise<ProcessedFixture[]> {
     try {
         const url = leagueId ? `/api/cricket/upcoming-fixtures?leagueId=${leagueId}` : '/api/cricket/upcoming-fixtures';
-        const response = await fetch(`${API_BASE_URL}${url}`);
+        const response = await fetch(`${API_BASE_URL}${url}`, { cache: 'no-store' });
         const rawData: SportmonksV2ApiResponse = await handleApiResponse(response);
         return processCricketV2ApiResponse(rawData?.data || []);
     } catch (error) {
@@ -363,7 +365,7 @@ export async function fetchUpcomingCricketFixtures(leagueId?: number): Promise<P
 
 async function fetchFootballFixtureById(fixtureId: number): Promise<SportmonksV3Fixture> {
     try {
-        const response = await fetch(`${API_BASE_URL}/api/football/fixtures?fixtureId=${fixtureId}`);
+        const response = await fetch(`${API_BASE_URL}/api/football/fixtures?fixtureId=${fixtureId}`, { cache: 'no-store' });
         const fixtureResponse: SportmonksSingleV3FixtureResponse = await handleApiResponse(response);
         return fixtureResponse.data;
     } catch (error) {
@@ -374,7 +376,7 @@ async function fetchFootballFixtureById(fixtureId: number): Promise<SportmonksV3
 
 async function fetchCricketFixtureById(fixtureId: number): Promise<SportmonksV2Fixture> {
     try {
-        const response = await fetch(`${API_BASE_URL}/api/cricket/fixtures?fixtureId=${fixtureId}`);
+        const response = await fetch(`${API_BASE_URL}/api/cricket/fixtures?fixtureId=${fixtureId}`, { cache: 'no-store' });
         const fixtureResponse: SportmonksSingleV2FixtureResponse = await handleApiResponse(response);
         return fixtureResponse.data;
     } catch (error) {
