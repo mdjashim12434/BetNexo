@@ -34,9 +34,10 @@ async function getMatchesForCategory(categorySlug: string, leagueId?: number) {
   const errorMessages: string[] = [];
 
   const handleFetchError = (sport: string, type: string, e: any) => {
+    // Pass the specific error message from the API, not a generic one, for better debugging.
     const message = e.message || `Unknown error fetching ${type} ${sport} fixtures.`;
     console.error(`Failed to fetch ${type} ${sport} fixtures:`, message);
-    errorMessages.push(`Could not load ${type} ${sport} matches.`);
+    errorMessages.push(message);
     return [];
   };
 

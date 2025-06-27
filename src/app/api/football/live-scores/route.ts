@@ -16,7 +16,9 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const leagueId = searchParams.get('leagueId');
 
-  const includes = "participants;scores;periods;events;league.country;round";
+  // Removed 'events' and 'round' from includes as they might be restricted by some API plans, causing errors.
+  // The essential data for live scores comes from participants, scores, and periods.
+  const includes = "participants;scores;periods;league.country";
   
   let baseUrl = `${SPORTMONKS_API_BASE_URL}?api_token=${apiKey}&include=${includes}&tz=UTC`;
 
