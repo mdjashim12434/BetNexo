@@ -94,7 +94,7 @@ export default function LoginPage() {
   // Effect to redirect if user is already logged in and verified
   useEffect(() => {
     if (!loadingAuth && appUser && appUser.emailVerified) {
-      // Redirect to home page after login, NOT the user-dashboard
+      // Redirect to home page if user is already logged in, NOT the user-dashboard
       if (appUser.role === 'Admin') {
         router.push('/admin');
       } else {
@@ -156,7 +156,12 @@ export default function LoginPage() {
       
       if (loggedInUser) {
         toast({ title: "Login Successful", description: "Welcome back!" });
-        // Redirection is handled by the useEffect hook once appUser is set
+        // Explicitly redirect after successful login context update.
+        if (loggedInUser.role === 'Admin') {
+            router.push('/admin');
+        } else {
+            router.push('/');
+        }
       } else {
          toast({ title: "Login Error", description: "Could not retrieve your user details after login. Please check if your account is fully set up or contact support.", variant: "destructive", duration: 7000 });
       }
