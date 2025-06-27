@@ -127,14 +127,14 @@ const processV2CricketFixtures = (fixtures: SportmonksV2Fixture[]): ProcessedFix
         return {
             id: fixture.id,
             sportKey: 'cricket',
-            name: `${homeTeam.name} vs ${awayTeam.name}`,
+            name: `${homeTeam?.name || 'Team A'} vs ${awayTeam?.name || 'Team B'}`,
             startingAt: parseSportmonksDateStringToISO(fixture.starting_at),
             state,
             isLive,
             isFinished,
-            league: { id: fixture.league_id, name: fixture.league?.data.name || 'N/A', countryName: '' }, // V2 league has no country
-            homeTeam: { id: homeTeam.id, name: homeTeam.name, image_path: homeTeam.image_path },
-            awayTeam: { id: awayTeam.id, name: awayTeam.name, image_path: awayTeam.image_path },
+            league: { id: fixture.league_id, name: fixture.league?.data?.name || 'N/A', countryName: '' }, // V2 league has no country. Added optional chaining for safety.
+            homeTeam: { id: homeTeam?.id || 0, name: homeTeam?.name || 'Home', image_path: homeTeam?.image_path },
+            awayTeam: { id: awayTeam?.id || 0, name: awayTeam?.name || 'Away', image_path: awayTeam?.image_path },
             odds: {}, // V2 Cricket odds are not supported in this implementation per user request
             homeScore,
             awayScore,

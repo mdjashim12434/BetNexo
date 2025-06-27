@@ -56,8 +56,9 @@ async function getHomePageMatches() {
   }
 
   // De-duplicate: If a match is live, it must not appear in the upcoming list.
+  // Also, filter out any matches that are already finished from the upcoming list.
   const liveMatchIds = new Set(liveMatches.map(m => m.id));
-  const uniqueUpcomingMatches = upcomingMatches.filter(match => !liveMatchIds.has(match.id));
+  const uniqueUpcomingMatches = upcomingMatches.filter(match => !liveMatchIds.has(match.id) && !match.isFinished);
   
   // Sort both lists by their starting time for a consistent order.
   liveMatches.sort((a, b) => new Date(a.startingAt).getTime() - new Date(b.startingAt).getTime());
