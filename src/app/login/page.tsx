@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -94,7 +95,6 @@ export default function LoginPage() {
   // Effect to redirect if user is already logged in and verified
   useEffect(() => {
     if (!loadingAuth && appUser && appUser.emailVerified) {
-      // Redirect to home page if user is already logged in, NOT the user-dashboard
       if (appUser.role === 'Admin') {
         router.push('/admin');
       } else {
@@ -124,7 +124,6 @@ export default function LoginPage() {
         }
       }
 
-      // Check if the resulting string is a valid email, especially after potential ID lookup
       if (!z.string().email().safeParse(emailToLogin).success) {
           toast({ title: "Invalid Input", description: "Please enter a valid email address or a 9-digit User ID.", variant: "destructive" });
           form.setError("emailOrUserId", { type: "manual", message: "Invalid email format." });
@@ -152,19 +151,10 @@ export default function LoginPage() {
         emailVerified: fbUser.emailVerified,
       };
       
-      const loggedInUser: User | null = await loginToAppContext(userPayloadForAppContext, false);
+      // Update the auth context. The useEffect will handle the redirect.
+      await loginToAppContext(userPayloadForAppContext, false);
       
-      if (loggedInUser) {
-        toast({ title: "Login Successful", description: "Welcome back!" });
-        // Explicitly redirect after successful login context update.
-        if (loggedInUser.role === 'Admin') {
-            router.push('/admin');
-        } else {
-            router.push('/');
-        }
-      } else {
-         toast({ title: "Login Error", description: "Could not retrieve your user details after login. Please check if your account is fully set up or contact support.", variant: "destructive", duration: 7000 });
-      }
+      toast({ title: "Login Successful", description: "Welcome back! Redirecting..." });
 
     } catch (error: any) {
       console.error("Login failed on page:", error);
@@ -206,9 +196,6 @@ export default function LoginPage() {
   if (loadingAuth) {
     return <PageLoader />;
   }
-  
-  // If user is already logged in & verified, useEffect above will redirect.
-  // If not loadingAuth, and not (appUser && appUser.emailVerified), then show the form.
   
   const AuthMethodButton = ({ method, icon: Icon, label }: { method: AuthMethod, icon: React.ElementType, label:string }) => (
     <Button
