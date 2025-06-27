@@ -42,10 +42,11 @@ async function getMatchesForCategory(categorySlug: string, leagueId?: number) {
 
   try {
     if (categorySlug === 'live') {
-      const [footballMatches] = await Promise.all([
+      const [footballMatches, cricketMatches] = await Promise.all([
         fetchLiveFootballFixtures(leagueId).catch((e) => handleFetchError('football', 'live', e)),
+        fetchLiveCricketFixtures(leagueId).catch((e) => handleFetchError('cricket', 'live', e)),
       ]);
-      matchesForCategory = [...footballMatches];
+      matchesForCategory = [...footballMatches, ...cricketMatches];
     } else if (categorySlug === 'football') {
       const [liveMatches, upcomingMatches] = await Promise.all([
         fetchLiveFootballFixtures(leagueId).catch((e) => handleFetchError('football', 'live', e)),
@@ -53,10 +54,11 @@ async function getMatchesForCategory(categorySlug: string, leagueId?: number) {
       ]);
       matchesForCategory = [...liveMatches, ...upcomingMatches];
     } else if (categorySlug === 'cricket') {
-      const [upcomingMatches] = await Promise.all([
+      const [liveMatches, upcomingMatches] = await Promise.all([
+        fetchLiveCricketFixtures(leagueId).catch((e) => handleFetchError('cricket', 'live', e)),
         fetchUpcomingCricketFixtures(leagueId).catch((e) => handleFetchError('cricket', 'upcoming', e)),
       ]);
-      matchesForCategory = [...upcomingMatches];
+      matchesForCategory = [...liveMatches, ...upcomingMatches];
     } else if (categorySlug === 'upcoming') {
       const [footballMatches, cricketMatches] = await Promise.all([
         fetchUpcomingFootballFixtures(leagueId).catch((e) => handleFetchError('football', 'upcoming', e)),
