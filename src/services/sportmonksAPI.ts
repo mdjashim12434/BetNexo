@@ -199,12 +199,19 @@ const processV3FixtureData = (fixtures: SportmonksV3Fixture[], sportKey: 'footba
             latestEvent = fixture.state.name;
         }
 
+        // The V3 API returns a datetime string like "2024-06-27 14:00:00", which is in UTC.
+        // To prevent JavaScript from misinterpreting this as local time, we explicitly
+        // append ' UTC' to the string before creating a Date object.
+        // .toISOString() then converts it to the canonical 'Z' format, e.g., "2024-06-27T14:00:00.000Z".
+        // This ensures all downstream date operations are consistent and correct.
+        const isoStartingAt = new Date(fixture.starting_at + ' UTC').toISOString();
+
 
         return {
             id: fixture.id,
             sportKey: sportKey,
             name: fixture.name,
-            startingAt: fixture.starting_at, // Ensure UTC format
+            startingAt: isoStartingAt,
             state: fixture.state,
             league: { id: fixture.league_id, name: fixture.league?.name || 'N/A', countryName: fixture.league?.country?.name || 'N/A' },
             homeTeam: { id: homeTeam?.id || 0, name: homeTeam?.name || 'Home', image_path: homeTeam?.image_path },
@@ -266,12 +273,19 @@ const processLiveFootballFixtures = (fixtures: SportmonksFootballLiveScore[]): P
                 }
             }
         }
+        
+        // The V3 API returns a datetime string like "2024-06-27 14:00:00", which is in UTC.
+        // To prevent JavaScript from misinterpreting this as local time, we explicitly
+        // append ' UTC' to the string before creating a Date object.
+        // .toISOString() then converts it to the canonical 'Z' format, e.g., "2024-06-27T14:00:00.000Z".
+        // This ensures all downstream date operations are consistent and correct.
+        const isoStartingAt = new Date(fixture.starting_at + ' UTC').toISOString();
 
         return {
             id: fixture.id,
             sportKey: 'football',
             name: fixture.name,
-            startingAt: fixture.starting_at,
+            startingAt: isoStartingAt,
             state: fixture.state,
             league: { id: fixture.league?.id || 0, name: fixture.league?.name || 'N/A', countryName: fixture.league?.country?.name || 'N/A' },
             homeTeam: { id: homeTeam?.id || 0, name: homeTeam?.name || 'Home', image_path: homeTeam?.image_path },
