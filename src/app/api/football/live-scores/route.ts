@@ -13,9 +13,9 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const leagueId = searchParams.get('leagueId');
   
-  // Directly targeting the livescores endpoint as it's more reliable for getting only active matches.
-  // Including essential data for display. 'events' is removed to avoid plan-related API errors.
-  const includes = "participants;scores;periods;league.country;state";
+  // Directly targeting the livescores endpoint.
+  // Including only essential data for display to maximize reliability across API plans.
+  const includes = "participants;scores;league.country;state";
   let baseUrl = `${SPORTMONKS_FOOTBALL_API_URL}/livescores?api_token=${apiKey}&include=${includes}&tz=UTC`;
 
   if (leagueId) {
