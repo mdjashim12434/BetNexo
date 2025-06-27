@@ -17,7 +17,7 @@ export interface SportmonksOdd {
 
 export interface SportmonksState {
     id: number;
-    state: 'NS' | 'INPLAY' | 'HT' | 'FT' | 'ET' | 'PEN_LIVE' | 'AET' | 'BREAK' | 'POSTP' | 'CANCL' | 'ABAN' | 'SUSP' | 'AWARDED' | 'DELETED' | 'TBA' | 'WO' | 'AU' | 'Finished' | 'Live' | '1st Innings' | '2nd Innings' | 'Innings Break' | 'Cancelled' | 'TOSS' | 'DELAYED';
+    state: string; // Using string for flexibility with API states
     name: string;
     short_name: string;
     developer_name: string;

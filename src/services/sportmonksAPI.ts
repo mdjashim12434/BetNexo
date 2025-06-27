@@ -15,11 +15,16 @@ import { format } from 'date-fns';
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:9002';
 
 // --- Centralized State Definitions ---
-const LIVE_STATES: SportmonksState['state'][] = [
-    'INPLAY', 'HT', 'ET', 'PEN_LIVE', 'BREAK', 
-    'Live', '1st Innings', '2nd Innings', 'Innings Break', 'Super Over', 'TOSS', 'DELAYED'
+const LIVE_STATES: string[] = [
+    // V3 Football states
+    'LIVE', 'HT', 'ET', 'PEN_LIVE', 'BREAK', 'INT',
+    // V3 Cricket states (names often used as codes)
+    '1st Innings', '2nd Innings', '3rd Innings', '4th Innings', 'Innings Break', 'Super Over', 'TOSS', 'DELAYED', 'Stumps', 'Lunch', 'Tea Break',
+    // Common/Fallback states from docs/experience
+    'INPLAY', // From V2, but good to keep as a fallback
+    'Live', // The 'name' field, but sometimes appears in 'state' field
 ];
-const FINISHED_STATES: SportmonksState['state'][] = [
+const FINISHED_STATES: string[] = [
     'FT', 'AET', 'Finished', 'POSTP', 'CANCL', 'ABAN', 'SUSP', 'AWARDED', 'DELETED', 'WO', 'AU'
 ];
 
@@ -270,4 +275,3 @@ export async function fetchFixtureDetails(fixtureId: number, sport: 'football' |
         throw error;
     }
 }
-
