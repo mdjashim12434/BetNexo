@@ -4,15 +4,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 const SPORTMONKS_FOOTBALL_API_URL = 'https://api.sportmonks.com/v3/football';
 const apiKey = process.env.SPORTMONKS_API_KEY;
 
-// Helper to format date to YYYY-MM-DD
-const formatDate = (date: Date): string => {
-  const year = date.getFullYear();
-  const month = (date.getMonth() + 1).toString().padStart(2, '0');
-  const day = date.getDate().toString().padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
-
-// This route handles fetching upcoming fixtures for a specific date range
+// This route handles fetching upcoming fixtures using the dedicated 'upcoming' endpoint for reliability.
 export async function GET(request: NextRequest) {
     if (!apiKey) {
         console.error("SPORTMONKS_API_KEY is not set in environment variables.");
@@ -22,19 +14,12 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const leagueId = searchParams.get('leagueId');
     const firstPageOnly = searchParams.get('firstPageOnly') === 'true';
-    
-    const today = new Date();
-    const futureDate = new Date();
-    futureDate.setDate(today.getDate() + 10);
-    
-    const startDate = formatDate(today);
-    const endDate = formatDate(futureDate);
 
-    // FIX: Removed 'odds.bookmaker' as this endpoint may not support it, causing 'Forbidden' errors.
-    // Odds should be fetched on the dedicated match detail page.
+    // The 'upcoming' endpoint is cleaner and more reliable than fetching by date range.
+    // Odds are not included here to keep the request light and avoid potential plan restrictions on list endpoints.
     const includes = "participants;league.country;state";
     
-    let baseUrl = `${SPORTMONKS_FOOTBALL_API_URL}/fixtures/between/${startDate}/${endDate}?api_token=${apiKey}&include=${includes}&tz=UTC`;
+    let baseUrl = `${SPORTMONKS_FOOTBALL_API_URL}/fixtures/upcoming?api_token=${apiKey}&include=${includes}&tz=UTC`;
     
     if (leagueId) {
         baseUrl += `&leagues=${leagueId}`;
@@ -52,6 +37,7 @@ export async function GET(request: NextRequest) {
                 return NextResponse.json({ error: message }, { status: response.status });
             }
             const data = await response.json();
+            // The /fixtures/upcoming endpoint should only return non-started matches, so no extra filtering is needed here.
             return NextResponse.json(data);
         }
 
