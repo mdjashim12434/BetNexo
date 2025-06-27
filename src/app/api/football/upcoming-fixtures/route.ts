@@ -25,11 +25,11 @@ export async function GET(request: NextRequest) {
     const nextWeek = getFormattedDate(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
     
     // Includes for comprehensive details, but excluding odds to keep it light.
+    // The `filter[states]` has been removed as it was causing 400/422 errors.
+    // Filtering for "Not Started" matches is now handled reliably in the `sportmonksAPI.ts` service after the data is fetched.
     const includes = "participants;league.country;state";
-    // State ID 1 is for 'Not Started' (NS). This ensures we only get truly upcoming matches from the API.
-    const statesToFetch = "1";
     
-    let baseUrl = `${SPORTMONKS_FOOTBALL_API_URL}/fixtures/between/${today}/${nextWeek}?api_token=${apiKey}&include=${includes}&tz=UTC&filter[states]=${statesToFetch}`;
+    let baseUrl = `${SPORTMONKS_FOOTBALL_API_URL}/fixtures/between/${today}/${nextWeek}?api_token=${apiKey}&include=${includes}&tz=UTC`;
     
     if (leagueId) {
         baseUrl += `&leagues=${leagueId}`;

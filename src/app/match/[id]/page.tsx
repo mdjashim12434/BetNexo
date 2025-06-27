@@ -24,21 +24,29 @@ export default function MatchDetailPage() {
 
   useEffect(() => {
     if (matchId) {
-      console.log(`MatchDetailPage Client: Fetching football fixtureId: ${matchId}`);
+      const numericMatchId = Number(matchId);
+      // Validate that the matchId is a valid number before making an API call.
+      if (isNaN(numericMatchId)) {
+        setError(`Invalid Match ID provided: "${matchId}". The link may be broken or incorrect.`);
+        setLoading(false);
+        return;
+      }
+
+      console.log(`MatchDetailPage Client: Fetching football fixtureId: ${numericMatchId}`);
       setLoading(true);
       setError(null);
-      fetchFixtureDetails(Number(matchId))
+      fetchFixtureDetails(numericMatchId)
         .then(apiFixture => {
           if (apiFixture) {
-            console.log(`MatchDetailPage Client: Found API fixture ${matchId}. Transformed.`);
+            console.log(`MatchDetailPage Client: Found API fixture ${numericMatchId}. Transformed.`);
             setMatch(apiFixture);
           } else {
-            console.warn(`MatchDetailPage Client: API fixture ${matchId} not found.`);
-            setError(`Match with ID ${matchId} not found. The match might no longer be available or the API did not return data for it.`);
+            console.warn(`MatchDetailPage Client: API fixture ${numericMatchId} not found.`);
+            setError(`Match with ID ${numericMatchId} not found. The match might no longer be available or the API did not return data for it.`);
           }
         })
         .catch(err => {
-          console.error(`MatchDetailPage Client: Error fetching fixture ${matchId}:`, err);
+          console.error(`MatchDetailPage Client: Error fetching fixture ${numericMatchId}:`, err);
           setError(err.message || `Failed to fetch match details for football.`);
         })
         .finally(() => {
