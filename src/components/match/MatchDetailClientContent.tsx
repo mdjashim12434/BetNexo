@@ -260,7 +260,7 @@ export default function MatchDetailClientContent({ initialMatch }: MatchDetailCl
                       <p className="text-sm font-medium text-muted-foreground">Match Winner:</p>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-stretch">
                         {getOutcomeButton('teamA', match.homeTeam.name, match.odds.home)}
-                        {match.odds.draw && getOutcomeButton('draw', 'Draw', match.odds.draw)}
+                        {getOutcomeButton('draw', 'Draw', match.odds.draw)}
                         {getOutcomeButton('teamB', match.awayTeam.name, match.odds.away)}
                       </div>
                     </div>
