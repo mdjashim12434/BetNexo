@@ -180,6 +180,18 @@ const processV3FixtureData = (fixtures: SportmonksV3Fixture[], sportKey: 'footba
 
 // --- Public Fetching Functions ---
 
+export async function fetchAllTodaysFootballFixtures(): Promise<ProcessedFixture[]> {
+    try {
+        const url = '/api/football/todays-fixtures';
+        const response = await fetch(`${API_BASE_URL}${url}`, { cache: 'no-store' });
+        const rawData: SportmonksV3FixturesResponse = await handleApiResponse(response);
+        return processV3FixtureData(rawData?.data || [], 'football');
+    } catch (error) {
+        console.error('Error in fetchAllTodaysFootballFixtures service:', error);
+        throw error;
+    }
+}
+
 export async function fetchLiveFootballFixtures(leagueId?: number): Promise<ProcessedFixture[]> {
   try {
     const url = leagueId ? `/api/football/live-scores?leagueId=${leagueId}` : '/api/football/live-scores';
