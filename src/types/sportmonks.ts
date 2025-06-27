@@ -1,5 +1,22 @@
 
-// --- Common Types for V3 API ---
+// --- Common Types ---
+export interface SportmonksState {
+    id: number;
+    state: string;
+    name: string;
+    short_name: string;
+    developer_name: string;
+}
+
+export interface SportmonksPagination {
+    count?: number;
+    per_page?: number;
+    current_page?: number;
+    next_page?: string | null;
+    has_more: boolean;
+}
+
+// --- V3 Football Specific Types ---
 export interface SportmonksOdd {
     id: number;
     fixture_id: number;
@@ -15,129 +32,75 @@ export interface SportmonksOdd {
     bookmaker?: { id: number; name: string; };
 }
 
-export interface SportmonksState {
-    id: number;
-    state: string; // Using string for flexibility with API states
-    name: string;
-    short_name: string;
-    developer_name: string;
-}
-
-export interface SportmonksParticipant {
+export interface SportmonksV3Participant {
     id: number;
     name: string;
     image_path: string;
     meta: { location: 'home' | 'away'; };
 }
 
-export interface SportmonksLeague {
+export interface SportmonksV3League {
     id: number;
     name: string;
     code?: string;
     country?: { id: number; name: string; };
 }
 
-export interface SportmonksVenue {
+export interface SportmonksV3Venue {
     id: number;
     name: string;
     city_name?: string;
-    city?: string; // Fallback
-    country_name?: string;
+    city?: string;
 }
 
-export interface SportmonksReferee {
+export interface SportmonksV3Referee {
     id: number;
     fullname: string;
-    type?: { name: string; };
 }
 
-export interface SportmonksPagination {
-    count?: number;
-    per_page?: number;
-    current_page?: number;
-    next_page?: string | null;
-    has_more: boolean;
-}
-
-export interface SportmonksComment {
+export interface SportmonksV3Comment {
     id: number;
-    fixture_id: number;
     comment: string;
     minute: number;
     extra_minute: number | null;
     is_goal: boolean;
 }
 
-// --- Sport-Specific V3 Types ---
-
-export interface SportmonksV3Run {
-    id: number;
-    fixture_id: number;
-    participant_id: number;
-    inning: number;
-    score: number;
-    wickets: number;
-    overs: number;
-}
-
 export interface FootballPeriod {
     id: number;
-    fixture_id: number;
-    type_id: number;
-    started: number;
-    ended: number;
-    counts_from: number;
     ticking: boolean;
-    minutes?: number; // Current minute in the period
+    minutes?: number;
 }
 
 export interface FootballScore {
     id: number;
-    fixture_id: number;
-    type_id: number;
     participant_id: number;
-    score: {
-        goals: number;
-        participant?: 'home' | 'away';
-    };
+    score: { goals: number; };
     description: string;
 }
 
 export interface FootballEvent {
     id: number;
     type_id: number;
-    type: {
-        id: number;
-        name: string;
-        code: string;
-    };
+    type: { id: number; name: string; code: string; };
     minute: number;
-    participant?: SportmonksParticipant;
 }
-
-// --- Main Fixture and Response Types (V3) ---
 
 export interface SportmonksV3Fixture {
     id: number;
     name: string;
     starting_at: string;
     league_id: number;
-    state?: SportmonksState; // Made optional for robustness
-    participants: SportmonksParticipant[];
+    state?: SportmonksState;
+    participants: SportmonksV3Participant[];
     odds?: SportmonksOdd[];
-    league?: SportmonksLeague;
-    comments?: SportmonksComment[];
-    venue?: SportmonksVenue;
-    referee?: SportmonksReferee;
-    officials?: { data: SportmonksReferee[] };
-    // Sport specific data
-    runs?: SportmonksV3Run[]; // Cricket
-    scores?: FootballScore[]; // Football
-    events?: FootballEvent[]; // Football
-    periods?: FootballPeriod[]; // Football
-    statistics?: any[];
-    sidelined?: any;
-    weatherReport?: any;
+    league?: SportmonksV3League;
+    comments?: SportmonksV3Comment[];
+    venue?: SportmonksV3Venue;
+    referee?: SportmonksV3Referee;
+    scores?: FootballScore[];
+    events?: FootballEvent[];
+    periods?: FootballPeriod[];
 }
 
 export interface SportmonksV3FixturesResponse {
@@ -149,8 +112,51 @@ export interface SportmonksSingleV3FixtureResponse {
     data: SportmonksV3Fixture;
 }
 
-// --- PROCESSED TYPES FOR UI COMPONENTS ---
+// --- V2 Cricket Specific Types ---
+export interface SportmonksV2Team {
+    id: number;
+    name: string;
+    code: string;
+    image_path: string;
+}
 
+export interface SportmonksV2Run {
+    fixture_id: number;
+    team_id: number;
+    inning: number;
+    score: number;
+    wickets: number;
+    overs: number;
+}
+
+export interface SportmonksV2Fixture {
+    id: number;
+    league_id: number;
+    starting_at: string;
+    type: string;
+    live: boolean;
+    status: string;
+    note: string;
+    localteam: SportmonksV2Team;
+    visitorteam: SportmonksV2Team;
+    league?: { data: { id: number; name: string; } };
+    venue?: { data: { id: number; name: string; city: string; } };
+    runs?: SportmonksV2Run[];
+    comments?: { data: any[] };
+    officials?: any;
+}
+
+export interface SportmonksV2FixturesResponse {
+    data: SportmonksV2Fixture[];
+    meta?: { pagination: any };
+}
+
+export interface SportmonksV2SingleFixtureResponse {
+    data: SportmonksV2Fixture;
+}
+
+
+// --- PROCESSED TYPES FOR UI COMPONENTS ---
 export interface ProcessedComment {
     id: number;
     comment: string;
@@ -159,7 +165,6 @@ export interface ProcessedComment {
     is_goal: boolean;
 }
 
-// The primary, unified, processed type for all matches (Football & Cricket)
 export interface ProcessedFixture {
     id: number;
     sportKey: 'football' | 'cricket';
@@ -168,53 +173,23 @@ export interface ProcessedFixture {
     state: SportmonksState;
     isLive: boolean;
     isFinished: boolean;
-    league: {
-        id: number;
-        name: string;
-        countryName: string;
-    };
-    homeTeam: {
-        id: number;
-        name: string;
-        image_path?: string;
-    };
-    awayTeam: {
-        id: number;
-        name: string;
-        image_path?: string;
-    };
+    league: { id: number; name: string; countryName: string; };
+    homeTeam: { id: number; name: string; image_path?: string; };
+    awayTeam: { id: number; name: string; image_path?: string; };
     odds: {
         home?: number;
         draw?: number;
         away?: number;
-        overUnder?: {
-            over?: number;
-            under?: number;
-            point?: number;
-        };
-        btts?: {
-            yes?: number;
-            no?: number;
-        };
-        dnb?: {
-            home?: number;
-            away?: number;
-        };
-        dc?: {
-            homeOrDraw?: number;
-            awayOrDraw?: number;
-            homeOrAway?: number;
-        };
+        overUnder?: { over?: number; under?: number; point?: number; };
+        btts?: { yes?: number; no?: number; };
+        dnb?: { home?: number; away?: number; };
+        dc?: { homeOrDraw?: number; awayOrDraw?: number; homeOrAway?: number; };
     };
     comments?: ProcessedComment[];
     venue?: { name: string; city: string; };
     referee?: { name: string; };
-    // Live score data
     homeScore?: string | number;
     awayScore?: string | number;
     minute?: number;
-    latestEvent?: {
-        text: string;
-        isGoal: boolean;
-    };
+    latestEvent?: { text: string; isGoal: boolean; };
 }

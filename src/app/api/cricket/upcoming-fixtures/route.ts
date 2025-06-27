@@ -1,17 +1,9 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
 
-// Updated to V3 endpoint
-const SPORTMONKS_CRICKET_API_URL = "https://api.sportmonks.com/v3/cricket";
+// Updated to V2 endpoint as requested by user for stability
+const SPORTMONKS_CRICKET_API_URL = "https://api.sportmonks.com/v2.0/cricket";
 const apiKey = process.env.SPORTMONKS_API_KEY;
-
-// Helper to format date to YYYY-MM-DD
-const formatDate = (date: Date): string => {
-  const year = date.getFullYear();
-  const month = (date.getMonth() + 1).toString().padStart(2, '0');
-  const day = date.getDate().toString().padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
 
 export async function GET(request: NextRequest) {
   if (!apiKey) {
@@ -22,20 +14,14 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const leagueId = searchParams.get('leagueId');
 
-  const today = new Date();
-  const futureDate = new Date();
-  futureDate.setDate(today.getDate() + 10);
-    
-  const startDate = formatDate(today);
-  const endDate = formatDate(futureDate);
-
-  // V3 includes, semicolon-separated. Added odds.bookmaker.
-  const includes = "participants;runs;league.country;state;odds.bookmaker;venue;stage";
+  // V2 includes, comma-separated. No odds needed for upcoming.
+  const includes = "localteam,visitorteam,league,stage,venue";
   
-  let baseUrl = `${SPORTMONKS_CRICKET_API_URL}/fixtures/between/${startDate}/${endDate}?api_token=${apiKey}&include=${includes}&tz=UTC`;
+  // Using filter by status=NS (Not Started) and sorting by date for upcoming matches
+  let baseUrl = `${SPORTMONKS_CRICKET_API_URL}/fixtures?api_token=${apiKey}&include=${includes}&tz=UTC&filter[status]=NS&sort=starting_at`;
 
   if (leagueId) {
-    baseUrl += `&leagues=${leagueId}`; // V3 uses 'leagues' parameter
+    baseUrl += `&leagues=${leagueId}`;
   }
 
   try {
@@ -51,7 +37,7 @@ export async function GET(request: NextRequest) {
 
         if (!apiResponse.ok) {
             const errorData = await apiResponse.json().catch(() => ({}));
-            console.error("Error from Sportmonks Cricket API (upcoming v3):", apiResponse.status, errorData);
+            console.error("Error from Sportmonks Cricket API (upcoming v2):", apiResponse.status, errorData);
             const message = errorData.message || `Failed to fetch upcoming cricket data. Status: ${apiResponse.status}`;
             return NextResponse.json({ error: message }, { status: apiResponse.status });
         }
@@ -61,8 +47,8 @@ export async function GET(request: NextRequest) {
             allFixtures = allFixtures.concat(data.data);
         }
 
-        // V3 pagination check
-        if (data.pagination && data.pagination.has_more) {
+        // V2 pagination check
+        if (data.meta && data.meta.pagination && data.meta.pagination.current_page < data.meta.pagination.total_pages) {
             currentPage++;
         } else {
             hasMore = false;
@@ -72,7 +58,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ data: allFixtures });
 
   } catch (error: any) {
-    console.error("Error proxying request to Sportmonks Cricket API (upcoming v3):", error);
+    console.error("Error proxying request to Sportmonks Cricket API (upcoming v2):", error);
     return NextResponse.json({ error: 'An internal server error occurred while contacting the proxy API.' }, { status: 500 });
   }
 }

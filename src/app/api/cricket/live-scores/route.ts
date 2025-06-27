@@ -1,20 +1,10 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
 
-// Updated to V3 endpoint
-const SPORTMONKS_CRICKET_API_URL = "https://api.sportmonks.com/v3/cricket";
+// Updated to V2 endpoint as requested by user for stability
+const SPORTMONKS_CRICKET_API_URL = "https://api.sportmonks.com/v2.0/cricket";
 const apiKey = process.env.SPORTMONKS_API_KEY;
 
-// Helper to format date to YYYY-MM-DD
-const getTodayDateString = (): string => {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = (today.getMonth() + 1).toString().padStart(2, '0');
-  const day = today.getDate().toString().padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
-
-// This route now fetches all fixtures for TODAY to reliably find live matches using V3 API.
 export async function GET(request: NextRequest) {
   if (!apiKey) {
     console.error("SPORTMONKS_API_KEY is not set in environment variables.");
@@ -23,57 +13,38 @@ export async function GET(request: NextRequest) {
   
   const { searchParams } = new URL(request.url);
   const leagueId = searchParams.get('leagueId');
-  const todayDate = getTodayDateString();
 
-  // V3 includes, semicolon-separated. Added 'odds.bookmaker' to utilize Odds Plan.
-  const includes = "participants;runs;league.country;state;venue;stage;odds.bookmaker";
-  let baseUrl = `${SPORTMONKS_CRICKET_API_URL}/fixtures/date/${todayDate}?api_token=${apiKey}&include=${includes}&tz=UTC`;
+  // V2 includes, comma-separated
+  const includes = "localteam,visitorteam,runs,league,stage";
+  let baseUrl = `${SPORTMONKS_CRICKET_API_URL}/livescores?api_token=${apiKey}&include=${includes}&tz=UTC`;
 
   if (leagueId) {
-    baseUrl += `&leagues=${leagueId}`; // V3 uses 'leagues' parameter
+    baseUrl += `&leagues=${leagueId}`; // V2 also uses 'leagues' parameter
   }
 
   try {
-    let allFixtures: any[] = [];
-    let currentPage = 1;
-    let hasMore = true;
+    const apiResponse = await fetch(baseUrl, {
+        cache: 'no-store' // Always fetch fresh data
+    });
 
-    while(hasMore) {
-        const urlWithPage = `${baseUrl}&page=${currentPage}`;
-        const apiResponse = await fetch(urlWithPage, {
-            cache: 'no-store' // Always fetch fresh data
-        });
-
-        if (!apiResponse.ok) {
-            const errorData = await apiResponse.json().catch(() => ({}));
-            console.error("Error from Sportmonks Cricket Live API (v3) for today's fixtures:", apiResponse.status, errorData);
-            let errorMessage = `Failed to fetch live cricket scores. Status: ${apiResponse.status}`;
-            if (apiResponse.status === 403 || (errorData.message && errorData.message.includes("plan"))) {
-                errorMessage = `Forbidden: Your current API plan does not allow access to this data.`;
-            } else if (errorData && errorData.message) {
-                errorMessage += ` - Message: ${errorData.message}`;
-            }
-            return NextResponse.json({ error: errorMessage }, { status: apiResponse.status });
+    if (!apiResponse.ok) {
+        const errorData = await apiResponse.json().catch(() => ({}));
+        console.error("Error from Sportmonks Cricket Live API (v2):", apiResponse.status, errorData);
+        let errorMessage = `Failed to fetch live cricket scores. Status: ${apiResponse.status}`;
+        if (apiResponse.status === 403 || (errorData.message && errorData.message.includes("plan"))) {
+            errorMessage = `Forbidden: Your current API plan does not allow access to this data.`;
+        } else if (errorData && errorData.message) {
+            errorMessage += ` - Message: ${errorData.message}`;
         }
-
-        const data = await apiResponse.json();
-        if (data.data && data.data.length > 0) {
-            allFixtures = allFixtures.concat(data.data);
-        }
-        
-        // V3 pagination check
-        if (data.pagination && data.pagination.has_more) {
-            currentPage++;
-        } else {
-            hasMore = false;
-        }
+        return NextResponse.json({ error: errorMessage }, { status: apiResponse.status });
     }
-    
-    // The data contains all of today's fixtures. Filtering happens in the service layer.
-    return NextResponse.json({ data: allFixtures });
+
+    const data = await apiResponse.json();
+    // V2 livescores endpoint is reliable for live matches.
+    return NextResponse.json(data);
 
   } catch (error: any) {
-    console.error("Error fetching from Sportmonks Cricket Live API (v3) via proxy:", error);
+    console.error("Error fetching from Sportmonks Cricket Live API (v2) via proxy:", error);
     return NextResponse.json({ error: 'An internal server error occurred.' }, { status: 500 });
   }
 }

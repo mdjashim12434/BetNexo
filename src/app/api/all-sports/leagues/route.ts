@@ -10,9 +10,12 @@ export async function GET() {
     });
   }
 
+  // Uses separate, version-specific API routes
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:9002';
+
   const [footballResult, cricketResult] = await Promise.allSettled([
-    fetch(`https://api.sportmonks.com/v3/football/leagues?api_token=${apiKey}`, { next: { revalidate: 3600 } }),
-    fetch(`https://api.sportmonks.com/v3/cricket/leagues?api_token=${apiKey}`, { next: { revalidate: 3600 } })
+    fetch(`${apiBaseUrl}/api/football/leagues`, { next: { revalidate: 3600 } }),
+    fetch(`${apiBaseUrl}/api/cricket/leagues`, { next: { revalidate: 3600 } })
   ]);
 
   let footballLeagues = [];
@@ -21,27 +24,19 @@ export async function GET() {
   if (footballResult.status === 'fulfilled' && footballResult.value.ok) {
     const footballData = await footballResult.value.json();
     footballLeagues = footballData.data ?? [];
-  } else if (footballResult.status === 'fulfilled') {
-    // API returned non-ok status
-    console.error(`Football leagues API failed with status ${footballResult.value.status}:`, await footballResult.value.text());
   } else {
-    // Fetch itself failed
-    console.error("Fetching football leagues failed:", footballResult.reason);
+    const reason = footballResult.status === 'rejected' ? footballResult.reason : `Status: ${footballResult.value.status}`;
+    console.error("Fetching football leagues failed:", reason);
   }
 
   if (cricketResult.status === 'fulfilled' && cricketResult.value.ok) {
     const cricketData = await cricketResult.value.json();
     cricketLeagues = cricketData.data ?? [];
-  } else if (cricketResult.status === 'fulfilled') {
-    // API returned non-ok status
-    console.error(`Cricket leagues API failed with status ${cricketResult.value.status}:`, await cricketResult.value.text());
   } else {
-    // Fetch itself failed
-    console.error("Fetching cricket leagues failed:", cricketResult.reason);
+     const reason = cricketResult.status === 'rejected' ? cricketResult.reason : `Status: ${cricketResult.value.status}`;
+    console.error("Fetching cricket leagues failed:", reason);
   }
   
-  // If both APIs failed to return any data, we might still want to inform the client.
-  // However, for maximum resilience, we return what we have. An empty list will be handled by the UI.
   if (footballLeagues.length === 0 && cricketLeagues.length === 0) {
       console.warn("Both football and cricket league fetches failed or returned no data.");
   }
