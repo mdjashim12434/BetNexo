@@ -9,6 +9,29 @@ import type {
     FootballEvent,
 } from '@/types/sportmonks';
 
+// --- NEW: The Odds API Types ---
+interface TheOddsApiBookmaker {
+  key: string;
+  title: string;
+  markets: {
+    key: 'h2h' | 'totals';
+    outcomes: {
+      name: string; // Team name or "Draw", "Over", "Under"
+      price: number;
+      point?: number;
+    }[];
+  }[];
+}
+interface TheOddsApiOdd {
+  id: string;
+  sport_key: string;
+  commence_time: string;
+  home_team: string;
+  away_team: string;
+  bookmakers: TheOddsApiBookmaker[];
+}
+
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:9002';
 
 // --- Centralized State Definitions ---
@@ -42,9 +65,26 @@ const parseSportmonksDateStringToISO = (dateString: string): string => {
 };
 
 
-// --- V3 Football Data Processor ---
-const processV3FootballFixtures = (fixtures: SportmonksV3Fixture[]): ProcessedFixture[] => {
+// --- NEW: Function to fetch odds from The Odds API via our proxy ---
+async function fetchTheOddsApiData(): Promise<TheOddsApiOdd[]> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/football/odds`, { cache: 'no-store' });
+    // Using no-store because odds change frequently
+    return handleApiResponse(response);
+  } catch (error) {
+    console.error("Failed to fetch data from The Odds API proxy:", error);
+    // Return empty array on failure so it doesn't break fixture display
+    return [];
+  }
+}
+
+
+// --- MODIFIED: V3 Football Data Processor to merge odds ---
+const processV3FootballFixtures = (fixtures: SportmonksV3Fixture[], theOddsApiData: TheOddsApiOdd[] = []): ProcessedFixture[] => {
     if (!Array.isArray(fixtures)) return [];
+
+    const normalizeTeamName = (name: string) => (name || '').toLowerCase().replace(/ fc$| afc$| sc$| cf$/, '').trim();
+
     return fixtures.map(fixture => {
         const homeTeam = fixture.participants?.find(p => p.meta.location === 'home');
         const awayTeam = fixture.participants?.find(p => p.meta.location === 'away');
@@ -52,14 +92,6 @@ const processV3FootballFixtures = (fixtures: SportmonksV3Fixture[]): ProcessedFi
         const isLive = LIVE_STATES_V3.includes(state.state);
         const isFinished = FINISHED_STATES_V3.includes(state.state);
         const comments = fixture.comments?.map(c => ({ ...c })).sort((a, b) => b.minute - a.minute) || [];
-
-        const getBestOdd = (marketId: number, originalLabel: string, point?: string): SportmonksOdd | undefined => {
-            let marketOdds = fixture.odds?.filter(o => o.market_id === marketId && o.original_label === originalLabel) || [];
-            if (point) marketOdds = marketOdds.filter(o => o.label === point);
-            return marketOdds.length > 0 ? marketOdds.reduce((best, current) => parseFloat(current.value) > parseFloat(best.value) ? current : best) : undefined;
-        };
-
-        const overUnderPoint = fixture.odds?.find(o => o.market_id === 10)?.label;
         const homeScore = fixture.scores?.find(s => s.participant_id === homeTeam?.id && s.description === 'CURRENT')?.score.goals || 0;
         const awayScore = fixture.scores?.find(s => s.participant_id === awayTeam?.id && s.description === 'CURRENT')?.score.goals || 0;
         const minute = fixture.periods?.find(p => p.ticking)?.minutes;
@@ -72,6 +104,52 @@ const processV3FootballFixtures = (fixtures: SportmonksV3Fixture[]): ProcessedFi
             if (isLive && state.name !== 'Live') return { text: state.name, isGoal: false };
             return undefined;
         };
+        
+        const fixtureTime = new Date(parseSportmonksDateStringToISO(fixture.starting_at));
+
+        // Find a matching odd from The Odds API data
+        const matchedOdd = theOddsApiData.find(odd => {
+          const oddsTime = new Date(odd.commence_time);
+          const timeDiff = Math.abs(fixtureTime.getTime() - oddsTime.getTime());
+          
+          const homeTeamName = homeTeam?.name || '';
+          const awayTeamName = awayTeam?.name || '';
+
+          const namesMatch = 
+            normalizeTeamName(odd.home_team) === normalizeTeamName(homeTeamName) &&
+            normalizeTeamName(odd.away_team) === normalizeTeamName(awayTeamName);
+          
+          // Match if names are similar and time is within a 2-hour window
+          return namesMatch && timeDiff < 2 * 60 * 60 * 1000;
+        });
+        
+        let finalOdds: ProcessedFixture['odds'] = {};
+
+        // If a match from The Odds API is found, populate odds from it
+        if (matchedOdd) {
+          const bookmaker = matchedOdd.bookmakers?.[0]; // Take the first available bookmaker
+          if (bookmaker) {
+            const h2hMarket = bookmaker.markets.find(m => m.key === 'h2h');
+            if (h2hMarket) {
+              finalOdds.home = h2hMarket.outcomes.find(o => normalizeTeamName(o.name) === normalizeTeamName(matchedOdd.home_team))?.price;
+              finalOdds.away = h2hMarket.outcomes.find(o => normalizeTeamName(o.name) === normalizeTeamName(matchedOdd.away_team))?.price;
+              finalOdds.draw = h2hMarket.outcomes.find(o => o.name === 'Draw')?.price;
+            }
+
+            const totalsMarket = bookmaker.markets.find(m => m.key === 'totals');
+            if (totalsMarket) {
+              const over = totalsMarket.outcomes.find(o => o.name === 'Over');
+              const under = totalsMarket.outcomes.find(o => o.name === 'Under');
+              if (over && under) {
+                  finalOdds.overUnder = {
+                      over: over.price,
+                      under: under.price,
+                      point: over.point
+                  }
+              }
+            }
+          }
+        }
 
         return {
             id: fixture.id, sportKey: 'football', name: fixture.name, startingAt: parseSportmonksDateStringToISO(fixture.starting_at),
@@ -79,15 +157,7 @@ const processV3FootballFixtures = (fixtures: SportmonksV3Fixture[]): ProcessedFi
             league: { id: fixture.league_id, name: fixture.league?.name || 'N/A', countryName: fixture.league?.country?.name || 'N/A' },
             homeTeam: { id: homeTeam?.id || 0, name: homeTeam?.name || 'Home', image_path: homeTeam?.image_path },
             awayTeam: { id: awayTeam?.id || 0, name: awayTeam?.name || 'Away', image_path: awayTeam?.image_path },
-            odds: {
-                home: parseFloat(getBestOdd(1, '1')?.value || '0'),
-                draw: parseFloat(getBestOdd(1, 'Draw')?.value || '0'),
-                away: parseFloat(getBestOdd(1, '2')?.value || '0'),
-                overUnder: { over: parseFloat(getBestOdd(10, 'Over', overUnderPoint)?.value || '0'), under: parseFloat(getBestOdd(10, 'Under', overUnderPoint)?.value || '0'), point: overUnderPoint ? parseFloat(overUnderPoint) : undefined },
-                btts: { yes: parseFloat(getBestOdd(12, 'Yes')?.value || '0'), no: parseFloat(getBestOdd(12, 'No')?.value || '0') },
-                dnb: { home: parseFloat(getBestOdd(8, '1')?.value || '0'), away: parseFloat(getBestOdd(8, '2')?.value || '0') },
-                dc: { homeOrDraw: parseFloat(getBestOdd(9, '1X')?.value || '0'), awayOrDraw: parseFloat(getBestOdd(9, 'X2')?.value || '0'), homeOrAway: parseFloat(getBestOdd(9, '12')?.value || '0') }
-            },
+            odds: finalOdds,
             comments,
             venue: fixture.venue ? { name: fixture.venue.name, city: fixture.venue.city_name || fixture.venue.city || '' } : undefined,
             referee: fixture.referee ? { name: fixture.referee.fullname } : undefined,
@@ -104,9 +174,19 @@ export async function fetchLiveFootballFixtures(leagueId?: number, firstPageOnly
      if (firstPageOnly) {
         url += url.includes('?') ? '&firstPageOnly=true' : '?firstPageOnly=true';
     }
-    const response = await fetch(`${API_BASE_URL}${url}`, { cache: 'no-store' });
-    const data: SportmonksV3FixturesResponse = await handleApiResponse(response);
-    return processV3FootballFixtures(data?.data || []);
+    
+    const [fixtureResult, oddsResult] = await Promise.allSettled([
+      fetch(`${API_BASE_URL}${url}`, { cache: 'no-store' }),
+      fetchTheOddsApiData()
+    ]);
+
+    if (fixtureResult.status === 'rejected') {
+        throw fixtureResult.reason;
+    }
+
+    const oddsData = oddsResult.status === 'fulfilled' ? oddsResult.value : [];
+    const data: SportmonksV3FixturesResponse = await handleApiResponse(fixtureResult.value);
+    return processV3FootballFixtures(data?.data || [], oddsData);
 }
 
 export async function fetchUpcomingFootballFixtures(leagueId?: number, firstPageOnly = false): Promise<ProcessedFixture[]> {
@@ -114,16 +194,35 @@ export async function fetchUpcomingFootballFixtures(leagueId?: number, firstPage
     if (firstPageOnly) {
         url += url.includes('?') ? '&firstPageOnly=true' : '?firstPageOnly=true';
     }
-    const response = await fetch(`${API_BASE_URL}${url}`, { cache: 'no-store' });
-    const data: SportmonksV3FixturesResponse = await handleApiResponse(response);
-    const processed = processV3FootballFixtures(data?.data || []);
+    
+    const [fixtureResult, oddsResult] = await Promise.allSettled([
+      fetch(`${API_BASE_URL}${url}`, { cache: 'no-store' }),
+      fetchTheOddsApiData()
+    ]);
+
+    if (fixtureResult.status === 'rejected') {
+        throw fixtureResult.reason;
+    }
+    
+    const oddsData = oddsResult.status === 'fulfilled' ? oddsResult.value : [];
+    const data: SportmonksV3FixturesResponse = await handleApiResponse(fixtureResult.value);
+    const processed = processV3FootballFixtures(data?.data || [], oddsData);
     
     // Filter out any matches that are not truly upcoming.
     return processed.filter(fixture => !fixture.isLive && !fixture.isFinished);
 }
 
 export async function fetchFixtureDetails(fixtureId: number): Promise<ProcessedFixture> {
-    const response = await fetch(`${API_BASE_URL}/api/football/fixtures?fixtureId=${fixtureId}`, { cache: 'no-store' });
-    const data: SportmonksSingleV3FixtureResponse = await handleApiResponse(response);
-    return processV3FootballFixtures([data.data])[0];
+    const [fixtureResult, oddsResult] = await Promise.allSettled([
+        fetch(`${API_BASE_URL}/api/football/fixtures?fixtureId=${fixtureId}`, { cache: 'no-store' }),
+        fetchTheOddsApiData()
+    ]);
+    
+    if (fixtureResult.status === 'rejected') {
+        throw fixtureResult.reason;
+    }
+    
+    const oddsData = oddsResult.status === 'fulfilled' ? oddsResult.value : [];
+    const data: SportmonksSingleV3FixtureResponse = await handleApiResponse(fixtureResult.value);
+    return processV3FootballFixtures([data.data], oddsData)[0];
 }
