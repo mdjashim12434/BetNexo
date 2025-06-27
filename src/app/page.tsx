@@ -1,6 +1,5 @@
 
 import {
-  fetchLiveFootballFixtures,
   fetchAllTodaysFootballFixtures,
 } from '@/services/sportmonksAPI';
 import type { ProcessedFixture } from '@/types/sportmonks';
@@ -8,32 +7,18 @@ import HomeClientPage from './HomeClientPage';
 
 async function getHomePageMatches() {
   try {
-    // Fetch live matches and all of today's matches in parallel for efficiency.
-    const [liveMatches, allTodaysMatches] = await Promise.all([
-      fetchLiveFootballFixtures().catch(e => {
-        console.error("Error fetching live football matches:", e.message);
+    // SINGLE, RELIABLE CALL: Fetch all of today's matches.
+    // This single source of truth is more reliable than merging /livescores and another endpoint.
+    const allTodaysMatches = await fetchAllTodaysFootballFixtures().catch(e => {
+        console.error("Error fetching today's football matches for home page:", e.message);
         return [];
-      }),
-      fetchAllTodaysFootballFixtures().catch(e => {
-        console.error("Error fetching today's football matches:", e.message);
-        return [];
-      })
-    ]);
+      });
 
-    // Combine all matches into one list. Put live matches first to give them priority.
-    const allMatchesCombined = [...liveMatches, ...allTodaysMatches];
+    // The processing in `fetchAllTodaysFootballFixtures` already sets `isLive`, `isFinished` etc.
+    // So we just need to filter and sort the results from this single, authoritative list.
 
-    // Use a Map to de-duplicate, ensuring we only keep the first occurrence of each match ID.
-    // Since liveMatches are first in the array, they will be the ones kept if duplicates exist.
-    const uniqueMatchesMap = new Map<number, ProcessedFixture>();
-    allMatchesCombined.forEach(match => {
-        if (!uniqueMatchesMap.has(match.id)) {
-            uniqueMatchesMap.set(match.id, match);
-        }
-    });
-
-    // Filter out finished matches from the unique list
-    const activeMatches = Array.from(uniqueMatchesMap.values()).filter(match => !match.isFinished);
+    // Filter out finished matches
+    const activeMatches = allTodaysMatches.filter(match => !match.isFinished);
     
     // Sort the list to ensure live matches are always first, followed by upcoming matches sorted by time.
     activeMatches.sort((a, b) => {
@@ -46,7 +31,7 @@ async function getHomePageMatches() {
     return { matches: activeMatches.slice(0, 20), error: null };
     
   } catch (error) {
-    console.error('Error fetching matches for home page:', error);
+    console.error('Error in getHomePageMatches:', error);
     return {
       matches: [],
       error:
