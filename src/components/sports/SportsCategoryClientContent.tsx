@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import MatchCard from '@/components/sports/MatchCard';
@@ -15,6 +15,12 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import {
+  fetchUpcomingFootballFixtures,
+  fetchUpcomingCricketFixtures,
+  fetchLiveFootballFixtures,
+  fetchLiveCricketFixtures,
+} from '@/services/sportmonksAPI';
 
 // Interfaces for leagues
 interface ApiLeague {
@@ -29,42 +35,37 @@ interface CombinedLeague {
 }
 
 interface SportsCategoryClientContentProps {
-  initialMatches: ProcessedFixture[];
   categorySlug: string;
   categoryName: string;
-  error?: string | null;
 }
 
 export default function SportsCategoryClientContent({
-  initialMatches,
   categorySlug,
   categoryName,
-  error,
 }: SportsCategoryClientContentProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loadingAuth } = useAuth();
+  const { toast } = useToast();
+
+  const [matches, setMatches] = useState<ProcessedFixture[]>([]);
+  const [loadingMatches, setLoadingMatches] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  
   const [searchTerm, setSearchTerm] = useState('');
   
   // State for all-sports leagues
   const [leagues, setLeagues] = useState<CombinedLeague[]>([]);
   const [loadingLeagues, setLoadingLeagues] = useState(false);
-  const { toast } = useToast();
 
   const showTabs = categorySlug === 'football' || categorySlug === 'cricket';
   
-  const liveCount = useMemo(() => initialMatches.filter(m => m.state?.state === 'INPLAY' || m.state?.state === 'Live').length, [initialMatches]);
-  const upcomingCount = useMemo(() => initialMatches.filter(m => m.state?.state !== 'INPLAY' && m.state?.state !== 'Live' && m.state?.state !== 'Finished' && m.state?.state !== 'FT').length, [initialMatches]);
+  const liveCount = useMemo(() => matches.filter(m => m.state?.state === 'INPLAY' || m.state?.state === 'Live').length, [matches]);
+  const upcomingCount = useMemo(() => matches.filter(m => m.state?.state !== 'INPLAY' && m.state?.state !== 'Live' && m.state?.state !== 'Finished' && m.state?.state !== 'FT').length, [matches]);
 
   const [activeTab, setActiveTab] = useState('all');
 
   const leagueId = searchParams.get('leagueId');
-  const displayTitle = useMemo(() => {
-    if (leagueId && initialMatches.length > 0) {
-      return initialMatches[0].league.name;
-    }
-    return categoryName;
-  }, [leagueId, initialMatches, categoryName]);
 
   // Fetch leagues if on the all-sports page
   useEffect(() => {
@@ -99,6 +100,84 @@ export default function SportsCategoryClientContent({
       fetchLeagues();
     }
   }, [categorySlug, toast]);
+
+  const fetchMatchesData = useCallback(async () => {
+    if (categorySlug === 'all-sports') {
+      setLoadingMatches(false);
+      return;
+    }
+
+    setLoadingMatches(true);
+    setFetchError(null);
+    
+    let matchesForCategory: ProcessedFixture[] = [];
+    const errorMessages: string[] = [];
+    const leagueIdNum = leagueId ? Number(leagueId) : undefined;
+
+    const handleFetchError = (sport: string, type: string, e: any) => {
+        const message = e.message || `Unknown error fetching ${type} ${sport} fixtures.`;
+        console.error(`Failed to fetch ${type} ${sport} fixtures:`, message);
+        errorMessages.push(`Could not load ${type} ${sport} matches.`);
+        return [];
+    };
+
+    try {
+        if (categorySlug === 'live') {
+            const [footballMatches] = await Promise.all([
+                fetchLiveFootballFixtures(leagueIdNum).catch((e) => handleFetchError('football', 'live', e)),
+            ]);
+            matchesForCategory = [...footballMatches];
+        } else if (categorySlug === 'football') {
+            const [liveMatches, upcomingMatches] = await Promise.all([
+                fetchLiveFootballFixtures(leagueIdNum).catch((e) => handleFetchError('football', 'live', e)),
+                fetchUpcomingFootballFixtures(leagueIdNum).catch((e) => handleFetchError('football', 'upcoming', e)),
+            ]);
+            matchesForCategory = [...liveMatches, ...upcomingMatches];
+        } else if (categorySlug === 'cricket') {
+            const [upcomingMatches] = await Promise.all([
+                fetchUpcomingCricketFixtures(leagueIdNum).catch((e) => handleFetchError('cricket', 'upcoming', e)),
+            ]);
+            matchesForCategory = [...upcomingMatches];
+        } else if (categorySlug === 'upcoming') {
+            const [footballMatches, cricketMatches] = await Promise.all([
+                fetchUpcomingFootballFixtures(leagueIdNum).catch((e) => handleFetchError('football', 'upcoming', e)),
+                fetchUpcomingCricketFixtures(leagueIdNum).catch((e) => handleFetchError('cricket', 'upcoming', e)),
+            ]);
+            matchesForCategory = [...footballMatches, ...cricketMatches];
+        }
+
+        if (errorMessages.length > 0) {
+            setFetchError(errorMessages.join('\n'));
+        }
+
+        matchesForCategory.sort((a, b) => {
+            const aIsLive = a.state?.state === 'INPLAY' || a.state?.state === 'Live';
+            const bIsLive = b.state?.state === 'INPLAY' || b.state?.state === 'Live';
+            if (aIsLive && !bIsLive) return -1;
+            if (!aIsLive && bIsLive) return 1;
+            return new Date(a.startingAt).getTime() - new Date(b.startingAt).getTime();
+        });
+
+        setMatches(matchesForCategory);
+
+    } catch (error: any) {
+        console.error(`A top-level error occurred while fetching fixtures for ${categorySlug}:`, error);
+        setFetchError(error.message || `An unknown error occurred while fetching matches for ${categorySlug}.`);
+    } finally {
+        setLoadingMatches(false);
+    }
+  }, [categorySlug, leagueId]);
+
+  useEffect(() => {
+    fetchMatchesData();
+  }, [fetchMatchesData]);
+  
+  const displayTitle = useMemo(() => {
+    if (leagueId && matches.length > 0) {
+      return matches[0].league.name;
+    }
+    return categoryName;
+  }, [leagueId, matches, categoryName]);
   
   // Filtered leagues for search
   const filteredLeagues = useMemo(() => {
@@ -109,24 +188,24 @@ export default function SportsCategoryClientContent({
   }, [leagues, searchTerm]);
 
   const filteredMatches = useMemo(() => {
-    let matches = initialMatches;
+    let currentMatches = matches;
 
     if (showTabs) {
       if (activeTab === 'live') {
-        matches = matches.filter(m => m.state?.state === 'INPLAY' || m.state?.state === 'Live');
+        currentMatches = currentMatches.filter(m => m.state?.state === 'INPLAY' || m.state?.state === 'Live');
       } else if (activeTab === 'upcoming') {
-        matches = matches.filter(m => m.state?.state !== 'INPLAY' && m.state?.state !== 'Live' && m.state?.state !== 'Finished' && m.state?.state !== 'FT');
+        currentMatches = currentMatches.filter(m => m.state?.state !== 'INPLAY' && m.state?.state !== 'Live' && m.state?.state !== 'Finished' && m.state?.state !== 'FT');
       }
     }
     
     if (searchTerm) {
-      return matches.filter(match =>
+      return currentMatches.filter(match =>
         match.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         match.league.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
-    return matches;
-  }, [initialMatches, searchTerm, showTabs, activeTab]);
+    return currentMatches;
+  }, [matches, searchTerm, showTabs, activeTab]);
 
   useEffect(() => {
     if (!loadingAuth && !user) {
@@ -208,6 +287,33 @@ export default function SportsCategoryClientContent({
     );
   }
 
+  // Loading state for match categories
+  if (loadingMatches) {
+     return (
+        <div className="space-y-6">
+            {sharedHeader}
+            {showTabs && (
+              <Tabs value={activeTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="all"><Skeleton className="h-4 w-20" /></TabsTrigger>
+                  <TabsTrigger value="live"><Skeleton className="h-4 w-20" /></TabsTrigger>
+                  <TabsTrigger value="upcoming"><Skeleton className="h-4 w-20" /></TabsTrigger>
+                </TabsList>
+              </Tabs>
+            )}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[...Array(6)].map((_, i) => (
+                    <Card key={i}>
+                        <CardHeader><Skeleton className="h-5 w-3/4" /><Skeleton className="h-4 w-1/2 mt-2" /></CardHeader>
+                        <CardContent><Skeleton className="h-10 w-full" /></CardContent>
+                        <CardFooter><Skeleton className="h-10 w-full" /></CardFooter>
+                    </Card>
+                ))}
+            </div>
+        </div>
+    );
+  }
+
   // Render matches for other categories
   return (
     <div className="space-y-6">
@@ -217,7 +323,7 @@ export default function SportsCategoryClientContent({
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="all">
-                  All <Badge variant="secondary" className="ml-2">{initialMatches.length}</Badge>
+                  All <Badge variant="secondary" className="ml-2">{matches.length}</Badge>
               </TabsTrigger>
               <TabsTrigger value="live" disabled={liveCount === 0}>
                   Live <Badge variant="destructive" className="ml-2 animate-pulse">{liveCount}</Badge>
@@ -229,22 +335,22 @@ export default function SportsCategoryClientContent({
         </Tabs>
       )}
 
-      {error && (
+      {fetchError && (
          <div className="text-center text-destructive py-10 my-4 bg-destructive/10 rounded-lg">
             <AlertTriangle className="mx-auto h-12 w-12 mb-4" />
             <p className="text-lg font-semibold">Failed to load matches</p>
-            <p className="text-sm mt-2 max-w-md mx-auto whitespace-pre-wrap">{error}</p>
+            <p className="text-sm mt-2 max-w-md mx-auto whitespace-pre-wrap">{fetchError}</p>
             <p className="text-xs mt-4 text-muted-foreground">This might be due to an issue with the API provider or an invalid API key.</p>
         </div>
       )}
 
-      {!error && filteredMatches.length > 0 ? (
+      {!fetchError && filteredMatches.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredMatches.map((match) => (
             <MatchCard key={`${match.sportKey}-${match.id}`} match={match} />
           ))}
         </div>
-      ) : !error && (
+      ) : !fetchError && (
         <div className="text-center text-muted-foreground py-10">
           <Frown className="mx-auto h-12 w-12 mb-4" />
           <p className="text-lg font-semibold">No Matches Found</p>
