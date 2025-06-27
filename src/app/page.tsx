@@ -2,36 +2,28 @@
 import {
   fetchLiveFootballFixtures,
   fetchUpcomingFootballFixtures,
-  fetchLiveCricketFixtures,
-  fetchUpcomingCricketFixtures,
 } from '@/services/sportmonksAPI';
 import type { ProcessedFixture } from '@/types/sportmonks';
 import HomeClientPage from './HomeClientPage';
 
 async function getHomePageMatches() {
   try {
-    // Fetch all categories of matches concurrently for better performance
+    // Fetch only football matches concurrently, as requested for focused debugging.
     const [
       liveFootball,
-      liveCricket,
       upcomingFootball,
-      upcomingCricket,
     ] = await Promise.all([
       fetchLiveFootballFixtures().catch(e => { console.error("Error fetching live football:", e.message); return []; }),
-      fetchLiveCricketFixtures().catch(e => { console.error("Error fetching live cricket:", e.message); return []; }),
       fetchUpcomingFootballFixtures().catch(e => { console.error("Error fetching upcoming football:", e.message); return []; }),
-      fetchUpcomingCricketFixtures().catch(e => { console.error("Error fetching upcoming cricket:", e.message); return []; }),
     ]);
 
-    // Use a Map to store unique matches by ID.
+    // Use a Map to store unique matches by ID to ensure live data overwrites upcoming data.
     const uniqueMatches = new Map<number, ProcessedFixture>();
 
     // Combine all matches, with upcoming matches first so that live data can overwrite them.
     const allFetchedMatches = [
       ...upcomingFootball,
-      ...upcomingCricket,
       ...liveFootball,
-      ...liveCricket,
     ];
 
     // Populate the map. If a key (match.id) already exists, its value will be overwritten by the later entry.
