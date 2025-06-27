@@ -85,11 +85,19 @@ const processCricketV2ApiResponse = (fixtures: SportmonksV2Fixture[]): Processed
              awayScore = formatScore(fixture.visitorteam.id);
         }
 
+        // The V2 API returns datetime strings like "2024-06-27 18:30:00".
+        // This datetime is specified to be in UTC. To ensure JavaScript correctly
+        // parses it as UTC regardless of the execution environment's local timezone,
+        // we must format it into a full ISO 8601 string by replacing the space
+        // with 'T' and appending 'Z'.
+        const isoStartingAt = fixture.starting_at.replace(' ', 'T') + 'Z';
+
+
         return {
             id: fixture.id,
             sportKey: 'cricket',
             name: `${fixture.localteam.name} vs ${fixture.visitorteam.name}`,
-            startingAt: fixture.starting_at.endsWith('Z') ? fixture.starting_at : `${fixture.starting_at}Z`,
+            startingAt: isoStartingAt, // Use the corrected ISO string
             state: state,
             league: {
                 id: fixture.league.id,
