@@ -25,6 +25,7 @@ const handleApiResponse = async (response: Response) => {
         case 401: userFriendlyMessage = `Authentication Failed: The API key is likely invalid or missing.`; break;
         case 403: userFriendlyMessage = `Forbidden: Your current API plan does not allow access to this data.`; break;
         case 404: userFriendlyMessage = `Not Found: The requested match or endpoint could not be found.`; break;
+        case 422: userFriendlyMessage = `Unprocessable Content: The API request had invalid parameters (e.g., bad date format).`; break;
         case 429: userFriendlyMessage = `Too Many Requests: The hourly API limit has been reached.`; break;
         default: userFriendlyMessage = `An unexpected API error occurred. Status: ${response.status}, Message: ${apiMessage}`; break;
     }
@@ -115,7 +116,10 @@ export async function fetchUpcomingFootballFixtures(leagueId?: number, firstPage
     }
     const response = await fetch(`${API_BASE_URL}${url}`, { cache: 'no-store' });
     const data: SportmonksV3FixturesResponse = await handleApiResponse(response);
-    return processV3FootballFixtures(data?.data || []);
+    const processed = processV3FootballFixtures(data?.data || []);
+    
+    // Filter out any matches that are not truly upcoming.
+    return processed.filter(fixture => !fixture.isLive && !fixture.isFinished);
 }
 
 export async function fetchFixtureDetails(fixtureId: number): Promise<ProcessedFixture> {

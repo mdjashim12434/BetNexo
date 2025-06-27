@@ -4,7 +4,12 @@ import { NextResponse, type NextRequest } from 'next/server';
 const SPORTMONKS_FOOTBALL_API_URL = 'https://api.sportmonks.com/v3/football';
 const apiKey = process.env.SPORTMONKS_API_KEY;
 
-// This route handles fetching upcoming fixtures using the dedicated 'upcoming' endpoint for reliability.
+// Helper to format date to YYYY-MM-DD
+const getFormattedDate = (date: Date): string => {
+    return date.toISOString().split('T')[0];
+};
+
+// This route handles fetching upcoming fixtures using a date range for better control and reliability.
 export async function GET(request: NextRequest) {
     if (!apiKey) {
         console.error("SPORTMONKS_API_KEY is not set in environment variables.");
@@ -15,18 +20,21 @@ export async function GET(request: NextRequest) {
     const leagueId = searchParams.get('leagueId');
     const firstPageOnly = searchParams.get('firstPageOnly') === 'true';
 
-    // The 'upcoming' endpoint is cleaner and more reliable than fetching by date range.
-    // Odds are not included here to keep the request light and avoid potential plan restrictions on list endpoints.
+    // Using fixtures/between/{start_date}/{end_date} endpoint as it's more reliable across different plans.
+    const today = getFormattedDate(new Date());
+    const nextWeek = getFormattedDate(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
+    
+    // Includes for comprehensive details, but excluding odds to keep it light.
     const includes = "participants;league.country;state";
     
-    let baseUrl = `${SPORTMONKS_FOOTBALL_API_URL}/fixtures/upcoming?api_token=${apiKey}&include=${includes}&tz=UTC`;
+    let baseUrl = `${SPORTMONKS_FOOTBALL_API_URL}/fixtures/between/${today}/${nextWeek}?api_token=${apiKey}&include=${includes}&tz=UTC`;
     
     if (leagueId) {
         baseUrl += `&leagues=${leagueId}`;
     }
 
     try {
-        // Optimization: If only the first page is needed (e.g., for homepage), fetch only that page to prevent timeouts.
+        // Optimization: If only the first page is needed (e.g., for homepage), fetch only that page.
         if (firstPageOnly) {
             const url = `${baseUrl}&page=1`;
             const response = await fetch(url, { cache: 'no-store' });
@@ -37,20 +45,17 @@ export async function GET(request: NextRequest) {
                 return NextResponse.json({ error: message }, { status: response.status });
             }
             const data = await response.json();
-            // The /fixtures/upcoming endpoint should only return non-started matches, so no extra filtering is needed here.
             return NextResponse.json(data);
         }
 
-        // Default behavior: Fetch all pages for comprehensive lists (e.g., dedicated sports pages).
+        // Default behavior: Fetch all pages for comprehensive lists.
         let allFixtures: any[] = [];
         let currentPage = 1;
         let hasMore = true;
 
         while (hasMore) {
             const url = `${baseUrl}&page=${currentPage}`;
-            const response = await fetch(url, {
-                cache: 'no-store' // Fetch fresh data
-            });
+            const response = await fetch(url, { cache: 'no-store' });
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
