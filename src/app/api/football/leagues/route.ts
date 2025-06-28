@@ -13,21 +13,38 @@ export async function GET() {
     });
   }
 
-  const url = `${SPORTMONKS_FOOTBALL_API_URL}/leagues?api_token=${apiKey}`;
+  const baseUrl = `${SPORTMONKS_FOOTBALL_API_URL}/leagues?api_token=${apiKey}`;
   
   try {
-    const apiResponse = await fetch(url, {
-        next: { revalidate: 3600 } // Cache for 1 hour
-    });
+    let allLeagues: any[] = [];
+    let currentPage = 1;
+    let hasMore = true;
 
-    if (!apiResponse.ok) {
-        const errorData = await apiResponse.json().catch(() => ({}));
-        console.error(`Football leagues API failed with status ${apiResponse.status}:`, await apiResponse.text());
-        return NextResponse.json({ error: 'Failed to fetch football leagues' }, { status: apiResponse.status });
+    while (hasMore) {
+        const urlWithPage = `${baseUrl}&page=${currentPage}`;
+        const apiResponse = await fetch(urlWithPage, {
+            next: { revalidate: 3600 } // Cache for 1 hour
+        });
+
+        if (!apiResponse.ok) {
+            const errorData = await apiResponse.json().catch(() => ({}));
+            console.error(`Football leagues API failed with status ${apiResponse.status}:`, await apiResponse.text());
+            return NextResponse.json({ error: 'Failed to fetch football leagues' }, { status: apiResponse.status });
+        }
+
+        const data = await apiResponse.json();
+        if (data.data && data.data.length > 0) {
+            allLeagues = allLeagues.concat(data.data);
+        }
+        
+        if (data.pagination && data.pagination.has_more) {
+            currentPage++;
+        } else {
+            hasMore = false;
+        }
     }
-
-    const data = await apiResponse.json();
-    return NextResponse.json(data);
+    
+    return NextResponse.json({ data: allLeagues });
     
   } catch (error) {
     console.error("Fetching football leagues failed:", error);

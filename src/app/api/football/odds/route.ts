@@ -12,7 +12,7 @@ export async function GET() {
 
   // Using the 'upcoming' endpoint to get a wide range of odds across all sports.
   // We will filter for soccer events after fetching.
-  const regions = 'eu'; // Regions: uk, eu, au, us
+  const regions = 'us,uk,eu,au'; // Regions: us, uk, eu, au - Fetch from all major regions for worldwide coverage.
   const markets = 'h2h,totals'; // h2h is moneyline, and totals is over/under.
   const oddsFormat = 'decimal';
   
