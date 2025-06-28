@@ -32,8 +32,6 @@ interface TheOddsApiOdd {
 }
 
 
-const API_BASE_URL = '';
-
 // --- Centralized State Definitions ---
 const LIVE_STATES_V3: string[] = ['LIVE', 'HT', 'ET', 'PEN_LIVE', 'BREAK', 'INT'];
 const FINISHED_STATES_V3: string[] = ['FT', 'AET', 'Finished', 'POSTP', 'CANCL', 'ABAN', 'SUSP', 'AWARDED', 'DELETED', 'WO', 'AU'];
@@ -69,7 +67,7 @@ const parseSportmonksDateStringToISO = (dateString: string): string => {
 // --- NEW: Function to fetch odds from The Odds API via our proxy ---
 async function fetchTheOddsApiData(): Promise<TheOddsApiOdd[]> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/football/odds`, { cache: 'no-store' });
+    const response = await fetch(`/api/football/odds`, { cache: 'no-store' });
     // Using no-store because odds change frequently
     return handleApiResponse(response);
   } catch (error) {
@@ -191,7 +189,7 @@ export async function fetchLiveFootballFixtures(leagueId?: number, firstPageOnly
     }
     
     const [fixtureResult, oddsResult] = await Promise.allSettled([
-      fetch(`${API_BASE_URL}${url}`, { cache: 'no-store' }),
+      fetch(url, { cache: 'no-store' }),
       fetchTheOddsApiData()
     ]);
 
@@ -211,7 +209,7 @@ export async function fetchUpcomingFootballFixtures(leagueId?: number, firstPage
     }
     
     const [fixtureResult, oddsResult] = await Promise.allSettled([
-      fetch(`${API_BASE_URL}${url}`, { cache: 'no-store' }),
+      fetch(url, { cache: 'no-store' }),
       fetchTheOddsApiData()
     ]);
 
@@ -234,7 +232,7 @@ export async function fetchUpcomingFootballFixtures(leagueId?: number, firstPage
 
 export async function fetchFixtureDetails(fixtureId: number): Promise<ProcessedFixture> {
     const [fixtureResult, oddsResult] = await Promise.allSettled([
-        fetch(`${API_BASE_URL}/api/football/fixtures?fixtureId=${fixtureId}`, { cache: 'no-store' }),
+        fetch(`/api/football/fixtures?fixtureId=${fixtureId}`, { cache: 'no-store' }),
         fetchTheOddsApiData()
     ]);
     
