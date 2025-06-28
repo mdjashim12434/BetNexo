@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -18,8 +19,8 @@ import {
   updateDoc, 
   serverTimestamp, 
   Timestamp, 
-  getDoc, 
   updateUserBalanceInFirestore,
+  findUserDocByCustomId, // Import the new helper function
   limit,
   startAfter,
   type QueryDocumentSnapshot
@@ -40,7 +41,7 @@ export type TransactionType = 'deposit' | 'withdrawal';
 
 export interface Transaction {
   id: string; // Firestore document ID
-  userId: string;
+  userId: number; // Changed to number to store customUserId
   userName: string;
   amount: number;
   currency: string;
@@ -141,23 +142,24 @@ export default function TransactionsLogTab() {
   const handleAction = async (transaction: Transaction, newStatus: 'approved' | 'rejected') => {
     const transactionDocRef = doc(db, "transactions", transaction.id);
     try {
+      // Find the user's Firebase UID from their customUserId before proceeding
+      const userDocSnap = await findUserDocByCustomId(transaction.userId);
+      if (!userDocSnap) {
+        toast({ title: "Action Failed", description: `User with Custom ID ${transaction.userId} not found. Cannot process transaction.`, variant: "destructive" });
+        return;
+      }
+      const userFirebaseUid = userDocSnap.id;
+      const userData = userDocSnap.data();
+
       if (newStatus === 'approved') {
         if (transaction.type === 'deposit') {
-          await updateUserBalanceInFirestore(transaction.userId, transaction.amount);
+          await updateUserBalanceInFirestore(userFirebaseUid, transaction.amount);
         } else if (transaction.type === 'withdrawal') {
-          const userDocRef = doc(db, "users", transaction.userId);
-          const userDocSnap = await getDoc(userDocRef); 
-          if (userDocSnap.exists()) {
-            const userData = userDocSnap.data();
-            if ((userData.balance || 0) < transaction.amount) {
-               toast({ title: "Action Failed", description: `User ${transaction.userName} has insufficient balance for this withdrawal. Current Balance: ${userData.currency || 'N/A'} ${(userData.balance || 0).toFixed(2)}. Required: ${transaction.amount.toFixed(2)}`, variant: "destructive", duration: 7000 });
-               return; 
-            }
-            await updateUserBalanceInFirestore(transaction.userId, -transaction.amount);
-          } else {
-            toast({title: "Error", description: `User document for ${transaction.userName} not found. Cannot process withdrawal.`, variant: "destructive"});
-            return; 
+          if ((userData.balance || 0) < transaction.amount) {
+             toast({ title: "Action Failed", description: `User ${transaction.userName} has insufficient balance for this withdrawal. Current Balance: ${userData.currency || 'N/A'} ${(userData.balance || 0).toFixed(2)}. Required: ${transaction.amount.toFixed(2)}`, variant: "destructive", duration: 7000 });
+             return; 
           }
+          await updateUserBalanceInFirestore(userFirebaseUid, -transaction.amount);
         }
       }
       await updateDoc(transactionDocRef, { status: newStatus, processedAt: serverTimestamp() });
@@ -238,7 +240,7 @@ export default function TransactionsLogTab() {
                     <TableRow key={txn.id} className="hover:bg-muted/50">
                       <TableCell>
                         <div>{txn.userName}</div>
-                        <div className="text-xs text-muted-foreground hidden sm:block">{txn.userId}</div>
+                        <div className="text-xs text-muted-foreground hidden sm:block">ID: {txn.userId}</div>
                       </TableCell>
                       <TableCell>
                         <Badge
@@ -279,7 +281,7 @@ export default function TransactionsLogTab() {
                                   <DialogTitle>Transaction Details (ID: {selectedTransactionForDetails.id})</DialogTitle>
                                   </DialogHeader>
                                   <div className="space-y-3 py-4 text-sm">
-                                      <p><strong>User:</strong> {selectedTransactionForDetails.userName} ({selectedTransactionForDetails.userId})</p>
+                                      <p><strong>User:</strong> {selectedTransactionForDetails.userName} (Custom ID: {selectedTransactionForDetails.userId})</p>
                                       <p><strong>Type:</strong> <span className="capitalize">{selectedTransactionForDetails.type}</span></p>
                                       <p><strong>Amount:</strong> {selectedTransactionForDetails.amount.toFixed(2)} {selectedTransactionForDetails.currency}</p>
                                       <p><strong>Method:</strong> {selectedTransactionForDetails.method}</p>

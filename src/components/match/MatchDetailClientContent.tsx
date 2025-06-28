@@ -96,8 +96,8 @@ export default function MatchDetailClientContent({ initialMatch }: MatchDetailCl
   };
 
   const handlePlaceBet = async () => {
-    if (!user || !match || !selectedBet || !betAmount) {
-      toast({ title: "Missing Information", description: "Please select an outcome and enter a bet amount.", variant: "destructive" });
+    if (!user || !user.customUserId || !match || !selectedBet || !betAmount) {
+      toast({ title: "Missing Information", description: "User, outcome, or bet amount is missing.", variant: "destructive" });
       return;
     }
 
@@ -140,7 +140,7 @@ export default function MatchDetailClientContent({ initialMatch }: MatchDetailCl
     try {
       await updateBalance(-amount);
       const betData = {
-        userId: user.id,
+        userId: user.customUserId,
         userName: user.name || user.email || 'Unknown User',
         matchId: String(match.id),
         matchHomeTeam: match.homeTeam.name,

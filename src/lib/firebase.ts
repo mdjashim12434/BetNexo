@@ -75,6 +75,23 @@ export const findUserByCustomId = async (customId: string): Promise<{ email: str
     }
 };
 
+// New helper function to find a user's document snapshot by their custom ID
+export const findUserDocByCustomId = async (customId: number): Promise<QueryDocumentSnapshot | null> => {
+    const usersRef = collection(db, "users");
+    const q = query(usersRef, where("customUserId", "==", customId), limit(1));
+    try {
+        const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+            return querySnapshot.docs[0];
+        }
+        return null;
+    } catch (error) {
+        console.error("Error finding user document by custom ID:", error);
+        throw error;
+    }
+};
+
+
 // Helper function to update user balance - important for transactions
 const updateUserBalanceInFirestore = async (userId: string, amountChange: number) => {
     const userDocRef = doc(db, "users", userId);

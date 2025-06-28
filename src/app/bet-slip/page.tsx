@@ -1,3 +1,4 @@
+
 'use client';
 
 import AppLayout from '@/components/AppLayout';
@@ -25,7 +26,7 @@ type BetOutcomeFirestore =
 
 interface BetDocument {
   id: string;
-  userId: string;
+  userId: number; // Changed from string to number to store customUserId
   userName: string;
   matchId: string;
   matchHomeTeam: string;
@@ -49,12 +50,12 @@ export default function BetHistoryPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchBetHistory = useCallback(async () => {
-    if (!user) return;
+    if (!user || !user.customUserId) return;
     setIsLoading(true);
     try {
       const betsQuery = query(
         collection(db, "bets"),
-        where("userId", "==", user.id),
+        where("userId", "==", user.customUserId),
         orderBy("betTimestamp", "desc")
       );
       const querySnapshot = await getDocs(betsQuery);

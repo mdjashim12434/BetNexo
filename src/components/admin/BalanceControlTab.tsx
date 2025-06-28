@@ -61,7 +61,7 @@ export default function BalanceControlTab() {
   }, [searchTerm, allUsers]);
 
   const handleAdjustBalance = async (type: 'add' | 'deduct') => {
-    if (!selectedUser || !amount || !adminUser) {
+    if (!selectedUser || !selectedUser.customUserId || !amount || !adminUser) {
       toast({ title: "Error", description: "A user must be selected and an amount entered.", variant: "destructive" });
       return;
     }
@@ -86,7 +86,7 @@ export default function BalanceControlTab() {
       
       const transactionDocRef = doc(collection(db, "transactions"));
       const newTransaction = {
-        userId: selectedUser.id,
+        userId: selectedUser.customUserId,
         userName: selectedUser.name || selectedUser.email,
         amount: numAmount,
         currency: selectedUser.currency || 'N/A',

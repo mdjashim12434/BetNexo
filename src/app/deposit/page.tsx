@@ -110,7 +110,7 @@ export default function DepositPage() {
   
   const handleDepositRequest = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !selectedMethod) {
+    if (!user || !user.customUserId || !selectedMethod) {
       toast({ title: "Error", description: "User or payment method not selected.", variant: "destructive" });
       return;
     }
@@ -140,7 +140,7 @@ export default function DepositPage() {
     setIsSubmitting(true);
     try {
       const newTransaction = {
-        userId: user.id,
+        userId: user.customUserId,
         userName: user.name || user.email || 'N/A',
         amount: depositAmount,
         currency: currency,
