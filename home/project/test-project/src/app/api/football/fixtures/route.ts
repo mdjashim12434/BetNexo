@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Includes for comprehensive details, now excluding odds, events, and comments to maximize plan compatibility.
-    const includes = "participants;league.country;state;scores;periods;events;comments";
+    const includes = "participants;league.country;state;scores;periods";
 
     const url = `${SPORTMONKS_FOOTBALL_API_URL}/fixtures/${fixtureId}?api_token=${apiKey}&include=${includes}&tz=UTC`;
     

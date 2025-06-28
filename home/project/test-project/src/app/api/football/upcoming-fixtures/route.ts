@@ -20,14 +20,16 @@ export async function GET(request: NextRequest) {
     const leagueId = searchParams.get('leagueId');
     const firstPageOnly = searchParams.get('firstPageOnly') === 'true';
 
-    // Using fixtures/between/{start_date}/{end_date} endpoint as it's more reliable across different plans.
+    // Using fixtures/between/{start_date}/{end_date} endpoint for a 30-day range.
     const today = getFormattedDate(new Date());
-    const nextWeek = getFormattedDate(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
+    const nextMonthDate = new Date();
+    nextMonthDate.setDate(nextMonthDate.getDate() + 30);
+    const nextMonth = getFormattedDate(nextMonthDate);
     
     // Includes for comprehensive details, now excluding odds.
     const includes = "participants;league.country;state";
     
-    let baseUrl = `${SPORTMONKS_FOOTBALL_API_URL}/fixtures/between/${today}/${nextWeek}?api_token=${apiKey}&include=${includes}&tz=UTC`;
+    let baseUrl = `${SPORTMONKS_FOOTBALL_API_URL}/fixtures/between/${today}/${nextMonth}?api_token=${apiKey}&include=${includes}&tz=UTC`;
     
     if (leagueId) {
         baseUrl += `&leagues=${leagueId}`;
