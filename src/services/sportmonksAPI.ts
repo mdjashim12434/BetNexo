@@ -32,7 +32,7 @@ interface TheOddsApiOdd {
 }
 
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:9002';
+const API_BASE_URL = '';
 
 // --- Centralized State Definitions ---
 const LIVE_STATES_V3: string[] = ['LIVE', 'HT', 'ET', 'PEN_LIVE', 'BREAK', 'INT'];
