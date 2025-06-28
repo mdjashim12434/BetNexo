@@ -18,7 +18,6 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const leagueId = searchParams.get('leagueId');
-    const firstPageOnly = searchParams.get('firstPageOnly') === 'true';
 
     // Using fixtures/between/{start_date}/{end_date} endpoint for a 30-day range.
     const today = getFormattedDate(new Date());
@@ -36,21 +35,7 @@ export async function GET(request: NextRequest) {
     }
 
     try {
-        // Optimization: If only the first page is needed (e.g., for homepage), fetch only that page.
-        if (firstPageOnly) {
-            const url = `${baseUrl}&page=1`;
-            const response = await fetch(url, { cache: 'no-store' });
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                console.error('Error fetching first page of upcoming football fixtures:', response.status, errorData);
-                const message = errorData.message || `Failed to fetch data. Status: ${response.status}`;
-                return NextResponse.json({ error: message }, { status: response.status });
-            }
-            const data = await response.json();
-            return NextResponse.json(data);
-        }
-
-        // Default behavior: Fetch all pages for comprehensive lists.
+        // Fetch all pages for comprehensive lists.
         let allFixtures: any[] = [];
         let currentPage = 1;
         let hasMore = true;
