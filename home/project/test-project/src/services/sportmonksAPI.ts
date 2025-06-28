@@ -11,7 +11,10 @@ import type {
 
 // --- Centralized State Definitions ---
 const LIVE_STATES_V3: string[] = ['LIVE', 'HT', 'ET', 'PEN_LIVE', 'BREAK', 'INT'];
-const FINISHED_STATES_V3: string[] = ['FT', 'AET', 'Finished', 'POSTP', 'CANCL', 'ABAN', 'SUSP', 'AWARDED', 'DELETED', 'WO', 'AU'];
+// Corrected finished states to only include states that signify a final result.
+// Removed states like POSTP, CANCL, etc. to prevent upcoming matches from being filtered out.
+const FINISHED_STATES_V3: string[] = ['FT', 'AET', 'Finished', 'AWARDED', 'WO', 'DELETED'];
+
 
 // --- BASE URL for internal API calls ---
 // Determines the base URL based on the execution environment (server or client).
@@ -125,6 +128,8 @@ export async function fetchUpcomingFootballFixtures(leagueId?: number, firstPage
     const processed = processV3FootballFixtures(data?.data || []);
     
     const now = new Date();
+    // The API now fetches from today onwards. This filter ensures we don't show matches from earlier today that are over.
+    // The !fixture.isFinished check is now more reliable due to corrected state definitions.
     return processed.filter(fixture => {
         const fixtureDate = new Date(fixture.startingAt);
         return fixtureDate > now && !fixture.isFinished;
