@@ -91,7 +91,10 @@ export default function AdminPage() {
             <SidebarHeader className="p-0">
               <div className="flex items-center justify-center h-16 border-b border-border/60">
                  <div className="font-headline text-xl text-primary flex items-center group-data-[collapsible=icon]:hidden">
-                    <ShieldAlert className="mr-2 h-6 w-6" /> BETBABU
+                    <ShieldAlert className="mr-2 h-6 w-6" /> 
+                    <span className="font-black italic tracking-tighter">
+                      <span className="text-white">MEL</span><span className="text-primary">BET</span>
+                    </span>
                  </div>
                  <ShieldAlert className="h-7 w-7 text-primary hidden group-data-[collapsible=icon]:block" />
               </div>

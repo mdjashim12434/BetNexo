@@ -244,10 +244,10 @@ export default function SportsCategoryClientContent({
       {showTabs && (
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="live" disabled={categorySlug === 'upcoming'}>
+              <TabsTrigger value="live">
                   Live <Badge variant="destructive" className="ml-2 animate-pulse">{liveMatches.length}</Badge>
               </TabsTrigger>
-              <TabsTrigger value="upcoming" disabled={categorySlug === 'live'}>
+              <TabsTrigger value="upcoming">
                   Upcoming <Badge variant="secondary" className="ml-2">{upcomingMatches.length}</Badge>
               </TabsTrigger>
             </TabsList>

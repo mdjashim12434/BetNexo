@@ -39,11 +39,7 @@ async function getMatchesForCategory(categorySlug: string, leagueId?: number) {
         return [];
     });
 
-  if (categorySlug === 'live') {
-    liveMatchesPromise = handleFetch(fetchLiveFootballFixtures(leagueId));
-    upcomingMatchesPromise = Promise.resolve([]);
-
-  } else if (categorySlug === 'football') {
+  if (categorySlug === 'live' || categorySlug === 'football') {
     liveMatchesPromise = handleFetch(fetchLiveFootballFixtures(leagueId));
     upcomingMatchesPromise = handleFetch(fetchUpcomingFootballFixtures(leagueId));
 
