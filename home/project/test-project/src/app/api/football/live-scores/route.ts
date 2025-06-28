@@ -14,7 +14,8 @@ export async function GET(request: NextRequest) {
   const leagueId = searchParams.get('leagueId');
   const firstPageOnly = searchParams.get('firstPageOnly') === 'true';
   
-  const includes = "participants;scores;league.country;state;periods;odds";
+  // Includes for live scores, now excluding odds.
+  const includes = "participants;scores;league.country;state;periods";
   let baseUrl = `${SPORTMONKS_FOOTBALL_API_URL}/livescores?api_token=${apiKey}&include=${includes}&tz=UTC`;
 
   if (leagueId) {
@@ -33,7 +34,6 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: message }, { status: response.status });
         }
         const data = await response.json();
-        // For livescores, even the first page might be empty, so we return the whole data object
         return NextResponse.json(data);
     }
     

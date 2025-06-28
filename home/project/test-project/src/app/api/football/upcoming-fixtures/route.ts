@@ -24,8 +24,8 @@ export async function GET(request: NextRequest) {
     const today = getFormattedDate(new Date());
     const nextWeek = getFormattedDate(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
     
-    // Includes for comprehensive details, now including odds from Sportmonks.
-    const includes = "participants;league.country;state;odds";
+    // Includes for comprehensive details, now excluding odds.
+    const includes = "participants;league.country;state";
     
     let baseUrl = `${SPORTMONKS_FOOTBALL_API_URL}/fixtures/between/${today}/${nextWeek}?api_token=${apiKey}&include=${includes}&tz=UTC`;
     

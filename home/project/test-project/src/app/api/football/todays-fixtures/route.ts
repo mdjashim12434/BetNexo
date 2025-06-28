@@ -22,8 +22,7 @@ export async function GET(request: NextRequest) {
     
     const todayDate = getTodayDateString();
 
-    // Basic includes to keep the call lightweight and avoid plan-related "Forbidden" errors.
-    // Odds and events are fetched on the match detail page, not in this list view, to ensure maximum compatibility.
+    // Basic includes to keep the call lightweight and avoid plan-related errors.
     const includes = "participants;league.country;state;scores;periods";
     
     let baseUrl = `${SPORTMONKS_FOOTBALL_API_URL}/fixtures/date/${todayDate}?api_token=${apiKey}&include=${includes}&tz=UTC`;

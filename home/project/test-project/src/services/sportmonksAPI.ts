@@ -5,9 +5,9 @@ import type {
     SportmonksSingleV3FixtureResponse,
     ProcessedFixture, 
     SportmonksState,
-    SportmonksOdd,
     FootballEvent,
 } from '@/types/sportmonks';
+
 
 // --- Centralized State Definitions ---
 const LIVE_STATES_V3: string[] = ['LIVE', 'HT', 'ET', 'PEN_LIVE', 'BREAK', 'INT'];
@@ -33,7 +33,6 @@ const API_BASE_URL = getApiBaseUrl();
 const handleApiResponse = async (response: Response) => {
     if (response.ok) return response.json();
     const errorJson = await response.json().catch(() => ({}));
-    // Check for `error` property from my own API routes, then `message` from external APIs.
     const apiMessage = errorJson.error || errorJson.message || 'The API did not provide a specific error message.';
     let userFriendlyMessage: string;
     switch (response.status) {
@@ -58,7 +57,7 @@ const parseSportmonksDateStringToISO = (dateString: string): string => {
 };
 
 
-// --- MODIFIED: V3 Football Data Processor to use Sportmonks odds ---
+// --- V3 Football Data Processor (simplified, without odds) ---
 const processV3FootballFixtures = (fixtures: SportmonksV3Fixture[]): ProcessedFixture[] => {
     if (!Array.isArray(fixtures)) return [];
 
@@ -82,81 +81,13 @@ const processV3FootballFixtures = (fixtures: SportmonksV3Fixture[]): ProcessedFi
             return undefined;
         };
         
-        let finalOdds: ProcessedFixture['odds'] = {};
-
-        // If Sportmonks odds are available, parse them
-        if (fixture.odds && fixture.odds.length > 0) {
-            const oddsByMarket = new Map<string, SportmonksOdd[]>();
-            fixture.odds.forEach(odd => {
-                if (!oddsByMarket.has(odd.market_description)) {
-                    oddsByMarket.set(odd.market_description, []);
-                }
-                oddsByMarket.get(odd.market_description)!.push(odd);
-            });
-
-            // 1. H2H (Match Winner)
-            const h2hOdds = oddsByMarket.get('Match Winner');
-            if (h2hOdds) {
-                finalOdds.home = parseFloat(h2hOdds.find(o => o.label === '1')?.value || '0') || undefined;
-                finalOdds.draw = parseFloat(h2hOdds.find(o => o.label === 'X')?.value || '0') || undefined;
-                finalOdds.away = parseFloat(h2hOdds.find(o => o.label === '2')?.value || '0') || undefined;
-            }
-            
-            // 2. Over/Under (Total Goals)
-            for (const [marketDesc, odds] of oddsByMarket.entries()) {
-                if (marketDesc.startsWith('Total Goals')) {
-                    const pointMatch = marketDesc.match(/\(([^)]+)\)/);
-                    if (pointMatch && pointMatch[1]) {
-                        const point = parseFloat(pointMatch[1]);
-                        const overOdd = parseFloat(odds.find(o => o.label.toLowerCase() === 'over')?.value || '0') || undefined;
-                        const underOdd = parseFloat(odds.find(o => o.label.toLowerCase() === 'under')?.value || '0') || undefined;
-                        if (overOdd && underOdd) {
-                            finalOdds.overUnder = { over: overOdd, under: underOdd, point: point };
-                            break; 
-                        }
-                    }
-                }
-            }
-
-            // 3. BTTS (Both Teams To Score)
-            const bttsOdds = oddsByMarket.get('Both Teams To Score');
-            if (bttsOdds) {
-                 const yesOdd = parseFloat(bttsOdds.find(o => o.label.toLowerCase() === 'yes')?.value || '0') || undefined;
-                 const noOdd = parseFloat(bttsOdds.find(o => o.label.toLowerCase() === 'no')?.value || '0') || undefined;
-                 if(yesOdd && noOdd){
-                    finalOdds.btts = { yes: yesOdd, no: noOdd };
-                 }
-            }
-
-            // 4. Double Chance
-            const dcOdds = oddsByMarket.get('Double Chance');
-            if (dcOdds) {
-                const homeOrDraw = parseFloat(dcOdds.find(o => o.label === '1X')?.value || '0') || undefined;
-                const awayOrDraw = parseFloat(dcOdds.find(o => o.label === 'X2')?.value || '0') || undefined;
-                const homeOrAway = parseFloat(dcOdds.find(o => o.label === '12')?.value || '0') || undefined;
-                if(homeOrDraw || awayOrDraw || homeOrAway) {
-                    finalOdds.dc = { homeOrDraw, awayOrDraw, homeOrAway };
-                }
-            }
-
-            // 5. Draw No Bet
-            const dnbOdds = oddsByMarket.get('Draw No Bet');
-            if(dnbOdds){
-                const home = parseFloat(dnbOdds.find(o => o.label === '1')?.value || '0') || undefined;
-                const away = parseFloat(dnbOdds.find(o => o.label === '2')?.value || '0') || undefined;
-                if(home || away){
-                    finalOdds.dnb = { home, away };
-                }
-            }
-        }
-
         return {
             id: fixture.id, sportKey: 'football', name: fixture.name, startingAt: parseSportmonksDateStringToISO(fixture.starting_at),
             state, isLive, isFinished,
             league: { id: fixture.league_id, name: fixture.league?.name || 'N/A', countryName: fixture.league?.country?.name || 'N/A' },
             homeTeam: { id: homeTeam?.id || 0, name: homeTeam?.name || 'Home', image_path: homeTeam?.image_path },
             awayTeam: { id: awayTeam?.id || 0, name: awayTeam?.name || 'Away', image_path: awayTeam?.image_path },
-            odds: finalOdds,
+            odds: {}, // Odds are removed for now.
             comments,
             venue: fixture.venue ? { name: fixture.venue.name, city: fixture.venue.city_name || fixture.venue.city || '' } : undefined,
             referee: fixture.referee ? { name: fixture.referee.fullname } : undefined,
@@ -166,7 +97,7 @@ const processV3FootballFixtures = (fixtures: SportmonksV3Fixture[]): ProcessedFi
 };
 
 
-// --- Public Fetching Functions (Refactored to use only Sportmonks) ---
+// --- Public Fetching Functions ---
 
 export async function fetchLiveFootballFixtures(leagueId?: number, firstPageOnly: boolean = false): Promise<ProcessedFixture[]> {
     let path = leagueId ? `/api/football/live-scores?leagueId=${leagueId}` : '/api/football/live-scores';
