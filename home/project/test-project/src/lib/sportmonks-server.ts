@@ -1,4 +1,3 @@
-
 // This file contains the server-side logic for fetching data directly from the Sportmonks API.
 // It is intended to be used by Server Components and API Routes to avoid server-to-server HTTP calls.
 
