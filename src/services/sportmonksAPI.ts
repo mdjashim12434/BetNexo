@@ -37,7 +37,7 @@ const LIVE_STATES_V3: string[] = ['LIVE', 'HT', 'ET', 'PEN_LIVE', 'BREAK', 'INT'
 const FINISHED_STATES_V3: string[] = ['FT', 'AET', 'Finished', 'POSTP', 'CANCL', 'ABAN', 'SUSP', 'AWARDED', 'DELETED', 'WO', 'AU'];
 
 // --- BASE URL for internal API calls ---
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:9002';
+const API_BASE_URL = 'http://localhost:9002';
 
 // Helper to generate user-friendly error messages
 const handleApiResponse = async (response: Response) => {
@@ -205,8 +205,10 @@ export async function fetchLiveFootballFixtures(leagueId?: number, firstPageOnly
     const data: SportmonksV3FixturesResponse = await handleApiResponse(fixtureResult.value);
     const processedFixtures = processV3FootballFixtures(data?.data || [], oddsData);
 
-    // Filter out matches that are not truly live, as the API can have delays.
-    return processedFixtures.filter(fixture => fixture.isLive);
+    // The /livescores endpoint can include recently finished matches.
+    // We will explicitly filter out any match that has a finished state.
+    // This is safer than only including "live" states, as we might miss some.
+    return processedFixtures.filter(fixture => !fixture.isFinished);
 }
 
 export async function fetchUpcomingFootballFixtures(leagueId?: number, firstPageOnly = false): Promise<ProcessedFixture[]> {
