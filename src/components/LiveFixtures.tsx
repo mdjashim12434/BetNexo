@@ -1,90 +1,21 @@
 
 "use client";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, Goal, Bell, Star, Info } from 'lucide-react';
+import { AlertTriangle, Info } from 'lucide-react';
+import type { ProcessedFixture } from "@/types/sportmonks";
+import MatchCard from "@/components/sports/MatchCard";
 
-const LiveMatchCard = ({ match }: { match: any }) => {
-    const homeTeam = match.participants?.find((p: any) => p.meta.location === 'home');
-    const awayTeam = match.participants?.find((p: any) => p.meta.location === 'away');
-    const homeScore = match.scores?.find((s: any) => s.participant_id === homeTeam?.id && s.description === 'CURRENT')?.score.goals || 0;
-    const awayScore = match.scores?.find((s: any) => s.participant_id === awayTeam?.id && s.description === 'CURRENT')?.score.goals || 0;
-    const minute = match.periods?.find((p: any) => p.ticking)?.minutes;
+interface LiveFixturesProps {
+  matches: ProcessedFixture[];
+  loading: boolean;
+  error: string | null;
+}
 
-    return (
-        <Link href={`/match/${match.id}`} passHref>
-        <Card as="a" className="p-3 transition-all hover:bg-muted/50 cursor-pointer">
-          <div className="flex justify-between items-center text-xs text-muted-foreground mb-3">
-            <div className="flex items-center gap-2">
-              <Goal className="h-4 w-4 text-primary" />
-              <span className="font-semibold truncate">{match.league?.name || 'N/A'}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Bell className="h-4 w-4" />
-              <Star className="h-4 w-4" />
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between gap-2 mb-2">
-            <div className="flex items-center gap-2 w-2/5 truncate">
-              <Image src={homeTeam?.image_path || `https://placehold.co/40x40.png`} alt={homeTeam?.name || ''} width={24} height={24} className="rounded-full" data-ai-hint="team logo" />
-              <span className="font-semibold text-sm truncate">{homeTeam?.name || 'Home'}</span>
-            </div>
-            <div className="text-xl font-bold text-center">
-              {homeScore} : {awayScore}
-            </div>
-            <div className="flex items-center gap-2 w-2/5 justify-end truncate">
-              <span className="font-semibold text-sm text-right truncate">{awayTeam?.name || 'Away'}</span>
-              <Image src={awayTeam?.image_path || `https://placehold.co/40x40.png`} alt={awayTeam?.name || ''} width={24} height={24} className="rounded-full" data-ai-hint="team logo" />
-            </div>
-          </div>
-          
-          {minute && <p className="text-center text-xs text-yellow-500 mb-3">{minute}' - {match.state?.name}</p>}
-        </Card>
-      </Link>
-    );
-};
-
-
-export default function LiveFixtures() {
-  const [matches, setMatches] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    const fetchLive = async () => {
-      setLoading(true);
-      setError("");
-      try {
-        const res = await fetch("/api/football/live-scores");
-        if (!res.ok) {
-            const errorData = await res.json().catch(() => ({}));
-            throw new Error(errorData.error || `API responded with status ${res.status}`);
-        }
-        const data = await res.json();
-        
-        // Correctly check for data within data.data
-        if (data && Array.isArray(data.data)) {
-          setMatches(data.data.slice(0, 10)); // Limit to 10 for homepage
-        } else {
-          // This case handles when data.data is not an array or is missing
-          setMatches([]);
-        }
-      } catch (err: any) {
-        console.error("Failed to fetch live matches:", err);
-        setError(err.message || "An unknown error occurred.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchLive();
-  }, []);
-
+export default function LiveFixtures({ matches, loading, error }: LiveFixturesProps) {
   if (loading) {
     return (
         <section>
@@ -106,7 +37,7 @@ export default function LiveFixtures() {
           <div className="p-4">
             <div className="p-3 rounded-md bg-destructive/10 text-destructive text-xs flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 shrink-0" />
-              <p>{error}</p>
+              <p className="whitespace-pre-wrap">{error}</p>
             </div>
           </div>
       </Card>
@@ -135,8 +66,8 @@ export default function LiveFixtures() {
         <Button variant="link" asChild><Link href="/sports/live">All</Link></Button>
       </div>
       <div className="space-y-3">
-        {matches.map((match: any) => (
-          <LiveMatchCard key={match.id} match={match} />
+        {matches.map((match) => (
+          <MatchCard key={match.id} match={match} />
         ))}
       </div>
     </section>

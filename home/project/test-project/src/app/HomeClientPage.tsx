@@ -1,4 +1,3 @@
-
 'use client';
 
 import AppLayout from '@/components/AppLayout';
@@ -16,7 +15,7 @@ import { cn } from '@/lib/utils';
 import LiveFixtures from '@/components/LiveFixtures';
 import UpcomingFixtures from '@/components/UpcomingFixtures';
 import type { ProcessedFixture } from '@/types/sportmonks';
-import Loading from './loading';
+import Loading from '@/app/loading';
 
 
 // --- Top Navigation Data ---

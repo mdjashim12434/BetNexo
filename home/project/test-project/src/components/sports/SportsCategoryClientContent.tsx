@@ -13,13 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useToast } from "@/hooks/use-toast";
 import MatchCard from '@/components/sports/MatchCard';
-
-interface ApiLeague {
-  id: number;
-  name: string;
-}
 
 interface CombinedLeague {
   id: number;
@@ -33,6 +27,7 @@ interface SportsCategoryClientContentProps {
   leagueId?: string;
   initialLiveMatches: ProcessedFixture[];
   initialUpcomingMatches: ProcessedFixture[];
+  initialLeagues: CombinedLeague[];
   initialError: string | null;
 }
 
@@ -42,17 +37,15 @@ export default function SportsCategoryClientContent({
   leagueId,
   initialLiveMatches,
   initialUpcomingMatches,
+  initialLeagues,
   initialError
 }: SportsCategoryClientContentProps) {
   const router = useRouter();
   const { user, loadingAuth } = useAuth();
-  const { toast } = useToast();
   
   const [searchTerm, setSearchTerm] = useState('');
-  const [leagues, setLeagues] = useState<CombinedLeague[]>([]);
-  const [loadingLeagues, setLoadingLeagues] = useState(false);
-
-  // Data is now passed via props, so we can remove the internal loading state for matches.
+  
+  // Data is passed via props, no internal loading state needed for it.
   const isLoading = false; 
 
   const getDefaultTab = () => {
@@ -71,28 +64,6 @@ export default function SportsCategoryClientContent({
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categorySlug, initialLiveMatches, initialUpcomingMatches]);
-
-  useEffect(() => {
-    if (categorySlug === 'all-sports') {
-      setLoadingLeagues(true);
-      fetch('/api/all-sports/leagues')
-        .then(res => {
-          if (!res.ok) throw new Error('Failed to fetch leagues');
-          return res.json();
-        })
-        .then((data: { leagues: ApiLeague[] }) => {
-          const combined: CombinedLeague[] = (data.leagues || []).map(l => ({ 
-            id: l.id, 
-            name: l.name, 
-            sport: 'football' as const 
-          }));
-          combined.sort((a, b) => a.name.localeCompare(b.name));
-          setLeagues(combined);
-        })
-        .catch(err => toast({ title: "Error Loading Leagues", description: err.message, variant: "destructive" }))
-        .finally(() => setLoadingLeagues(false));
-    }
-  }, [categorySlug, toast]);
   
   const displayTitle = useMemo(() => {
     if (leagueId) {
@@ -100,20 +71,20 @@ export default function SportsCategoryClientContent({
         const matchWithLeague = allMatches.find(m => m.league && m.league.name !== 'N/A');
         if (matchWithLeague) {
             return matchWithLeague.league.name;
-        } else if (leagues.length > 0) {
-            const league = leagues.find(l => String(l.id) === leagueId);
+        } else if (initialLeagues.length > 0) {
+            const league = initialLeagues.find(l => String(l.id) === leagueId);
             if (league) return league.name;
         }
     }
     return categoryName;
-  }, [leagueId, initialLiveMatches, initialUpcomingMatches, categoryName, leagues]);
+  }, [leagueId, initialLiveMatches, initialUpcomingMatches, categoryName, initialLeagues]);
   
   const filteredLeagues = useMemo(() => {
-    if (!searchTerm) return leagues;
-    return leagues.filter(league =>
+    if (!searchTerm) return initialLeagues;
+    return initialLeagues.filter(league =>
       league.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [leagues, searchTerm]);
+  }, [initialLeagues, searchTerm]);
 
   const matchesToShow = useMemo(() => {
     let sourceMatches;
@@ -223,13 +194,12 @@ export default function SportsCategoryClientContent({
     return (
       <div className="space-y-6">
         {sharedHeader}
-        {loadingLeagues ? (
-          <Card>
-            <CardHeader><Skeleton className="h-8 w-48" /></CardHeader>
-            <CardContent className="space-y-3 p-4">
-              {[...Array(15)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
-            </CardContent>
-          </Card>
+        {initialError ? (
+           <div className="text-center text-destructive py-10 my-4 bg-destructive/10 rounded-lg">
+            <AlertTriangle className="mx-auto h-12 w-12 mb-4" />
+            <p className="text-lg font-semibold">Failed to load leagues</p>
+            <p className="text-sm mt-2 max-w-md mx-auto whitespace-pre-wrap">{initialError}</p>
+         </div>
         ) : filteredLeagues.length > 0 ? (
           <Card>
             <CardHeader><CardTitle>All Available Leagues</CardTitle></CardHeader>
@@ -253,7 +223,7 @@ export default function SportsCategoryClientContent({
           <div className="text-center text-muted-foreground py-10">
             <Frown className="mx-auto h-12 w-12 mb-4" />
             <p className="text-lg font-semibold">No Leagues Found</p>
-            <p className="text-sm">Could not retrieve league information at this time.</p>
+            <p className="text-sm">{searchTerm ? `No leagues found for "${searchTerm}".` : "Could not retrieve league information at this time."}</p>
           </div>
         )}
       </div>

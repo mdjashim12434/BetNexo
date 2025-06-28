@@ -15,6 +15,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import LiveFixtures from '@/components/LiveFixtures';
 import UpcomingFixtures from '@/components/UpcomingFixtures';
+import type { ProcessedFixture } from '@/types/sportmonks';
+import Loading from './loading';
+
 
 // --- Top Navigation Data ---
 const topNavItems = [
@@ -28,7 +31,6 @@ const topNavItems = [
 // --- Sports Grid Data (Using reliable lucide-react icons) ---
 const sportsGridItems = [
   { name: 'All', href: '/sports/all-sports', icon: CopyCheck },
-  { name: 'Cricket', href: '#', icon: Disc },
   { name: 'Football', href: '/sports/football', icon: Goal },
   { name: 'Basketball', href: '#', icon: Star },
   { name: 'Table Tennis', href: '#', icon: Zap },
@@ -53,8 +55,17 @@ const casinoLinks = [
   { name: "Midgard Zombies", imageHint: "zombie cartoon", href: "/casino" },
 ];
 
+interface HomeClientPageProps {
+  initialLiveMatches: ProcessedFixture[];
+  initialUpcomingMatches: ProcessedFixture[];
+  initialError: string | null;
+}
 
-export default function HomeClientPage() {
+export default function HomeClientPage({
+  initialLiveMatches,
+  initialUpcomingMatches,
+  initialError,
+}: HomeClientPageProps) {
   const { user, loadingAuth } = useAuth();
   const router = useRouter();
 
@@ -65,13 +76,7 @@ export default function HomeClientPage() {
   }, [user, loadingAuth, router]);
 
   if (loadingAuth || !user) {
-    return (
-      <AppLayout>
-        <div className="flex items-center justify-center min-h-[calc(100vh-theme(spacing.32))]">
-          <div className="text-center p-10">Loading...</div>
-        </div>
-      </AppLayout>
-    );
+    return <Loading />;
   }
 
   return (
@@ -79,7 +84,6 @@ export default function HomeClientPage() {
       <div className="container py-6">
         <div className="space-y-4 md:space-y-6 pb-24">
           
-          {/* Top Navigation */}
           <ScrollArea className="w-full whitespace-nowrap -mt-4">
             <div className="flex justify-between items-center p-2 gap-4">
               {topNavItems.map((item, index) => (
@@ -92,7 +96,6 @@ export default function HomeClientPage() {
             <ScrollBar orientation="horizontal" className="hidden"/>
           </ScrollArea>
           
-          {/* Sports Grid */}
           <ScrollArea className="w-full whitespace-nowrap">
             <div className="flex gap-3 px-1 py-1">
               {sportsGridItems.map(sport => (
@@ -105,7 +108,6 @@ export default function HomeClientPage() {
             <ScrollBar orientation="horizontal" className="hidden"/>
           </ScrollArea>
 
-          {/* Promotional Banners */}
           <ScrollArea className="w-full whitespace-nowrap">
             <div className="flex gap-3 px-1 py-1">
                 {promoBanners.map(banner => (
@@ -131,7 +133,6 @@ export default function HomeClientPage() {
             <ScrollBar orientation="horizontal" className="hidden"/>
           </ScrollArea>
 
-          {/* Casino Quick Links */}
           <ScrollArea className="w-full whitespace-nowrap">
             <div className="flex gap-4 px-1 py-1">
               {casinoLinks.map(link => (
@@ -147,10 +148,9 @@ export default function HomeClientPage() {
             <ScrollBar orientation="horizontal" className="hidden"/>
           </ScrollArea>
           
-          {/* Live & Upcoming Matches Section */}
           <div className="space-y-6">
-            <LiveFixtures />
-            <UpcomingFixtures />
+            <LiveFixtures matches={initialLiveMatches} loading={false} error={initialError} />
+            <UpcomingFixtures matches={initialUpcomingMatches} loading={false} error={initialError} />
           </div>
 
         </div>

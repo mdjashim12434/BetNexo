@@ -1,3 +1,4 @@
+
 import type { SVGProps } from 'react';
 
 // This component is no longer used and can be considered deprecated.

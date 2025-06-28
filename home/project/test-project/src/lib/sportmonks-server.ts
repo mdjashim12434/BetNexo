@@ -31,7 +31,7 @@ async function fetchFromSportmonks(url: string) {
 }
 
 async function fetchPaginatedData(baseUrl: string) {
-    let allFixtures: any[] = [];
+    let allData: any[] = [];
     let currentPage = 1;
     let hasMore = true;
 
@@ -40,7 +40,7 @@ async function fetchPaginatedData(baseUrl: string) {
         const data = await fetchFromSportmonks(urlWithPage);
         
         if (data.data && data.data.length > 0) {
-            allFixtures = allFixtures.concat(data.data);
+            allData = allData.concat(data.data);
         }
 
         if (data.pagination && data.pagination.has_more) {
@@ -49,7 +49,7 @@ async function fetchPaginatedData(baseUrl: string) {
             hasMore = false;
         }
     }
-    return { data: allFixtures };
+    return { data: allData };
 }
 
 export async function getLiveScoresFromServer(leagueId?: number, firstPageOnly = false) {
@@ -69,10 +69,8 @@ export async function getLiveScoresFromServer(leagueId?: number, firstPageOnly =
 }
 
 export async function getUpcomingFixturesFromServer(leagueId?: number, firstPageOnly = false) {
-    // This date range is intentionally set to the future to ensure data is returned for demonstration,
-    // as per the user's working example. For a production app, this should be dynamic.
-    const startDate = '2025-06-29';
-    const endDate = '2025-07-10';
+    const startDate = getFormattedDate(new Date(Date.now() + 24 * 60 * 60 * 1000)); // Tomorrow
+    const endDate = getFormattedDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)); // 30 days from now
     
     const includes = "participants;league.country;state";
     let baseUrl = `${SPORTMONKS_FOOTBALL_API_URL}/fixtures/between/${startDate}/${endDate}?api_token=${apiKey}&include=${includes}&tz=UTC`;
@@ -100,6 +98,12 @@ export async function getTodaysFixturesFromServer() {
     const todayDate = getFormattedDate(new Date());
     const includes = "participants;league.country;state;scores;periods";
     const baseUrl = `${SPORTMONKS_FOOTBALL_API_URL}/fixtures/date/${todayDate}?api_token=${apiKey}&include=${includes}&tz=UTC`;
+    const paginatedData = await fetchPaginatedData(baseUrl);
+    return paginatedData.data || [];
+}
+
+export async function getFootballLeaguesFromServer() {
+    const baseUrl = `${SPORTMONKS_FOOTBALL_API_URL}/leagues?api_token=${apiKey}`;
     const paginatedData = await fetchPaginatedData(baseUrl);
     return paginatedData.data || [];
 }

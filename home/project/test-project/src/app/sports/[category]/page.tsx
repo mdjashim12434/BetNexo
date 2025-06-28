@@ -1,7 +1,7 @@
 
 import AppLayout from '@/components/AppLayout';
 import SportsCategoryClientContent from '@/components/sports/SportsCategoryClientContent';
-import { getLiveScoresFromServer, getUpcomingFixturesFromServer } from '@/lib/sportmonks-server';
+import { getLiveScoresFromServer, getUpcomingFixturesFromServer, getFootballLeaguesFromServer } from '@/lib/sportmonks-server';
 import { processV3FootballFixtures } from '@/services/sportmonksAPI';
 import type { ProcessedFixture } from '@/types/sportmonks';
 
@@ -19,10 +19,39 @@ export async function generateStaticParams() {
   }));
 }
 
+interface ApiLeague {
+  id: number;
+  name: string;
+}
+
+interface CombinedLeague {
+  id: number;
+  name: string;
+  sport: 'football';
+}
+
 interface SportCategoryPageProps {
   params: { category: string };
   searchParams: { [key: string]: string | string[] | undefined };
 }
+
+async function getLeaguesForPage(): Promise<{ leagues: CombinedLeague[], error: string | null }> {
+  try {
+    const footballLeaguesRaw = await getFootballLeaguesFromServer();
+    const footballLeagues: CombinedLeague[] = (footballLeaguesRaw || []).map((l: ApiLeague) => ({
+      id: l.id,
+      name: l.name,
+      sport: 'football' as const
+    }));
+    
+    footballLeagues.sort((a, b) => a.name.localeCompare(b.name));
+    return { leagues: footballLeagues, error: null };
+  } catch (error: any) {
+    console.error("Error fetching leagues on server:", error);
+    return { leagues: [], error: error.message || "Failed to fetch leagues." };
+  }
+}
+
 
 async function getMatchesForCategory(categorySlug: string, leagueId?: number) {
     if (categorySlug === 'all-sports') {
@@ -34,7 +63,6 @@ async function getMatchesForCategory(categorySlug: string, leagueId?: number) {
     let error: string | null = null;
     const errorMessages: string[] = [];
     
-    // Determine which fetches to run based on category
     const shouldFetchLive = categorySlug === 'live' || categorySlug === 'football';
     const shouldFetchUpcoming = categorySlug === 'upcoming' || categorySlug === 'football';
 
@@ -82,7 +110,10 @@ export default async function SportCategoryPage({ params, searchParams }: SportC
   const categoryName = categoryMapping[categorySlug] || 'Sports';
   const leagueId = searchParams.leagueId ? Number(searchParams.leagueId) : undefined;
   
-  const { liveMatches, upcomingMatches, error } = await getMatchesForCategory(categorySlug, leagueId);
+  const { liveMatches, upcomingMatches, error: matchesError } = await getMatchesForCategory(categorySlug, leagueId);
+  const { leagues, error: leaguesError } = categorySlug === 'all-sports' ? await getLeaguesForPage() : { leagues: [], error: null };
+
+  const combinedError = [matchesError, leaguesError].filter(Boolean).join('\n') || null;
   
   return (
     <AppLayout>
@@ -93,7 +124,8 @@ export default async function SportCategoryPage({ params, searchParams }: SportC
           leagueId={searchParams.leagueId as string | undefined}
           initialLiveMatches={liveMatches}
           initialUpcomingMatches={upcomingMatches}
-          initialError={error}
+          initialLeagues={leagues}
+          initialError={combinedError}
         />
       </div>
     </AppLayout>
