@@ -36,6 +36,9 @@ interface TheOddsApiOdd {
 const LIVE_STATES_V3: string[] = ['LIVE', 'HT', 'ET', 'PEN_LIVE', 'BREAK', 'INT'];
 const FINISHED_STATES_V3: string[] = ['FT', 'AET', 'Finished', 'POSTP', 'CANCL', 'ABAN', 'SUSP', 'AWARDED', 'DELETED', 'WO', 'AU'];
 
+// --- BASE URL for internal API calls ---
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:9002';
+
 // Helper to generate user-friendly error messages
 const handleApiResponse = async (response: Response) => {
     if (response.ok) return response.json();
@@ -67,7 +70,7 @@ const parseSportmonksDateStringToISO = (dateString: string): string => {
 // --- NEW: Function to fetch odds from The Odds API via our proxy ---
 async function fetchTheOddsApiData(): Promise<TheOddsApiOdd[]> {
   try {
-    const response = await fetch(`/api/football/odds`, { cache: 'no-store' });
+    const response = await fetch(`${API_BASE_URL}/api/football/odds`, { cache: 'no-store' });
     // Using no-store because odds change frequently
     return handleApiResponse(response);
   } catch (error) {
@@ -183,10 +186,11 @@ const processV3FootballFixtures = (fixtures: SportmonksV3Fixture[], theOddsApiDa
 // --- Public Fetching Functions ---
 
 export async function fetchLiveFootballFixtures(leagueId?: number, firstPageOnly = false): Promise<ProcessedFixture[]> {
-    let url = leagueId ? `/api/football/live-scores?leagueId=${leagueId}` : '/api/football/live-scores';
+    let path = leagueId ? `/api/football/live-scores?leagueId=${leagueId}` : '/api/football/live-scores';
      if (firstPageOnly) {
-        url += url.includes('?') ? '&firstPageOnly=true' : '?firstPageOnly=true';
+        path += path.includes('?') ? '&firstPageOnly=true' : '?firstPageOnly=true';
     }
+    const url = `${API_BASE_URL}${path}`;
     
     const [fixtureResult, oddsResult] = await Promise.allSettled([
       fetch(url, { cache: 'no-store' }),
@@ -203,10 +207,11 @@ export async function fetchLiveFootballFixtures(leagueId?: number, firstPageOnly
 }
 
 export async function fetchUpcomingFootballFixtures(leagueId?: number, firstPageOnly = false): Promise<ProcessedFixture[]> {
-    let url = leagueId ? `/api/football/upcoming-fixtures?leagueId=${leagueId}` : '/api/football/upcoming-fixtures';
+    let path = leagueId ? `/api/football/upcoming-fixtures?leagueId=${leagueId}` : '/api/football/upcoming-fixtures';
     if (firstPageOnly) {
-        url += url.includes('?') ? '&firstPageOnly=true' : '?firstPageOnly=true';
+        path += path.includes('?') ? '&firstPageOnly=true' : '?firstPageOnly=true';
     }
+    const url = `${API_BASE_URL}${path}`;
     
     const [fixtureResult, oddsResult] = await Promise.allSettled([
       fetch(url, { cache: 'no-store' }),
@@ -231,8 +236,9 @@ export async function fetchUpcomingFootballFixtures(leagueId?: number, firstPage
 }
 
 export async function fetchFixtureDetails(fixtureId: number): Promise<ProcessedFixture> {
+    const url = `${API_BASE_URL}/api/football/fixtures?fixtureId=${fixtureId}`;
     const [fixtureResult, oddsResult] = await Promise.allSettled([
-        fetch(`/api/football/fixtures?fixtureId=${fixtureId}`, { cache: 'no-store' }),
+        fetch(url, { cache: 'no-store' }),
         fetchTheOddsApiData()
     ]);
     
