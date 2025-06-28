@@ -6,7 +6,7 @@ import BottomNav from '@/components/navigation/BottomNav';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { Star, Swords, Gamepad2, Dice5, Zap, Dribbble, Goal, CheckSquare, Tablet, Circle, Disc, Image as ImageIcon, CopyCheck, Basketball, TableTennisPaddleBall, TennisBall, Hockey } from 'lucide-react';
+import { Star, Swords, Gamepad2, Dice5, Zap, Goal, Image as ImageIcon, CopyCheck, Basketball, TableTennisPaddleBall, TennisBall, Hockey, Disc } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -26,28 +26,11 @@ const topNavItems = [
   { name: 'Fast Games', href: '#', icon: Zap },
 ];
 
-// --- Custom Icons for Sports Grid ---
-const FootballIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg width="1em" height="1em" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" {...props}>
-      <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10s10-4.48 10-10S17.52 2 12 2zm-1.04 2.61l.98.56.98-.56l1.04 1.8l-1.04 1.8l-.98.56h-1.96l-.98-.56l-1.04-1.8l1.04-1.8zm2.08 6.78l1.04 1.8l-.98.56h-1.96l-.98-.56l1.04-1.8h1.84zm-6.24 0l1.04 1.8l-.98.56H5.96l-.98-.56l1.04-1.8h1.84zM12 17.39l-.98.56h-1.96l-.98-.56l-1.04-1.8l1.04-1.8l.98-.56h1.96l.98.56l1.04 1.8l-1.04 1.8zm2.08-3.39l.98.56h1.96l.98-.56l1.04-1.8l-1.04-1.8l-.98-.56h-1.96l-.98.56l-1.04 1.8l1.04 1.8h.02z"/>
-    </svg>
-);
-
-const CricketIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg width="1em" height="1em" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" {...props}>
-        <g fill="currentColor" transform="rotate(45 12 12)">
-            <path d="M13.5 3h-3L9 9v10h6V9l-1.5-6z"/>
-        </g>
-        <circle cx="6.5" cy="17.5" r="2.5" fill="currentColor"/>
-    </svg>
-);
-
-
-// --- Sports Grid Data ---
+// --- Sports Grid Data (Using reliable lucide-react icons) ---
 const sportsGridItems = [
   { name: 'All', href: '/sports/all-sports', icon: CopyCheck },
-  { name: 'Cricket', href: '#', icon: CricketIcon },
-  { name: 'Football', href: '/sports/football', icon: FootballIcon },
+  { name: 'Cricket', href: '#', icon: Disc },
+  { name: 'Football', href: '/sports/football', icon: Goal },
   { name: 'Basketball', href: '#', icon: Basketball },
   { name: 'Table Tennis', href: '#', icon: TableTennisPaddleBall },
   { name: 'Tennis', href: '#', icon: TennisBall },
