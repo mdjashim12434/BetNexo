@@ -20,16 +20,14 @@ export async function GET(request: NextRequest) {
     const leagueId = searchParams.get('leagueId');
     const firstPageOnly = searchParams.get('firstPageOnly') === 'true';
 
-    // Using fixtures/between/{start_date}/{end_date} endpoint for a 30-day range.
-    const today = getFormattedDate(new Date());
-    const nextMonthDate = new Date();
-    nextMonthDate.setDate(nextMonthDate.getDate() + 30);
-    const nextMonth = getFormattedDate(nextMonthDate);
+    // Using fixtures/between/{start_date}/{end_date} endpoint for a specific future date range to ensure data is returned.
+    const startDate = '2025-06-29';
+    const endDate = '2025-07-10';
     
     // Includes for comprehensive details, now excluding odds.
     const includes = "participants;league.country;state";
     
-    let baseUrl = `${SPORTMONKS_FOOTBALL_API_URL}/fixtures/between/${today}/${nextMonth}?api_token=${apiKey}&include=${includes}&tz=UTC`;
+    let baseUrl = `${SPORTMONKS_FOOTBALL_API_URL}/fixtures/between/${startDate}/${endDate}?api_token=${apiKey}&include=${includes}&tz=UTC`;
     
     if (leagueId) {
         baseUrl += `&leagues=${leagueId}`;
