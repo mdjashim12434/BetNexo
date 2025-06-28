@@ -157,15 +157,20 @@ export default function SportsCategoryClientContent({
   const [loadingLeagues, setLoadingLeagues] = useState(false);
 
   const getDefaultTab = () => {
-    if (categorySlug === 'live') return 'live';
     if (categorySlug === 'upcoming') return 'upcoming';
     return 'live';
   };
   const [activeTab, setActiveTab] = useState(getDefaultTab());
-
+  
+  // Set the active tab based on the category slug, but only if it's different
   useEffect(() => {
-    setActiveTab(getDefaultTab());
+    const newDefaultTab = getDefaultTab();
+    if (activeTab !== newDefaultTab) {
+        setActiveTab(newDefaultTab);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categorySlug]);
+
 
   useEffect(() => {
     async function getMatchesForCategory() {
@@ -175,11 +180,12 @@ export default function SportsCategoryClientContent({
       }
       setIsLoading(true);
       setFetchError(null);
+      setLiveMatches([]);
+      setUpcomingMatches([]);
   
       try {
-        let liveMatchesPromise: Promise<ProcessedFixture[]> = Promise.resolve([]);
-        let upcomingMatchesPromise: Promise<ProcessedFixture[]> = Promise.resolve([]);
         const errorMessages: string[] = [];
+        const numericLeagueId = leagueId ? Number(leagueId) : undefined;
   
         const handleFetch = <T,>(promise: Promise<T>): Promise<T | []> =>
           promise.catch(e => {
@@ -189,16 +195,19 @@ export default function SportsCategoryClientContent({
               return [];
           });
   
-        const numericLeagueId = leagueId ? Number(leagueId) : undefined;
-  
-        if (categorySlug === 'live' || categorySlug === 'football') {
-          liveMatchesPromise = handleFetch(fetchLiveFootballFixtures(numericLeagueId));
-          upcomingMatchesPromise = handleFetch(fetchUpcomingFootballFixtures(numericLeagueId));
+        let livePromise: Promise<ProcessedFixture[]> = Promise.resolve([]);
+        let upcomingPromise: Promise<ProcessedFixture[]> = Promise.resolve([]);
+        
+        if (categorySlug === 'live') {
+          livePromise = handleFetch(fetchLiveFootballFixtures(numericLeagueId));
         } else if (categorySlug === 'upcoming') {
-          upcomingMatchesPromise = handleFetch(fetchUpcomingFootballFixtures(numericLeagueId));
+          upcomingPromise = handleFetch(fetchUpcomingFootballFixtures(numericLeagueId));
+        } else if (categorySlug === 'football') {
+          livePromise = handleFetch(fetchLiveFootballFixtures(numericLeagueId));
+          upcomingPromise = handleFetch(fetchUpcomingFootballFixtures(numericLeagueId));
         }
-  
-        const [live, upcoming] = await Promise.all([liveMatchesPromise, upcomingMatchesPromise]);
+
+        const [live, upcoming] = await Promise.all([livePromise, upcomingPromise]);
   
         const liveMatchIds = new Set(live.map(m => m.id));
         const uniqueUpcoming = upcoming.filter(m => !liveMatchIds.has(m.id));
@@ -265,8 +274,16 @@ export default function SportsCategoryClientContent({
     );
   }, [leagues, searchTerm]);
 
-  const filteredMatches = useMemo(() => {
-    const sourceMatches = activeTab === 'live' ? liveMatches : upcomingMatches;
+  const matchesToShow = useMemo(() => {
+    let sourceMatches;
+    if (categorySlug === 'live') {
+        sourceMatches = liveMatches;
+    } else if (categorySlug === 'upcoming') {
+        sourceMatches = upcomingMatches;
+    } else { // football page with tabs
+        sourceMatches = activeTab === 'live' ? liveMatches : upcomingMatches;
+    }
+
     if (!searchTerm) return sourceMatches;
     
     const lowercasedSearchTerm = searchTerm.toLowerCase();
@@ -274,7 +291,7 @@ export default function SportsCategoryClientContent({
       match.name.toLowerCase().includes(lowercasedSearchTerm) ||
       match.league.name.toLowerCase().includes(lowercasedSearchTerm)
     );
-  }, [liveMatches, upcomingMatches, searchTerm, activeTab]);
+  }, [liveMatches, upcomingMatches, searchTerm, activeTab, categorySlug]);
 
   useEffect(() => {
     if (!loadingAuth && !user) {
@@ -286,7 +303,7 @@ export default function SportsCategoryClientContent({
     return <div className="text-center p-10">Loading user session...</div>
   }
 
-  const showTabs = categorySlug === 'football' || categorySlug === 'live' || categorySlug === 'upcoming';
+  const showTabs = categorySlug === 'football';
 
   const sharedHeader = (
      <>
@@ -330,6 +347,34 @@ export default function SportsCategoryClientContent({
         ))}
     </div>
   );
+
+  const renderMatchList = () => {
+    const isLiveList = (categorySlug === 'live') || (categorySlug === 'football' && activeTab === 'live');
+
+    return (
+        <div className="space-y-3">
+            {matchesToShow.map((match) => 
+                isLiveList 
+                ? <LiveMatchCard key={`live-${match.id}`} match={match} />
+                : <UpcomingMatchCard key={`upcoming-${match.id}`} match={match} />
+            )}
+        </div>
+    );
+  }
+
+  const renderNoMatches = () => {
+    let message = 'No matches for this selection were found at this time.';
+    if(categorySlug === 'live') message = 'No live matches were found at this time.';
+    if(categorySlug === 'upcoming') message = 'No upcoming matches were found at this time.';
+
+    return (
+      <div className="text-center text-muted-foreground py-10">
+        <Frown className="mx-auto h-12 w-12 mb-4" />
+        <p className="text-lg font-semibold">No Matches Found</p>
+        <p className="text-sm">{message}</p>
+      </div>
+    );
+  }
 
   if (categorySlug === 'all-sports') {
     return (
@@ -395,21 +440,7 @@ export default function SportsCategoryClientContent({
             <p className="text-lg font-semibold">Failed to load matches</p>
             <p className="text-sm mt-2 max-w-md mx-auto whitespace-pre-wrap">{fetchError}</p>
          </div>
-      ) : filteredMatches.length > 0 ? (
-        <div className="space-y-3">
-          {filteredMatches.map((match) => (
-            activeTab === 'live' 
-                ? <LiveMatchCard key={`live-${match.id}`} match={match} />
-                : <UpcomingMatchCard key={`upcoming-${match.id}`} match={match} />
-          ))}
-        </div>
-      ) : (
-        <div className="text-center text-muted-foreground py-10">
-          <Frown className="mx-auto h-12 w-12 mb-4" />
-          <p className="text-lg font-semibold">No Matches Found</p>
-          <p className="text-sm">No {activeTab} matches for this selection were found at this time.</p>
-        </div>
-      )}
+      ) : matchesToShow.length > 0 ? renderMatchList() : renderNoMatches()}
     </div>
   );
 }
