@@ -333,31 +333,6 @@
       "static/chunks/main-app-0ec640679fb0f8cb.js",
       "static/chunks/app/upcoming/page-0dbf306c3424b682.js"
     ],
-    "/wallet/page": [
-      "static/chunks/webpack-786bc8dd37364a66.js",
-      "static/chunks/4bd1b696-ea220d9e6899be91.js",
-      "static/chunks/1684-5430a757c3d8613f.js",
-      "static/chunks/main-app-0ec640679fb0f8cb.js",
-      "static/chunks/bc9e92e6-08de0ed1d06cea81.js",
-      "static/chunks/ceb9e9aa-e3d0c17acc048874.js",
-      "static/chunks/3139-16c6acf56538fb90.js",
-      "static/chunks/6874-bb089797972fa0f2.js",
-      "static/chunks/53-0a422152ae3f0390.js",
-      "static/chunks/app/wallet/page-723888beb7df7295.js"
-    ],
-    "/withdraw/page": [
-      "static/chunks/webpack-786bc8dd37364a66.js",
-      "static/chunks/4bd1b696-ea220d9e6899be91.js",
-      "static/chunks/1684-5430a757c3d8613f.js",
-      "static/chunks/main-app-0ec640679fb0f8cb.js",
-      "static/chunks/bc9e92e6-08de0ed1d06cea81.js",
-      "static/chunks/ceb9e9aa-e3d0c17acc048874.js",
-      "static/chunks/3139-16c6acf56538fb90.js",
-      "static/chunks/6874-bb089797972fa0f2.js",
-      "static/chunks/6766-fe59b6f60e1c4509.js",
-      "static/chunks/53-0a422152ae3f0390.js",
-      "static/chunks/app/withdraw/page-b5195f5335c307d5.js"
-    ],
     "/user-dashboard/page": [
       "static/chunks/webpack-786bc8dd37364a66.js",
       "static/chunks/4bd1b696-ea220d9e6899be91.js",
@@ -386,6 +361,31 @@
       "static/chunks/53-0a422152ae3f0390.js",
       "static/chunks/5601-6158805e9f868eae.js",
       "static/chunks/app/sports/[category]/page-8bc481eeac84a136.js"
+    ],
+    "/wallet/page": [
+      "static/chunks/webpack-786bc8dd37364a66.js",
+      "static/chunks/4bd1b696-ea220d9e6899be91.js",
+      "static/chunks/1684-5430a757c3d8613f.js",
+      "static/chunks/main-app-0ec640679fb0f8cb.js",
+      "static/chunks/bc9e92e6-08de0ed1d06cea81.js",
+      "static/chunks/ceb9e9aa-e3d0c17acc048874.js",
+      "static/chunks/3139-16c6acf56538fb90.js",
+      "static/chunks/6874-bb089797972fa0f2.js",
+      "static/chunks/53-0a422152ae3f0390.js",
+      "static/chunks/app/wallet/page-723888beb7df7295.js"
+    ],
+    "/withdraw/page": [
+      "static/chunks/webpack-786bc8dd37364a66.js",
+      "static/chunks/4bd1b696-ea220d9e6899be91.js",
+      "static/chunks/1684-5430a757c3d8613f.js",
+      "static/chunks/main-app-0ec640679fb0f8cb.js",
+      "static/chunks/bc9e92e6-08de0ed1d06cea81.js",
+      "static/chunks/ceb9e9aa-e3d0c17acc048874.js",
+      "static/chunks/3139-16c6acf56538fb90.js",
+      "static/chunks/6874-bb089797972fa0f2.js",
+      "static/chunks/6766-fe59b6f60e1c4509.js",
+      "static/chunks/53-0a422152ae3f0390.js",
+      "static/chunks/app/withdraw/page-b5195f5335c307d5.js"
     ]
   }
 }

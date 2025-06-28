@@ -2,53 +2,12 @@
 "use client";
 import React from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, Goal, Bell, Star, Info } from 'lucide-react';
+import { AlertTriangle, Info } from 'lucide-react';
 import type { ProcessedFixture } from "@/types/sportmonks";
-
-const LiveMatchCard = ({ match }: { match: ProcessedFixture }) => {
-    const homeTeam = match.homeTeam;
-    const awayTeam = match.awayTeam;
-    const homeScore = match.homeScore || 0;
-    const awayScore = match.awayScore || 0;
-    const minute = match.minute;
-
-    return (
-        <Link href={`/match/${match.id}`} passHref>
-        <Card as="a" className="p-3 transition-all hover:bg-muted/50 cursor-pointer">
-          <div className="flex justify-between items-center text-xs text-muted-foreground mb-3">
-            <div className="flex items-center gap-2">
-              <Goal className="h-4 w-4 text-primary" />
-              <span className="font-semibold truncate">{match.league?.name || 'N/A'}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Bell className="h-4 w-4" />
-              <Star className="h-4 w-4" />
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between gap-2 mb-2">
-            <div className="flex items-center gap-2 w-2/5 truncate">
-              <Image src={homeTeam?.image_path || `https://placehold.co/40x40.png`} alt={homeTeam?.name || ''} width={24} height={24} className="rounded-full" data-ai-hint="team logo" />
-              <span className="font-semibold text-sm truncate">{homeTeam?.name || 'Home'}</span>
-            </div>
-            <div className="text-xl font-bold text-center">
-              {homeScore} : {awayScore}
-            </div>
-            <div className="flex items-center gap-2 w-2/5 justify-end truncate">
-              <span className="font-semibold text-sm text-right truncate">{awayTeam?.name || 'Away'}</span>
-              <Image src={awayTeam?.image_path || `https://placehold.co/40x40.png`} alt={awayTeam?.name || ''} width={24} height={24} className="rounded-full" data-ai-hint="team logo" />
-            </div>
-          </div>
-          
-          {minute && <p className="text-center text-xs text-yellow-500 mb-3">{minute}' - {match.state?.name}</p>}
-        </Card>
-      </Link>
-    );
-};
+import MatchCard from "@/components/sports/MatchCard";
 
 interface LiveFixturesProps {
   matches: ProcessedFixture[];
@@ -107,8 +66,8 @@ export default function LiveFixtures({ matches, loading, error }: LiveFixturesPr
         <Button variant="link" asChild><Link href="/sports/live">All</Link></Button>
       </div>
       <div className="space-y-3">
-        {matches.map((match: ProcessedFixture) => (
-          <LiveMatchCard key={match.id} match={match} />
+        {matches.map((match) => (
+          <MatchCard key={match.id} match={match} />
         ))}
       </div>
     </section>

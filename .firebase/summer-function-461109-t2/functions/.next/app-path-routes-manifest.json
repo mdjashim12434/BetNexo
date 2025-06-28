@@ -34,8 +34,8 @@
   "/signup/page": "/signup",
   "/sports-dashboard/page": "/sports-dashboard",
   "/upcoming/page": "/upcoming",
-  "/wallet/page": "/wallet",
-  "/withdraw/page": "/withdraw",
   "/user-dashboard/page": "/user-dashboard",
-  "/sports/[category]/page": "/sports/[category]"
+  "/sports/[category]/page": "/sports/[category]",
+  "/wallet/page": "/wallet",
+  "/withdraw/page": "/withdraw"
 }

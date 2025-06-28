@@ -2,48 +2,12 @@
 "use client";
 import React from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, Goal, Bell, Star, Info } from 'lucide-react';
-import { format } from 'date-fns';
+import { AlertTriangle, Info } from 'lucide-react';
 import type { ProcessedFixture } from "@/types/sportmonks";
-
-const UpcomingMatchCard = ({ match }: { match: ProcessedFixture }) => {
-    return (
-        <Link href={`/match/${match.id}`} passHref>
-        <Card as="a" className="p-3 transition-all hover:bg-muted/50 cursor-pointer">
-           <div className="flex justify-between items-center text-xs text-muted-foreground mb-3">
-            <div className="flex items-center gap-2">
-              <Goal className="h-4 w-4 text-primary" />
-              <span className="font-semibold truncate">{match.league?.name || 'N/A'}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Bell className="h-4 w-4" />
-              <Star className="h-4 w-4" />
-            </div>
-          </div>
-          
-           <div className="flex items-center justify-between gap-2 mb-2">
-            <div className="flex flex-col items-center gap-1 w-2/5 text-center">
-              <Image src={match.homeTeam.image_path || `https://placehold.co/40x40.png`} alt={match.homeTeam.name || 'Home'} width={32} height={32} className="rounded-full" data-ai-hint="team logo" />
-              <span className="font-semibold text-sm truncate">{match.homeTeam.name}</span>
-            </div>
-            <div className="text-xl font-bold text-muted-foreground">
-              VS
-            </div>
-            <div className="flex flex-col items-center gap-1 w-2/5 text-center">
-              <Image src={match.awayTeam.image_path || `https://placehold.co/40x40.png`} alt={match.awayTeam.name || 'Away'} width={32} height={32} className="rounded-full" data-ai-hint="team logo" />
-              <span className="font-semibold text-sm text-right truncate">{match.awayTeam.name}</span>
-            </div>
-          </div>
-          
-          <p className="text-center text-xs text-muted-foreground mb-3">{format(new Date(match.startingAt), "dd.MM.yy hh:mm a")}</p>
-        </Card>
-      </Link>
-    );
-};
+import MatchCard from "@/components/sports/MatchCard";
 
 interface UpcomingFixturesProps {
   matches: ProcessedFixture[];
@@ -103,7 +67,7 @@ export default function UpcomingFixtures({ matches, loading, error }: UpcomingFi
       </div>
       <div className="space-y-3">
         {matches.map((match) => (
-          <UpcomingMatchCard key={match.id} match={match} />
+          <MatchCard key={match.id} match={match} />
         ))}
       </div>
     </section>

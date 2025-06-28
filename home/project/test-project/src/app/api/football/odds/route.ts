@@ -1,12 +1,11 @@
 
-// This file is deprecated. Odds are now fetched directly by the sportmonksAPI service 
-// if required, but are currently disabled in list views to improve reliability.
+// This file is deprecated as the homepage now fetches data directly from Sportmonks via server components.
 import { NextResponse } from 'next/server';
 
 export async function GET() {
   return NextResponse.json(
     { 
-      error: 'This endpoint is deprecated as odds functionality is currently disabled in this context.' 
+      error: 'This endpoint is deprecated. The main application no longer uses The Odds API for scores.' 
     }, 
     { status: 410 } // HTTP 410 Gone
   );
