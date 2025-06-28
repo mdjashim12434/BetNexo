@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import AppLayout from '@/components/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { AlertTriangle, Frown, Loader2, ChevronsRight, ChevronDown, ChevronUp } from "lucide-react";
+import { AlertTriangle, Frown, Loader2, ChevronsRight, ChevronDown, ChevronUp, Radio, Calendar, Trophy } from "lucide-react";
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
@@ -246,9 +246,9 @@ export default function SportsDashboardPage() {
             </CardHeader>
             <CardContent>
                 <div className="flex flex-wrap gap-2 mb-4 border-b pb-4">
-                    <Button onClick={() => setView('live')} variant={view === 'live' ? 'default' : 'outline'}>Live</Button>
-                    <Button onClick={() => setView('upcoming')} variant={view === 'upcoming' ? 'default' : 'outline'}>Upcoming</Button>
-                    <Button onClick={() => setView('leagues')} variant={view === 'leagues' ? 'default' : 'outline'}>All Leagues</Button>
+                    <Button onClick={() => setView('live')} variant={view === 'live' ? 'default' : 'outline'}><Radio />Live</Button>
+                    <Button onClick={() => setView('upcoming')} variant={view === 'upcoming' ? 'default' : 'outline'}><Calendar />Upcoming</Button>
+                    <Button onClick={() => setView('leagues')} variant={view === 'leagues' ? 'default' : 'outline'}><Trophy />All Leagues</Button>
                 </div>
                 <div>{renderContent()}</div>
             </CardContent>
