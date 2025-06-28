@@ -14,8 +14,20 @@ const LIVE_STATES_V3: string[] = ['LIVE', 'HT', 'ET', 'PEN_LIVE', 'BREAK', 'INT'
 const FINISHED_STATES_V3: string[] = ['FT', 'AET', 'Finished', 'POSTP', 'CANCL', 'ABAN', 'SUSP', 'AWARDED', 'DELETED', 'WO', 'AU'];
 
 // --- BASE URL for internal API calls ---
-// Use the environment variable to construct the full URL for server-side fetches.
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:9002';
+// Determines the base URL based on the execution environment (server or client).
+const getApiBaseUrl = () => {
+  // If running on the server, use the internal localhost URL.
+  // This is for cases where API routes or Server Components call service functions.
+  if (typeof window === 'undefined') {
+    return process.env.API_BASE_URL || 'http://localhost:9002';
+  }
+  // If running on the client, use a relative path.
+  // The browser will automatically use the current domain.
+  return '';
+};
+
+const API_BASE_URL = getApiBaseUrl();
+
 
 // Helper to generate user-friendly error messages
 const handleApiResponse = async (response: Response) => {
