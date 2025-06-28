@@ -37,9 +37,8 @@ const LIVE_STATES_V3: string[] = ['LIVE', 'HT', 'ET', 'PEN_LIVE', 'BREAK', 'INT'
 const FINISHED_STATES_V3: string[] = ['FT', 'AET', 'Finished', 'POSTP', 'CANCL', 'ABAN', 'SUSP', 'AWARDED', 'DELETED', 'WO', 'AU'];
 
 // --- BASE URL for internal API calls ---
-// Use a relative path for all fetch calls. Next.js's fetch can handle this
-// on both server and client, preventing the self-calling deadlock on server start.
-const API_BASE_URL = '';
+// Use the environment variable to construct the full URL for server-side fetches.
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:9002';
 
 // Helper to generate user-friendly error messages
 const handleApiResponse = async (response: Response) => {
