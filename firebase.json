@@ -6,7 +6,7 @@
     "rules": "storage.rules"
   },
   "hosting": {
-    "public": "default",
+    "public": "home/project/test-project/out",
     "ignore": [
       "firebase.json",
       "**/.*",
