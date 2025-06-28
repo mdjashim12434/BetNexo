@@ -14,7 +14,8 @@ export async function GET(request: NextRequest) {
   const leagueId = searchParams.get('leagueId');
   const firstPageOnly = searchParams.get('firstPageOnly') === 'true';
   
-  const includes = "participants;scores;league.country;state;periods";
+  // Includes for comprehensive details, now including odds from Sportmonks.
+  const includes = "participants;scores;league.country;state;periods;odds";
   let baseUrl = `${SPORTMONKS_FOOTBALL_API_URL}/livescores?api_token=${apiKey}&include=${includes}&tz=UTC`;
 
   if (leagueId) {
