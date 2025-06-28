@@ -22,8 +22,8 @@ export async function GET(request: NextRequest) {
     
     const todayDate = getTodayDateString();
 
-    // Includes for comprehensive details, now with odds.
-    const includes = "participants;league.country;state;scores;periods;events;odds";
+    // Includes for comprehensive details, now excluding odds for list view reliability.
+    const includes = "participants;league.country;state;scores;periods;events";
     
     let baseUrl = `${SPORTMONKS_FOOTBALL_API_URL}/fixtures/date/${todayDate}?api_token=${apiKey}&include=${includes}&tz=UTC`;
     
