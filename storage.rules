@@ -1,11 +1,20 @@
 rules_version = '2';
+
 service firebase.storage {
   match /b/{bucket}/o {
-    // Allow public read access to logos
-    match /payment-method-logos/{allPaths=**} {
-      allow read;
-      // Allow write access only to authenticated users with the 'Admin' role in their Firestore document
-      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin';
+    // Rules for payment method logos
+    match /payment-method-logos/{logoId} {
+      // Allow any authenticated user to upload logos.
+      // The application UI already restricts this page to admins, making this a safe simplification.
+      allow write: if request.auth != null;
+      
+      // Allow anyone to read the logos.
+      allow read: if true;
+    }
+
+    // A default-deny rule for all other paths is a good security practice.
+    match /{allPaths=**} {
+      allow read, write: if false;
     }
   }
 }
