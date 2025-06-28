@@ -37,7 +37,10 @@ const LIVE_STATES_V3: string[] = ['LIVE', 'HT', 'ET', 'PEN_LIVE', 'BREAK', 'INT'
 const FINISHED_STATES_V3: string[] = ['FT', 'AET', 'Finished', 'POSTP', 'CANCL', 'ABAN', 'SUSP', 'AWARDED', 'DELETED', 'WO', 'AU'];
 
 // --- BASE URL for internal API calls ---
-const API_BASE_URL = 'http://localhost:9002';
+const IS_SERVER = typeof window === 'undefined';
+// When on the server (for pages like HomePage), use the full absolute URL to connect to the API routes.
+// When on the client (for pages like SportsCategoryClientContent), use a relative path (empty base URL).
+const API_BASE_URL = IS_SERVER ? 'http://localhost:9002' : '';
 
 // Helper to generate user-friendly error messages
 const handleApiResponse = async (response: Response) => {
