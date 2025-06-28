@@ -16,11 +16,10 @@ import {
   orderBy, 
   getDocs, 
   doc, 
-  updateDoc, 
+  writeBatch,
   serverTimestamp, 
   Timestamp, 
-  updateUserBalanceInFirestore,
-  findUserDocByCustomId, // Import the new helper function
+  findUserDocByCustomId,
   limit,
   startAfter,
   type QueryDocumentSnapshot
@@ -140,7 +139,6 @@ export default function TransactionsLogTab() {
 
 
   const handleAction = async (transaction: Transaction, newStatus: 'approved' | 'rejected') => {
-    const transactionDocRef = doc(db, "transactions", transaction.id);
     try {
       // Find the user's Firebase UID from their customUserId before proceeding
       const userDocSnap = await findUserDocByCustomId(transaction.userId);
@@ -151,18 +149,30 @@ export default function TransactionsLogTab() {
       const userFirebaseUid = userDocSnap.id;
       const userData = userDocSnap.data();
 
-      if (newStatus === 'approved') {
-        if (transaction.type === 'deposit') {
-          await updateUserBalanceInFirestore(userFirebaseUid, transaction.amount);
-        } else if (transaction.type === 'withdrawal') {
-          if ((userData.balance || 0) < transaction.amount) {
-             toast({ title: "Action Failed", description: `User ${transaction.userName} has insufficient balance for this withdrawal. Current Balance: ${userData.currency || 'N/A'} ${(userData.balance || 0).toFixed(2)}. Required: ${transaction.amount.toFixed(2)}`, variant: "destructive", duration: 7000 });
-             return; 
-          }
-          await updateUserBalanceInFirestore(userFirebaseUid, -transaction.amount);
+      // For withdrawals, check balance BEFORE creating the batch
+      if (newStatus === 'approved' && transaction.type === 'withdrawal') {
+        if ((userData.balance || 0) < transaction.amount) {
+           toast({ title: "Action Failed", description: `User ${transaction.userName} has insufficient balance for this withdrawal. Current Balance: ${userData.currency || 'N/A'} ${(userData.balance || 0).toFixed(2)}. Required: ${transaction.amount.toFixed(2)}`, variant: "destructive", duration: 7000 });
+           return; 
         }
       }
-      await updateDoc(transactionDocRef, { status: newStatus, processedAt: serverTimestamp() });
+
+      // Everything seems okay, let's perform the atomic write.
+      const batch = writeBatch(db);
+      
+      // 1. Update transaction status
+      const transactionDocRef = doc(db, "transactions", transaction.id);
+      batch.update(transactionDocRef, { status: newStatus, processedAt: serverTimestamp() });
+
+      // 2. Update user balance if approved
+      if (newStatus === 'approved') {
+        const userDocRef = doc(db, "users", userFirebaseUid);
+        const amountChange = transaction.type === 'deposit' ? transaction.amount : -transaction.amount;
+        const newBalance = (userData.balance || 0) + amountChange;
+        batch.update(userDocRef, { balance: newBalance });
+      }
+
+      await batch.commit();
       
       toast({
         title: `Transaction ${newStatus}`,

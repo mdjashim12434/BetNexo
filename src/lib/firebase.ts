@@ -25,6 +25,7 @@ import {
   getDocs, 
   limit, 
   startAfter, 
+  writeBatch,
   Timestamp,
   type QueryDocumentSnapshot 
 } from 'firebase/firestore';
@@ -129,6 +130,7 @@ export {
   getDoc,
   setDoc,
   updateDoc,
+  writeBatch,
   serverTimestamp,
   collection,
   query,
