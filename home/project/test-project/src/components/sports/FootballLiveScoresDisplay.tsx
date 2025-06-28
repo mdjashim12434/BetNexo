@@ -2,7 +2,7 @@
 'use client';
 
 import type { ProcessedFixture } from '@/types/sportmonks';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { AlertTriangle, Info, Goal, Bell, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -12,7 +12,7 @@ import Image from 'next/image';
 interface HomeMatchesDisplayProps {
   liveMatches: ProcessedFixture[];
   upcomingMatches: ProcessedFixture[];
-  error?: string;
+  error?: string | null;
 }
 
 const LiveMatchCard = ({ match }: { match: ProcessedFixture }) => (
@@ -95,12 +95,12 @@ export default function HomeMatchesDisplay({
     <div className="space-y-6">
        {error && (
         <Card>
-          <div className="p-4">
+          <CardContent className="pt-6">
             <div className="p-3 rounded-md bg-destructive/10 text-destructive text-xs flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 shrink-0" />
-              <p>{error}</p>
+              <p className="whitespace-pre-wrap">{error}</p>
             </div>
-          </div>
+          </CardContent>
         </Card>
       )}
 
