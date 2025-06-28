@@ -1,4 +1,3 @@
-
 // Import the functions you need from the SDKs you need
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { 
@@ -30,13 +29,14 @@ import {
   type QueryDocumentSnapshot 
 } from 'firebase/firestore';
 import { getAnalytics, isSupported } from "firebase/analytics";
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyAAeONCc7rsrvOwlbxmHjxf-qUw3O1v9QY",
   authDomain: "summer-function-461109-t2.firebaseapp.com",
   projectId: "summer-function-461109-t2",
-  storageBucket: "summer-function-461109-t2.firebasestorage.app",
+  storageBucket: "summer-function-461109-t2.appspot.com",
   messagingSenderId: "404019274818",
   appId: "1:404019274818:web:e765b67dfb7710d4be79db",
   measurementId: "G-8FH69DQ5Q9"
@@ -46,6 +46,7 @@ const firebaseConfig = {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 const db = getFirestore(app);
+const storage = getStorage(app);
 
 // Initialize Analytics if supported (client-side)
 const analytics = isSupported().then(yes => yes ? getAnalytics(app) : null);
@@ -100,6 +101,7 @@ export {
   app,
   auth,
   db,
+  storage,
   analytics,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -122,6 +124,9 @@ export {
   startAfter,
   updateUserBalanceInFirestore,
   Timestamp,
+  storageRef,
+  uploadBytes,
+  getDownloadURL,
   type FirebaseUserType,
   type QueryDocumentSnapshot,
 };
