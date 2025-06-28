@@ -1,4 +1,5 @@
 
+
 import { NextResponse, type NextRequest } from 'next/server';
 import { getFixtureDetailsFromServer } from '@/lib/sportmonks-server';
 
@@ -13,7 +14,7 @@ export async function GET(request: NextRequest) {
         }
 
         const data = await getFixtureDetailsFromServer(Number(fixtureId));
-        return NextResponse.json(data);
+        return NextResponse.json({ data });
 
     } catch (error: any) {
         console.error('Error in football fixtures proxy route:', error);

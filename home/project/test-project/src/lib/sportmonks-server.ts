@@ -52,8 +52,8 @@ async function fetchPaginatedData(baseUrl: string) {
 }
 
 export async function getLiveScoresFromServer(leagueId?: number, firstPageOnly = false) {
-    const includes = "participants;scores;league.country;state;periods";
-    let baseUrl = `${SPORTMONKS_FOOTBALL_API_URL}/livescores?api_token=${apiKey}&include=${includes}&tz=UTC`;
+    const includes = "formations;scores;sidelined;sport;round;stage;group;aggregate;league;season;referees;coaches;tvStations;venue;state;weatherReport;lineups;events;timeline;comments;trends;statistics;periods;participants;odds;inplayOdds;prematchNews;metadata;predictions;ballCoordinates";
+    let baseUrl = `${SPORTMONKS_FOOTBALL_API_URL}/livescores/inplay?api_token=${apiKey}&include=${includes}&tz=UTC`;
     if (leagueId) {
         baseUrl += `&leagues=${leagueId}`;
     }
@@ -71,7 +71,7 @@ export async function getUpcomingFixturesFromServer(leagueId?: number, firstPage
     const startDate = getFormattedDate(new Date(Date.now() + 24 * 60 * 60 * 1000)); // Tomorrow
     const endDate = getFormattedDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)); // 30 days from now
     
-    const includes = "participants;league.country;state";
+    const includes = "participants;league.country;state;odds";
     let baseUrl = `${SPORTMONKS_FOOTBALL_API_URL}/fixtures/between/${startDate}/${endDate}?api_token=${apiKey}&include=${includes}&tz=UTC`;
     if (leagueId) {
         baseUrl += `&leagues=${leagueId}`;
@@ -87,7 +87,7 @@ export async function getUpcomingFixturesFromServer(leagueId?: number, firstPage
 }
 
 export async function getFixtureDetailsFromServer(fixtureId: number) {
-    const includes = "participants;league.country;state;scores;periods;comments;venue;referee";
+    const includes = "participants;league.country;state;scores;periods;comments;venue;referee;odds;inplayOdds;statistics;trends";
     const url = `${SPORTMONKS_FOOTBALL_API_URL}/fixtures/${fixtureId}?api_token=${apiKey}&include=${includes}&tz=UTC`;
     const result = await fetchFromSportmonks(url);
     return result.data;

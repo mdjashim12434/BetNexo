@@ -4,6 +4,7 @@ import type {
     ProcessedFixture, 
     SportmonksState,
     FootballEvent,
+    SportmonksOdd,
 } from '@/types/sportmonks';
 
 // This function is now a pure utility and can be used on both server and client if needed.
@@ -22,6 +23,9 @@ const parseSportmonksDateStringToISO = (dateString: string): string => {
     return isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString();
 };
 
+const findOddsForMarket = (odds: SportmonksOdd[], marketId: number) => {
+    return odds.find(o => o.market_id === marketId);
+}
 
 // --- V3 Football Data Processor ---
 export const processV3FootballFixtures = (fixtures: SportmonksV3Fixture[]): ProcessedFixture[] => {
@@ -46,14 +50,67 @@ export const processV3FootballFixtures = (fixtures: SportmonksV3Fixture[]): Proc
             if (isLive && state.name !== 'Live') return { text: state.name, isGoal: false };
             return undefined;
         };
+
+        const processedOdds: ProcessedFixture['odds'] = {};
+        const allOdds = fixture.odds || [];
         
+        // Market ID: 1 = 1X2 (Match Winner)
+        const matchWinnerOdds = findOddsForMarket(allOdds, 1)?.bookmaker?.data?.[0]?.odds?.data || [];
+        if (matchWinnerOdds.length > 0) {
+            processedOdds.home = matchWinnerOdds.find(o => o.label === '1')?.value;
+            processedOdds.draw = matchWinnerOdds.find(o => o.label === 'X')?.value;
+            processedOdds.away = matchWinnerOdds.find(o => o.label === '2')?.value;
+        }
+
+        // Market ID: 10 = Over/Under
+        const overUnderOdds = findOddsForMarket(allOdds, 10)?.bookmaker?.data?.[0]?.odds?.data || [];
+        if (overUnderOdds.length > 0) {
+            const over = overUnderOdds.find(o => o.label === 'Over');
+            const under = overUnderOdds.find(o => o.label === 'Under');
+            if(over && under){
+                processedOdds.overUnder = {
+                    over: over.value,
+                    under: under.value,
+                    point: over.total ? parseFloat(over.total) : undefined
+                };
+            }
+        }
+        
+        // Market ID: 976077 = Both Teams to Score
+        const bttsOdds = findOddsForMarket(allOdds, 976077)?.bookmaker?.data?.[0]?.odds?.data || [];
+        if (bttsOdds.length > 0) {
+             processedOdds.btts = {
+                yes: bttsOdds.find(o => o.label === 'Yes')?.value,
+                no: bttsOdds.find(o => o.label === 'No')?.value
+            };
+        }
+
+        // Market ID: 74 = Draw No Bet
+        const dnbOdds = findOddsForMarket(allOdds, 74)?.bookmaker?.data?.[0]?.odds?.data || [];
+        if (dnbOdds.length > 0) {
+            processedOdds.dnb = {
+                home: dnbOdds.find(o => o.label === '1')?.value,
+                away: dnbOdds.find(o => o.label === '2')?.value
+            };
+        }
+
+        // Market ID: 12 = Double Chance
+        const dcOdds = findOddsForMarket(allOdds, 12)?.bookmaker?.data?.[0]?.odds?.data || [];
+        if (dcOdds.length > 0) {
+            processedOdds.dc = {
+                homeOrDraw: dcOdds.find(o => o.label === '1X')?.value,
+                awayOrDraw: dcOdds.find(o => o.label === 'X2')?.value,
+                homeOrAway: dcOdds.find(o => o.label === '12')?.value
+            };
+        }
+
         return {
             id: fixture.id, sportKey: 'football', name: fixture.name, startingAt: parseSportmonksDateStringToISO(fixture.starting_at),
             state, isLive, isFinished,
             league: { id: fixture.league_id, name: fixture.league?.name || 'N/A', countryName: fixture.league?.country?.name || 'N/A' },
             homeTeam: { id: homeTeam?.id || 0, name: homeTeam?.name || 'Home', image_path: homeTeam?.image_path },
             awayTeam: { id: awayTeam?.id || 0, name: awayTeam?.name || 'Away', image_path: awayTeam?.image_path },
-            odds: {}, // Odds are removed for now.
+            odds: processedOdds,
             comments,
             venue: fixture.venue ? { name: fixture.venue.name, city: fixture.venue.city_name || fixture.venue.city || '' } : undefined,
             referee: fixture.referee ? { name: fixture.referee.fullname } : undefined,
