@@ -45,7 +45,7 @@ export default function SportsCategoryClientContent({
   
   const [searchTerm, setSearchTerm] = useState('');
   
-  // Data is passed via props, no internal loading state needed for it.
+  // All data is now passed via props, so internal loading state is not required.
   const isLoading = false; 
 
   const getDefaultTab = () => {
@@ -194,12 +194,19 @@ export default function SportsCategoryClientContent({
     return (
       <div className="space-y-6">
         {sharedHeader}
-        {initialError ? (
-           <div className="text-center text-destructive py-10 my-4 bg-destructive/10 rounded-lg">
+        {isLoading ? (
+          <Card>
+            <CardHeader><Skeleton className="h-8 w-48" /></CardHeader>
+            <CardContent className="space-y-3 p-4">
+              {[...Array(15)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
+            </CardContent>
+          </Card>
+        ) : initialError ? (
+          <div className="text-center text-destructive py-10 my-4 bg-destructive/10 rounded-lg">
             <AlertTriangle className="mx-auto h-12 w-12 mb-4" />
             <p className="text-lg font-semibold">Failed to load leagues</p>
             <p className="text-sm mt-2 max-w-md mx-auto whitespace-pre-wrap">{initialError}</p>
-         </div>
+          </div>
         ) : filteredLeagues.length > 0 ? (
           <Card>
             <CardHeader><CardTitle>All Available Leagues</CardTitle></CardHeader>

@@ -12,7 +12,7 @@
       "static/chunks/4bd1b696-ea220d9e6899be91.js",
       "static/chunks/1684-5430a757c3d8613f.js",
       "static/chunks/main-app-0ec640679fb0f8cb.js",
-      "static/css/2bb9ec66f1f2251c.css",
+      "static/css/149e131de2727f5f.css",
       "static/chunks/bc9e92e6-08de0ed1d06cea81.js",
       "static/chunks/ceb9e9aa-e3d0c17acc048874.js",
       "static/chunks/3139-16c6acf56538fb90.js",
@@ -27,131 +27,124 @@
       "static/chunks/main-app-0ec640679fb0f8cb.js",
       "static/chunks/app/error-fdaba6f05b481300.js"
     ],
+    "/loading": [
+      "static/chunks/webpack-786bc8dd37364a66.js",
+      "static/chunks/4bd1b696-ea220d9e6899be91.js",
+      "static/chunks/1684-5430a757c3d8613f.js",
+      "static/chunks/main-app-0ec640679fb0f8cb.js",
+      "static/chunks/app/loading-e62c87972965cda0.js"
+    ],
     "/api/all-sports/leagues/route": [
       "static/chunks/webpack-786bc8dd37364a66.js",
       "static/chunks/4bd1b696-ea220d9e6899be91.js",
       "static/chunks/1684-5430a757c3d8613f.js",
       "static/chunks/main-app-0ec640679fb0f8cb.js",
-      "static/chunks/app/api/all-sports/leagues/route-70269ea19400e46b.js"
+      "static/chunks/app/api/all-sports/leagues/route-9df12654c59250e4.js"
     ],
     "/api/core/continents/route": [
       "static/chunks/webpack-786bc8dd37364a66.js",
       "static/chunks/4bd1b696-ea220d9e6899be91.js",
       "static/chunks/1684-5430a757c3d8613f.js",
       "static/chunks/main-app-0ec640679fb0f8cb.js",
-      "static/chunks/app/api/core/continents/route-888b3c6700d62397.js"
+      "static/chunks/app/api/core/continents/route-15e332da812c284d.js"
     ],
     "/api/cricket/fixtures/route": [
       "static/chunks/webpack-786bc8dd37364a66.js",
       "static/chunks/4bd1b696-ea220d9e6899be91.js",
       "static/chunks/1684-5430a757c3d8613f.js",
       "static/chunks/main-app-0ec640679fb0f8cb.js",
-      "static/chunks/app/api/cricket/fixtures/route-a9c2a9ffc9269b5a.js"
+      "static/chunks/app/api/cricket/fixtures/route-6d0ba423965b5c88.js"
     ],
     "/api/cricket/leagues/route": [
       "static/chunks/webpack-786bc8dd37364a66.js",
       "static/chunks/4bd1b696-ea220d9e6899be91.js",
       "static/chunks/1684-5430a757c3d8613f.js",
       "static/chunks/main-app-0ec640679fb0f8cb.js",
-      "static/chunks/app/api/cricket/leagues/route-fb12f53d7ad882c7.js"
+      "static/chunks/app/api/cricket/leagues/route-6f7ee8fe5a93a035.js"
     ],
     "/api/cricket/live-scores/route": [
       "static/chunks/webpack-786bc8dd37364a66.js",
       "static/chunks/4bd1b696-ea220d9e6899be91.js",
       "static/chunks/1684-5430a757c3d8613f.js",
       "static/chunks/main-app-0ec640679fb0f8cb.js",
-      "static/chunks/app/api/cricket/live-scores/route-5b9b9334b1fbca22.js"
+      "static/chunks/app/api/cricket/live-scores/route-5226c0a13cd0b4d8.js"
     ],
     "/api/cricket/upcoming-fixtures/route": [
       "static/chunks/webpack-786bc8dd37364a66.js",
       "static/chunks/4bd1b696-ea220d9e6899be91.js",
       "static/chunks/1684-5430a757c3d8613f.js",
       "static/chunks/main-app-0ec640679fb0f8cb.js",
-      "static/chunks/app/api/cricket/upcoming-fixtures/route-b701699eb40fad18.js"
+      "static/chunks/app/api/cricket/upcoming-fixtures/route-b93976fa7561074b.js"
     ],
     "/api/fixtures-by-league/route": [
       "static/chunks/webpack-786bc8dd37364a66.js",
       "static/chunks/4bd1b696-ea220d9e6899be91.js",
       "static/chunks/1684-5430a757c3d8613f.js",
       "static/chunks/main-app-0ec640679fb0f8cb.js",
-      "static/chunks/app/api/fixtures-by-league/route-a6256869ffedcd3e.js"
+      "static/chunks/app/api/fixtures-by-league/route-c57aba484f8df696.js"
     ],
     "/api/football/fixtures/route": [
       "static/chunks/webpack-786bc8dd37364a66.js",
       "static/chunks/4bd1b696-ea220d9e6899be91.js",
       "static/chunks/1684-5430a757c3d8613f.js",
       "static/chunks/main-app-0ec640679fb0f8cb.js",
-      "static/chunks/app/api/football/fixtures/route-57141d0cd7ac9625.js"
+      "static/chunks/app/api/football/fixtures/route-e655cdd764a49236.js"
     ],
     "/api/football/leagues/route": [
       "static/chunks/webpack-786bc8dd37364a66.js",
       "static/chunks/4bd1b696-ea220d9e6899be91.js",
       "static/chunks/1684-5430a757c3d8613f.js",
       "static/chunks/main-app-0ec640679fb0f8cb.js",
-      "static/chunks/app/api/football/leagues/route-17d2f96d1262dc82.js"
+      "static/chunks/app/api/football/leagues/route-ce05e102ef3ab37b.js"
     ],
     "/api/football/live-scores/route": [
       "static/chunks/webpack-786bc8dd37364a66.js",
       "static/chunks/4bd1b696-ea220d9e6899be91.js",
       "static/chunks/1684-5430a757c3d8613f.js",
       "static/chunks/main-app-0ec640679fb0f8cb.js",
-      "static/chunks/app/api/football/live-scores/route-c966f949654f48ce.js"
+      "static/chunks/app/api/football/live-scores/route-6ee19ad4e4918ebf.js"
     ],
     "/api/football/odds/route": [
       "static/chunks/webpack-786bc8dd37364a66.js",
       "static/chunks/4bd1b696-ea220d9e6899be91.js",
       "static/chunks/1684-5430a757c3d8613f.js",
       "static/chunks/main-app-0ec640679fb0f8cb.js",
-      "static/chunks/app/api/football/odds/route-7ed149a086c793b6.js"
+      "static/chunks/app/api/football/odds/route-d2fe8c9d068342e2.js"
     ],
     "/api/football/teams/[teamId]/route": [
       "static/chunks/webpack-786bc8dd37364a66.js",
       "static/chunks/4bd1b696-ea220d9e6899be91.js",
       "static/chunks/1684-5430a757c3d8613f.js",
       "static/chunks/main-app-0ec640679fb0f8cb.js",
-      "static/chunks/app/api/football/teams/[teamId]/route-4c256cd42bcc03cc.js"
+      "static/chunks/app/api/football/teams/[teamId]/route-7e527b3e8e403ce4.js"
     ],
     "/api/football/todays-fixtures/route": [
       "static/chunks/webpack-786bc8dd37364a66.js",
       "static/chunks/4bd1b696-ea220d9e6899be91.js",
       "static/chunks/1684-5430a757c3d8613f.js",
       "static/chunks/main-app-0ec640679fb0f8cb.js",
-      "static/chunks/app/api/football/todays-fixtures/route-dff5fbbdae3b33a2.js"
+      "static/chunks/app/api/football/todays-fixtures/route-d4b65b0333df8a83.js"
     ],
     "/api/football/upcoming-fixtures/route": [
       "static/chunks/webpack-786bc8dd37364a66.js",
       "static/chunks/4bd1b696-ea220d9e6899be91.js",
       "static/chunks/1684-5430a757c3d8613f.js",
       "static/chunks/main-app-0ec640679fb0f8cb.js",
-      "static/chunks/app/api/football/upcoming-fixtures/route-423d1da46743e0a3.js"
+      "static/chunks/app/api/football/upcoming-fixtures/route-5678794357e7fca6.js"
     ],
     "/api/leagues/route": [
       "static/chunks/webpack-786bc8dd37364a66.js",
       "static/chunks/4bd1b696-ea220d9e6899be91.js",
       "static/chunks/1684-5430a757c3d8613f.js",
       "static/chunks/main-app-0ec640679fb0f8cb.js",
-      "static/chunks/app/api/leagues/route-be64404312b062f4.js"
-    ],
-    "/api/live-matches/route": [
-      "static/chunks/webpack-786bc8dd37364a66.js",
-      "static/chunks/4bd1b696-ea220d9e6899be91.js",
-      "static/chunks/1684-5430a757c3d8613f.js",
-      "static/chunks/main-app-0ec640679fb0f8cb.js",
-      "static/chunks/app/api/live-matches/route-54b29ea24c4fcf54.js"
+      "static/chunks/app/api/leagues/route-607630f5782743ea.js"
     ],
     "/api/odds/[fixtureId]/route": [
       "static/chunks/webpack-786bc8dd37364a66.js",
       "static/chunks/4bd1b696-ea220d9e6899be91.js",
       "static/chunks/1684-5430a757c3d8613f.js",
       "static/chunks/main-app-0ec640679fb0f8cb.js",
-      "static/chunks/app/api/odds/[fixtureId]/route-831860f5fd866d99.js"
-    ],
-    "/api/upcoming-matches/route": [
-      "static/chunks/webpack-786bc8dd37364a66.js",
-      "static/chunks/4bd1b696-ea220d9e6899be91.js",
-      "static/chunks/1684-5430a757c3d8613f.js",
-      "static/chunks/main-app-0ec640679fb0f8cb.js",
-      "static/chunks/app/api/upcoming-matches/route-3b09468d77b45220.js"
+      "static/chunks/app/api/odds/[fixtureId]/route-a4973506e42157e0.js"
     ],
     "/admin/page": [
       "static/chunks/webpack-786bc8dd37364a66.js",
@@ -176,7 +169,7 @@
       "static/chunks/4bd1b696-ea220d9e6899be91.js",
       "static/chunks/1684-5430a757c3d8613f.js",
       "static/chunks/main-app-0ec640679fb0f8cb.js",
-      "static/chunks/app/all-sports/page-5faf500b13e962e7.js"
+      "static/chunks/app/all-sports/page-479652a8c2af5068.js"
     ],
     "/bet-slip/page": [
       "static/chunks/webpack-786bc8dd37364a66.js",
@@ -209,7 +202,7 @@
       "static/chunks/4bd1b696-ea220d9e6899be91.js",
       "static/chunks/1684-5430a757c3d8613f.js",
       "static/chunks/main-app-0ec640679fb0f8cb.js",
-      "static/chunks/app/cricket/page-c99d8498680b1d5d.js"
+      "static/chunks/app/cricket/page-06d066ae698b84fe.js"
     ],
     "/deposit/page": [
       "static/chunks/webpack-786bc8dd37364a66.js",
@@ -229,14 +222,14 @@
       "static/chunks/4bd1b696-ea220d9e6899be91.js",
       "static/chunks/1684-5430a757c3d8613f.js",
       "static/chunks/main-app-0ec640679fb0f8cb.js",
-      "static/chunks/app/football/page-1d1e70b552ad619c.js"
+      "static/chunks/app/football/page-1c3cd0c0d50ce7ed.js"
     ],
     "/live/page": [
       "static/chunks/webpack-786bc8dd37364a66.js",
       "static/chunks/4bd1b696-ea220d9e6899be91.js",
       "static/chunks/1684-5430a757c3d8613f.js",
       "static/chunks/main-app-0ec640679fb0f8cb.js",
-      "static/chunks/app/live/page-993a09baebcc0e15.js"
+      "static/chunks/app/live/page-de5b720b3a1aaf1b.js"
     ],
     "/login/page": [
       "static/chunks/webpack-786bc8dd37364a66.js",
@@ -264,10 +257,9 @@
       "static/chunks/3769-92e07519c8f3111c.js",
       "static/chunks/8178-1ee5ee3d8d73b472.js",
       "static/chunks/704-dd5603ac255c2f80.js",
-      "static/chunks/1903-09684bc11e5dc413.js",
+      "static/chunks/4284-952dde604a242039.js",
       "static/chunks/53-0a422152ae3f0390.js",
-      "static/chunks/5601-6158805e9f868eae.js",
-      "static/chunks/app/match/[id]/page-8c71c0496ddaa091.js"
+      "static/chunks/app/match/[id]/page-86dd33d7c802617c.js"
     ],
     "/page": [
       "static/chunks/webpack-786bc8dd37364a66.js",
@@ -280,10 +272,10 @@
       "static/chunks/6874-bb089797972fa0f2.js",
       "static/chunks/6766-fe59b6f60e1c4509.js",
       "static/chunks/3769-92e07519c8f3111c.js",
-      "static/chunks/1903-09684bc11e5dc413.js",
-      "static/chunks/2281-b3e631807d54d12a.js",
+      "static/chunks/4284-952dde604a242039.js",
+      "static/chunks/8597-dbef1ae03cbfab96.js",
       "static/chunks/53-0a422152ae3f0390.js",
-      "static/chunks/app/page-0ccf0de81c7e61f4.js"
+      "static/chunks/app/page-bd56045ed1a405af.js"
     ],
     "/profile/page": [
       "static/chunks/webpack-786bc8dd37364a66.js",
@@ -331,7 +323,7 @@
       "static/chunks/4bd1b696-ea220d9e6899be91.js",
       "static/chunks/1684-5430a757c3d8613f.js",
       "static/chunks/main-app-0ec640679fb0f8cb.js",
-      "static/chunks/app/upcoming/page-0dbf306c3424b682.js"
+      "static/chunks/app/upcoming/page-371568a954c808dc.js"
     ],
     "/user-dashboard/page": [
       "static/chunks/webpack-786bc8dd37364a66.js",
@@ -344,23 +336,6 @@
       "static/chunks/6874-bb089797972fa0f2.js",
       "static/chunks/53-0a422152ae3f0390.js",
       "static/chunks/app/user-dashboard/page-e86f3bdcbf5be8b3.js"
-    ],
-    "/sports/[category]/page": [
-      "static/chunks/webpack-786bc8dd37364a66.js",
-      "static/chunks/4bd1b696-ea220d9e6899be91.js",
-      "static/chunks/1684-5430a757c3d8613f.js",
-      "static/chunks/main-app-0ec640679fb0f8cb.js",
-      "static/chunks/bc9e92e6-08de0ed1d06cea81.js",
-      "static/chunks/ceb9e9aa-e3d0c17acc048874.js",
-      "static/chunks/3139-16c6acf56538fb90.js",
-      "static/chunks/6874-bb089797972fa0f2.js",
-      "static/chunks/6766-fe59b6f60e1c4509.js",
-      "static/chunks/3769-92e07519c8f3111c.js",
-      "static/chunks/8178-1ee5ee3d8d73b472.js",
-      "static/chunks/704-dd5603ac255c2f80.js",
-      "static/chunks/53-0a422152ae3f0390.js",
-      "static/chunks/5601-6158805e9f868eae.js",
-      "static/chunks/app/sports/[category]/page-8bc481eeac84a136.js"
     ],
     "/wallet/page": [
       "static/chunks/webpack-786bc8dd37364a66.js",
@@ -386,6 +361,22 @@
       "static/chunks/6766-fe59b6f60e1c4509.js",
       "static/chunks/53-0a422152ae3f0390.js",
       "static/chunks/app/withdraw/page-b5195f5335c307d5.js"
+    ],
+    "/sports/[category]/page": [
+      "static/chunks/webpack-786bc8dd37364a66.js",
+      "static/chunks/4bd1b696-ea220d9e6899be91.js",
+      "static/chunks/1684-5430a757c3d8613f.js",
+      "static/chunks/main-app-0ec640679fb0f8cb.js",
+      "static/chunks/bc9e92e6-08de0ed1d06cea81.js",
+      "static/chunks/ceb9e9aa-e3d0c17acc048874.js",
+      "static/chunks/3139-16c6acf56538fb90.js",
+      "static/chunks/6874-bb089797972fa0f2.js",
+      "static/chunks/6766-fe59b6f60e1c4509.js",
+      "static/chunks/3769-92e07519c8f3111c.js",
+      "static/chunks/8178-1ee5ee3d8d73b472.js",
+      "static/chunks/704-dd5603ac255c2f80.js",
+      "static/chunks/53-0a422152ae3f0390.js",
+      "static/chunks/app/sports/[category]/page-ae84a770c9ba3bb2.js"
     ]
   }
 }

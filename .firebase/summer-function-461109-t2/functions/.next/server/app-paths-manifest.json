@@ -15,9 +15,7 @@
   "/api/football/todays-fixtures/route": "app/api/football/todays-fixtures/route.js",
   "/api/football/upcoming-fixtures/route": "app/api/football/upcoming-fixtures/route.js",
   "/api/leagues/route": "app/api/leagues/route.js",
-  "/api/live-matches/route": "app/api/live-matches/route.js",
   "/api/odds/[fixtureId]/route": "app/api/odds/[fixtureId]/route.js",
-  "/api/upcoming-matches/route": "app/api/upcoming-matches/route.js",
   "/favicon.ico/route": "app/favicon.ico/route.js",
   "/admin/page": "app/admin/page.js",
   "/all-sports/page": "app/all-sports/page.js",
@@ -35,7 +33,7 @@
   "/sports-dashboard/page": "app/sports-dashboard/page.js",
   "/upcoming/page": "app/upcoming/page.js",
   "/user-dashboard/page": "app/user-dashboard/page.js",
-  "/sports/[category]/page": "app/sports/[category]/page.js",
   "/wallet/page": "app/wallet/page.js",
-  "/withdraw/page": "app/withdraw/page.js"
+  "/withdraw/page": "app/withdraw/page.js",
+  "/sports/[category]/page": "app/sports/[category]/page.js"
 }
