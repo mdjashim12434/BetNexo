@@ -168,8 +168,11 @@ const processV3FootballFixtures = (fixtures: SportmonksV3Fixture[]): ProcessedFi
 
 // --- Public Fetching Functions (Refactored to use only Sportmonks) ---
 
-export async function fetchLiveFootballFixtures(leagueId?: number): Promise<ProcessedFixture[]> {
+export async function fetchLiveFootballFixtures(leagueId?: number, firstPageOnly: boolean = false): Promise<ProcessedFixture[]> {
     let path = leagueId ? `/api/football/live-scores?leagueId=${leagueId}` : '/api/football/live-scores';
+    if (firstPageOnly) {
+        path += path.includes('?') ? '&firstPageOnly=true' : '?firstPageOnly=true';
+    }
     const url = `${API_BASE_URL}${path}`;
     
     const response = await fetch(url, { cache: 'no-store' });
@@ -179,8 +182,11 @@ export async function fetchLiveFootballFixtures(leagueId?: number): Promise<Proc
     return processedFixtures.filter(fixture => !fixture.isFinished);
 }
 
-export async function fetchUpcomingFootballFixtures(leagueId?: number): Promise<ProcessedFixture[]> {
+export async function fetchUpcomingFootballFixtures(leagueId?: number, firstPageOnly: boolean = false): Promise<ProcessedFixture[]> {
     let path = leagueId ? `/api/football/upcoming-fixtures?leagueId=${leagueId}` : '/api/football/upcoming-fixtures';
+    if (firstPageOnly) {
+        path += path.includes('?') ? '&firstPageOnly=true' : '?firstPageOnly=true';
+    }
     const url = `${API_BASE_URL}${path}`;
     
     const response = await fetch(url, { cache: 'no-store' });
