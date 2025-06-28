@@ -35,15 +35,18 @@ interface AuthContextType {
 }
 
 const GlobalLoader = () => (
-  <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm text-primary">
+  <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
     <div className="flex flex-col items-center justify-center gap-6">
-      {/* Logo */}
-      <h1 className="text-5xl font-headline font-bold text-primary tracking-wider animate-pulse">
-        BETBABU
-      </h1>
-      {/* Loading bar */}
-      <div className="w-48 h-1.5 bg-muted rounded-full overflow-hidden">
-        <div className="w-full h-full bg-primary animate-loading-bar"></div>
+      {/* New Logo */}
+      <div className="text-5xl font-headline font-black italic tracking-tighter">
+        <span className="text-white">Bet</span><span className="text-primary">Nexo</span>
+      </div>
+      
+      {/* New animated dots */}
+      <div className="flex items-center justify-center space-x-2">
+        <div className="h-3 w-3 rounded-full bg-primary animate-loader-dot" style={{ animationDelay: '0s' }}></div>
+        <div className="h-3 w-3 rounded-full bg-primary animate-loader-dot" style={{ animationDelay: '0.2s' }}></div>
+        <div className="h-3 w-3 rounded-full bg-primary animate-loader-dot" style={{ animationDelay: '0.4s' }}></div>
       </div>
     </div>
   </div>
