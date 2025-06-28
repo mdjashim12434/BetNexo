@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import MatchCard from './MatchCard';
+import MatchCard from '@/components/sports/MatchCard';
 
 interface ApiLeague {
   id: number;
@@ -49,12 +49,11 @@ export default function SportsCategoryClientContent({
   const { toast } = useToast();
   
   const [searchTerm, setSearchTerm] = useState('');
-  
   const [leagues, setLeagues] = useState<CombinedLeague[]>([]);
   const [loadingLeagues, setLoadingLeagues] = useState(false);
 
-  // The component receives fetched data as props, so we just manage the search term.
-  const [isLoading, setIsLoading] = useState(false);
+  // Data is now passed via props, so we can remove the internal loading state for matches.
+  const isLoading = false; 
 
   const getDefaultTab = () => {
     if (categorySlug === 'upcoming') return 'upcoming';
@@ -72,7 +71,6 @@ export default function SportsCategoryClientContent({
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categorySlug, initialLiveMatches, initialUpcomingMatches]);
-
 
   useEffect(() => {
     if (categorySlug === 'all-sports') {
