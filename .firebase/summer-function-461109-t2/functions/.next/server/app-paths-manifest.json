@@ -31,8 +31,8 @@
   "/profile/page": "app/profile/page.js",
   "/signup/page": "app/signup/page.js",
   "/sports-dashboard/page": "app/sports-dashboard/page.js",
-  "/upcoming/page": "app/upcoming/page.js",
   "/user-dashboard/page": "app/user-dashboard/page.js",
+  "/upcoming/page": "app/upcoming/page.js",
   "/wallet/page": "app/wallet/page.js",
   "/withdraw/page": "app/withdraw/page.js",
   "/sports/[category]/page": "app/sports/[category]/page.js"

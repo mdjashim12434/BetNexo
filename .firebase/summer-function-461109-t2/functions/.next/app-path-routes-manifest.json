@@ -31,8 +31,8 @@
   "/profile/page": "/profile",
   "/signup/page": "/signup",
   "/sports-dashboard/page": "/sports-dashboard",
-  "/upcoming/page": "/upcoming",
   "/user-dashboard/page": "/user-dashboard",
+  "/upcoming/page": "/upcoming",
   "/wallet/page": "/wallet",
   "/withdraw/page": "/withdraw",
   "/sports/[category]/page": "/sports/[category]"

@@ -4,7 +4,6 @@
 import AppLayout from '@/components/AppLayout';
 import BottomNav from '@/components/navigation/BottomNav';
 import { Card, CardContent } from '@/components/ui/card';
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Star, Swords, Gamepad2, Dice5, Zap, Goal, Image as ImageIcon, CopyCheck, Disc } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
@@ -84,35 +83,33 @@ export default function HomeClientPage({
       <div className="container py-6">
         <div className="space-y-4 md:space-y-6 pb-24">
           
-          <ScrollArea className="w-full whitespace-nowrap -mt-4">
-            <div className="flex justify-between items-center p-2 gap-4">
+          <div className="w-full overflow-x-auto md:overflow-visible -mt-4">
+            <div className="flex flex-row flex-nowrap md:flex-wrap justify-start md:justify-between items-center p-2 gap-4">
               {topNavItems.map((item, index) => (
-                <Link href={item.href} key={item.name} className={cn("flex flex-col items-center justify-center gap-1.5 pb-2 text-muted-foreground hover:text-primary transition-colors", index === 0 ? "text-primary border-b-2 border-primary" : "")}>
+                <Link href={item.href} key={item.name} className={cn("flex flex-col items-center justify-center gap-1.5 pb-2 text-muted-foreground hover:text-primary transition-colors flex-shrink-0", index === 0 ? "text-primary border-b-2 border-primary" : "")}>
                   <item.icon className="h-6 w-6" />
                   <span className="text-xs font-medium tracking-tight">{item.name}</span>
                 </Link>
               ))}
             </div>
-            <ScrollBar orientation="horizontal" className="hidden"/>
-          </ScrollArea>
+          </div>
           
-          <ScrollArea className="w-full whitespace-nowrap">
-            <div className="flex gap-3 px-1 py-1">
+          <div className="w-full overflow-x-auto md:overflow-visible">
+            <div className="flex flex-row md:flex-wrap justify-start gap-3 px-1 py-1">
               {sportsGridItems.map(sport => (
-                <Link href={sport.href} key={sport.name} className="flex flex-col items-center justify-center w-20 h-20 bg-card rounded-lg shadow-sm hover:shadow-md transition-shadow gap-2 p-2">
+                <Link href={sport.href} key={sport.name} className="flex flex-col items-center justify-center w-20 h-20 bg-card rounded-lg shadow-sm hover:shadow-md transition-shadow gap-2 p-2 flex-shrink-0">
                     <sport.icon className="h-8 w-8 text-primary" />
                     <span className="text-xs font-medium text-foreground truncate">{sport.name}</span>
                 </Link>
               ))}
             </div>
-            <ScrollBar orientation="horizontal" className="hidden"/>
-          </ScrollArea>
+          </div>
 
-          <ScrollArea className="w-full whitespace-nowrap">
-            <div className="flex gap-3 px-1 py-1">
+          <div className="w-full overflow-x-auto md:overflow-visible">
+            <div className="flex flex-row md:flex-wrap justify-start gap-3 px-1 py-1">
                 {promoBanners.map(banner => (
                   <Link href={banner.href} key={banner.title} legacyBehavior passHref>
-                    <a className="block">
+                    <a className="block flex-shrink-0">
                       <Card className="w-64 h-32 overflow-hidden relative group">
                         <Image 
                           src={`https://placehold.co/400x200.png`} 
@@ -130,13 +127,12 @@ export default function HomeClientPage({
                   </Link>
                 ))}
             </div>
-            <ScrollBar orientation="horizontal" className="hidden"/>
-          </ScrollArea>
+          </div>
 
-          <ScrollArea className="w-full whitespace-nowrap">
-            <div className="flex gap-4 px-1 py-1">
+          <div className="w-full overflow-x-auto md:overflow-visible">
+            <div className="flex flex-row md:flex-wrap justify-start gap-4 px-1 py-1">
               {casinoLinks.map(link => (
-                  <Link href={link.href} key={link.name} className="flex flex-col items-center justify-center gap-2 w-20 text-center">
+                  <Link href={link.href} key={link.name} className="flex flex-col items-center justify-center gap-2 w-20 text-center flex-shrink-0">
                       <Avatar className="h-16 w-16 border-2 border-primary/20">
                           <AvatarImage src={`https://placehold.co/128x128.png`} data-ai-hint={link.imageHint}/>
                           <AvatarFallback><ImageIcon /></AvatarFallback>
@@ -145,8 +141,7 @@ export default function HomeClientPage({
                   </Link>
               ))}
             </div>
-            <ScrollBar orientation="horizontal" className="hidden"/>
-          </ScrollArea>
+          </div>
           
           <div className="space-y-6">
             <LiveFixtures matches={initialLiveMatches} loading={false} error={initialError} />

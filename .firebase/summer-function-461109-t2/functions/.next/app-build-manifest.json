@@ -318,13 +318,6 @@
       "static/chunks/53-0a422152ae3f0390.js",
       "static/chunks/app/sports-dashboard/page-a046802770135e73.js"
     ],
-    "/upcoming/page": [
-      "static/chunks/webpack-786bc8dd37364a66.js",
-      "static/chunks/4bd1b696-ea220d9e6899be91.js",
-      "static/chunks/1684-5430a757c3d8613f.js",
-      "static/chunks/main-app-0ec640679fb0f8cb.js",
-      "static/chunks/app/upcoming/page-371568a954c808dc.js"
-    ],
     "/user-dashboard/page": [
       "static/chunks/webpack-786bc8dd37364a66.js",
       "static/chunks/4bd1b696-ea220d9e6899be91.js",
@@ -336,6 +329,13 @@
       "static/chunks/6874-bb089797972fa0f2.js",
       "static/chunks/53-0a422152ae3f0390.js",
       "static/chunks/app/user-dashboard/page-e86f3bdcbf5be8b3.js"
+    ],
+    "/upcoming/page": [
+      "static/chunks/webpack-786bc8dd37364a66.js",
+      "static/chunks/4bd1b696-ea220d9e6899be91.js",
+      "static/chunks/1684-5430a757c3d8613f.js",
+      "static/chunks/main-app-0ec640679fb0f8cb.js",
+      "static/chunks/app/upcoming/page-371568a954c808dc.js"
     ],
     "/wallet/page": [
       "static/chunks/webpack-786bc8dd37364a66.js",
