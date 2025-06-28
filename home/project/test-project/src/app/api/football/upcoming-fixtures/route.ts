@@ -18,13 +18,14 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const leagueId = searchParams.get('leagueId');
-    const firstPageOnly = searchParams.get('firstPageOnly') === 'true';
 
     // Using fixtures/between/{start_date}/{end_date} endpoint as it's more reliable across different plans.
     const today = getFormattedDate(new Date());
     const nextWeek = getFormattedDate(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
     
-    // Includes for comprehensive details, now excluding odds for list view reliability.
+    // Includes for comprehensive details, but excluding odds to keep it light.
+    // The `filter[states]` has been removed as it was causing 400/422 errors.
+    // Filtering for "Not Started" matches is now handled reliably in the `sportmonksAPI.ts` service after the data is fetched.
     const includes = "participants;league.country;state";
     
     let baseUrl = `${SPORTMONKS_FOOTBALL_API_URL}/fixtures/between/${today}/${nextWeek}?api_token=${apiKey}&include=${includes}&tz=UTC`;
@@ -34,21 +35,6 @@ export async function GET(request: NextRequest) {
     }
 
     try {
-        // Optimization: If only the first page is needed (e.g., for homepage), fetch only that page.
-        if (firstPageOnly) {
-            const url = `${baseUrl}&page=1`;
-            const response = await fetch(url, { cache: 'no-store' });
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                console.error('Error fetching first page of upcoming football fixtures:', response.status, errorData);
-                const message = errorData.message || `Failed to fetch data. Status: ${response.status}`;
-                return NextResponse.json({ error: message }, { status: response.status });
-            }
-            const data = await response.json();
-            return NextResponse.json(data);
-        }
-
-        // Default behavior: Fetch all pages for comprehensive lists.
         let allFixtures: any[] = [];
         let currentPage = 1;
         let hasMore = true;

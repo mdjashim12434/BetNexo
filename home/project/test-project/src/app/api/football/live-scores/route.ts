@@ -12,9 +12,7 @@ export async function GET(request: NextRequest) {
   
   const { searchParams } = new URL(request.url);
   const leagueId = searchParams.get('leagueId');
-  const firstPageOnly = searchParams.get('firstPageOnly') === 'true';
   
-  // Includes for comprehensive details, now excluding odds for list view reliability.
   const includes = "participants;scores;league.country;state;periods";
   let baseUrl = `${SPORTMONKS_FOOTBALL_API_URL}/livescores?api_token=${apiKey}&include=${includes}&tz=UTC`;
 
@@ -23,20 +21,6 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Optimization: If only the first page is needed (e.g., for homepage), fetch only that page.
-    if (firstPageOnly) {
-        const url = `${baseUrl}&page=1`;
-        const apiResponse = await fetch(url, { cache: 'no-store' });
-        if (!apiResponse.ok) {
-            const errorData = await apiResponse.json().catch(() => ({}));
-            const message = errorData.message || `Failed to fetch first page of live scores. Status: ${apiResponse.status}`;
-            return NextResponse.json({ error: message }, { status: apiResponse.status });
-        }
-        const data = await apiResponse.json();
-        return NextResponse.json(data);
-    }
-
-    // Default behavior: Fetch all pages for comprehensive lists.
     let allFixtures: any[] = [];
     let currentPage = 1;
     let hasMore = true;
