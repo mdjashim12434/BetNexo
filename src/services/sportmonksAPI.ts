@@ -203,7 +203,10 @@ export async function fetchLiveFootballFixtures(leagueId?: number, firstPageOnly
 
     const oddsData = oddsResult.status === 'fulfilled' ? oddsResult.value : [];
     const data: SportmonksV3FixturesResponse = await handleApiResponse(fixtureResult.value);
-    return processV3FootballFixtures(data?.data || [], oddsData);
+    const processedFixtures = processV3FootballFixtures(data?.data || [], oddsData);
+
+    // Filter out matches that are not truly live, as the API can have delays.
+    return processedFixtures.filter(fixture => fixture.isLive);
 }
 
 export async function fetchUpcomingFootballFixtures(leagueId?: number, firstPageOnly = false): Promise<ProcessedFixture[]> {
