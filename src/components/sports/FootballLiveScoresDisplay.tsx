@@ -3,23 +3,17 @@
 
 import type { ProcessedFixture } from '@/types/sportmonks';
 import { Card, CardContent } from '@/components/ui/card';
-import { AlertTriangle, Info, Goal, Bell, Star, Link as LinkIcon } from 'lucide-react';
+import { AlertTriangle, Info, Goal, Bell, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import Image from 'next/image';
 
-const OddsButton = ({ label, value }: { label: string, value?: number }) => {
-  if (value === undefined || value === null) return null;
-  return (
-    <Button variant="outline" className="flex-1 bg-muted/50 h-auto py-1.5 px-2">
-      <div className="flex justify-between w-full text-xs">
-        <span className="text-muted-foreground">{label}</span>
-        <span className="font-bold text-foreground">{value.toFixed(3)}</span>
-      </div>
-    </Button>
-  );
-};
+interface HomeMatchesDisplayProps {
+  liveMatches: ProcessedFixture[];
+  upcomingMatches: ProcessedFixture[];
+  error?: string | null;
+}
 
 const LiveMatchCard = ({ match }: { match: ProcessedFixture }) => (
   <Link href={`/match/${match.id}`} passHref>
@@ -30,7 +24,6 @@ const LiveMatchCard = ({ match }: { match: ProcessedFixture }) => (
           <span className="font-semibold truncate">{match.league.name}</span>
         </div>
         <div className="flex items-center gap-2">
-          <LinkIcon className="h-4 w-4" />
           <Bell className="h-4 w-4" />
           <Star className="h-4 w-4" />
         </div>
@@ -51,14 +44,6 @@ const LiveMatchCard = ({ match }: { match: ProcessedFixture }) => (
       </div>
       
       {match.minute && <p className="text-center text-xs text-yellow-500 mb-3">{match.minute}' - {match.state.name}</p>}
-
-      <div className="space-y-1">
-        <p className="text-xs font-semibold text-muted-foreground">Team Wins</p>
-        <div className="flex gap-2">
-          <OddsButton label="W1" value={match.odds.home} />
-          <OddsButton label="W2" value={match.odds.away} />
-        </div>
-      </div>
     </Card>
   </Link>
 );
@@ -93,15 +78,6 @@ const UpcomingMatchCard = ({ match }: { match: ProcessedFixture }) => (
       </div>
       
       <p className="text-center text-xs text-muted-foreground mb-3">{format(new Date(match.startingAt), "dd.MM.yy hh:mm a")}</p>
-      
-       <div className="space-y-1">
-        <p className="text-xs font-semibold text-muted-foreground">1X2</p>
-        <div className="flex gap-2">
-          <OddsButton label="W1" value={match.odds.home} />
-          <OddsButton label="X" value={match.odds.draw} />
-          <OddsButton label="W2" value={match.odds.away} />
-        </div>
-      </div>
     </Card>
   </Link>
 );
@@ -122,7 +98,7 @@ export default function HomeMatchesDisplay({
           <CardContent className="pt-6">
             <div className="p-3 rounded-md bg-destructive/10 text-destructive text-xs flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 shrink-0" />
-              <p>{error}</p>
+              <p className="whitespace-pre-wrap">{error}</p>
             </div>
           </CardContent>
         </Card>

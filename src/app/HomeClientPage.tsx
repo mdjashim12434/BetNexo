@@ -3,7 +3,6 @@
 
 import AppLayout from '@/components/AppLayout';
 import BottomNav from '@/components/navigation/BottomNav';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Star, Swords, Gamepad2, Dice5, Zap, Goal, Image as ImageIcon, CopyCheck, Disc } from 'lucide-react';
@@ -11,11 +10,11 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import LiveFixtures from '@/components/LiveFixtures';
-import UpcomingFixtures from '@/components/UpcomingFixtures';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
+import type { ProcessedFixture } from '@/types/sportmonks';
+import HomeMatchesDisplay from '@/components/sports/FootballLiveScoresDisplay';
 
 // --- Top Navigation Data ---
 const topNavItems = [
@@ -54,7 +53,17 @@ const casinoLinks = [
   { name: "Midgard Zombies", imageHint: "zombie cartoon", href: "/casino" },
 ];
 
-export default function HomeClientPage() {
+interface HomeClientPageProps {
+  initialLiveMatches: ProcessedFixture[];
+  initialUpcomingMatches: ProcessedFixture[];
+  initialError: string | null;
+}
+
+export default function HomeClientPage({
+  initialLiveMatches,
+  initialUpcomingMatches,
+  initialError,
+}: HomeClientPageProps) {
   const { user, loadingAuth } = useAuth();
   const router = useRouter();
 
@@ -149,8 +158,11 @@ export default function HomeClientPage() {
           
           {/* Live & Upcoming Matches Section */}
           <div className="space-y-6">
-            <LiveFixtures />
-            <UpcomingFixtures />
+            <HomeMatchesDisplay 
+                liveMatches={initialLiveMatches}
+                upcomingMatches={initialUpcomingMatches}
+                error={initialError}
+             />
           </div>
 
         </div>
