@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -64,8 +65,8 @@ export default function PaymentMethodsManagementTab() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [companyAccountNumber, setCompanyAccountNumber] = useState('');
   const [companyAccountType, setCompanyAccountType] = useState<'personal' | 'agent' | 'merchant'>('personal');
-  const [minAmount, setMinAmount] = useState<number | string>('');
-  const [maxAmount, setMaxAmount] = useState<number | string>('');
+  const [minAmount, setMinAmount] = useState('');
+  const [maxAmount, setMaxAmount] = useState('');
   const [isEnabled, setIsEnabled] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isEditing = !!currentMethod.id;
@@ -131,8 +132,8 @@ export default function PaymentMethodsManagementTab() {
     setLogoUrl(method.logoUrl);
     setCompanyAccountNumber(method.companyAccountNumber);
     setCompanyAccountType(method.companyAccountType);
-    setMinAmount(method.minAmount);
-    setMaxAmount(method.maxAmount);
+    setMinAmount(String(method.minAmount || ''));
+    setMaxAmount(String(method.maxAmount || ''));
     setIsEnabled(method.enabled);
     setLogoFile(null);
     setShowForm(true);
@@ -313,11 +314,11 @@ export default function PaymentMethodsManagementTab() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                    <div>
                     <Label htmlFor="minAmount">Minimum Amount (0 for no limit)</Label>
-                    <Input id="minAmount" type="number" value={minAmount} onChange={(e) => setMinAmount(Number(e.target.value))} placeholder="100" disabled={isSubmitting}/>
+                    <Input id="minAmount" type="number" value={minAmount} onChange={(e) => setMinAmount(e.target.value)} placeholder="100" disabled={isSubmitting}/>
                   </div>
                   <div>
                     <Label htmlFor="maxAmount">Maximum Amount (0 for no limit)</Label>
-                    <Input id="maxAmount" type="number" value={maxAmount} onChange={(e) => setMaxAmount(Number(e.target.value))} placeholder="25000" disabled={isSubmitting}/>
+                    <Input id="maxAmount" type="number" value={maxAmount} onChange={(e) => setMaxAmount(e.target.value)} placeholder="25000" disabled={isSubmitting}/>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2 pt-2">
