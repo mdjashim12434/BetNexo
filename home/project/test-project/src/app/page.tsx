@@ -1,52 +1,31 @@
 
 import {
-  fetchLiveFootballFixtures,
-  fetchUpcomingFootballFixtures,
+  fetchTodaysFootballFixtures,
 } from '@/services/sportmonksAPI';
 import HomeClientPage from './HomeClientPage';
 import type { ProcessedFixture } from '@/types/sportmonks';
 
 async function getHomePageMatches() {
-  let liveMatches: ProcessedFixture[] = [];
-  let upcomingMatches: ProcessedFixture[] = [];
+  let allTodaysMatches: ProcessedFixture[] = [];
   let error: string | null = null;
   
   try {
-    // Fetch live and upcoming separately and in parallel for robustness
-    const [liveResult, upcomingResult] = await Promise.allSettled([
-        fetchLiveFootballFixtures(undefined, true), // Fetch first page only for homepage
-        fetchUpcomingFootballFixtures(undefined, true) // Fetch first page only for homepage
-    ]);
-
-    if (liveResult.status === 'fulfilled') {
-        liveMatches = liveResult.value;
-    } else {
-        console.error("Home page: Failed to fetch live matches:", liveResult.reason);
-        // Don't set the main error message for a partial failure, to allow other data to show
-    }
-    
-    if (upcomingResult.status === 'fulfilled') {
-        // Ensure upcoming matches are not already in the live list
-        const liveMatchIds = new Set(liveMatches.map(m => m.id));
-        upcomingMatches = upcomingResult.value.filter(match => !liveMatchIds.has(match.id));
-    } else {
-        console.error("Home page: Failed to fetch upcoming matches:", upcomingResult.reason);
-    }
-    
-    // Combine errors only if both failed, providing a more specific message
-    if (liveResult.status === 'rejected' && upcomingResult.status === 'rejected') {
-         const errorMessage = (liveResult.reason as Error)?.message || (upcomingResult.reason as Error)?.message || "Could not fetch any matches.";
-         if (errorMessage.includes("API key is not configured")) {
-            error = "The Sportmonks API Key is missing. Please add it to your .env file to see match data.";
-         } else {
-            error = errorMessage;
-         }
-    }
-    
+    allTodaysMatches = await fetchTodaysFootballFixtures();
   } catch (e: any) {
-    console.error("Home page: Unexpected error in getHomePageMatches:", e);
-    error = e.message || "An unexpected error occurred while fetching matches.";
+    console.error("Home page: Failed to fetch today's football matches:", e);
+    // Let's provide a more specific message if the API key is missing or invalid
+    if (e.message && (e.message.includes("API key is not configured") || e.message.includes("Authentication Failed"))) {
+       error = "The Sportmonks API Key is missing or invalid. Please add it to your .env file to see match data.";
+    } else {
+       error = e.message || "Could not fetch today's football matches.";
+    }
   }
+
+  const now = new Date();
+  
+  // Split today's matches into live and upcoming
+  const liveMatches = allTodaysMatches.filter(m => m.isLive && !m.isFinished);
+  const upcomingMatches = allTodaysMatches.filter(m => !m.isLive && !m.isFinished && new Date(m.startingAt) > now);
 
   // Sort both lists by their starting time for a consistent order.
   liveMatches.sort((a, b) => new Date(a.startingAt).getTime() - new Date(b.startingAt).getTime());
