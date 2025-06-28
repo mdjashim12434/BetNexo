@@ -223,8 +223,13 @@ export async function fetchUpcomingFootballFixtures(leagueId?: number, firstPage
     const data: SportmonksV3FixturesResponse = await handleApiResponse(fixtureResult.value);
     const processed = processV3FootballFixtures(data?.data || [], oddsData);
     
-    // Filter out any matches that are not truly upcoming.
-    return processed.filter(fixture => !fixture.isLive && !fixture.isFinished);
+    const now = new Date();
+    // Filter out any matches that are not truly upcoming by checking the start time.
+    // A match is upcoming if its start time is in the future and it hasn't been finished/cancelled.
+    return processed.filter(fixture => {
+        const fixtureDate = new Date(fixture.startingAt);
+        return fixtureDate > now && !fixture.isFinished;
+    });
 }
 
 export async function fetchFixtureDetails(fixtureId: number): Promise<ProcessedFixture> {
