@@ -21,8 +21,8 @@
   },
   "functions": [
     {
-      "source": "functions",
-      "codebase": "default",
+      "source": "myfunctions",
+      "codebase": "myfunctions",
       "ignore": [
         "node_modules",
         ".git",
