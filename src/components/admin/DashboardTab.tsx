@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -57,7 +56,7 @@ export default function DashboardTab({ setActiveSection }: DashboardTabProps) {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-headline font-semibold text-primary mb-1">Admin Dashboard</h2>
-        <p className="text-muted-foreground">Overview of BETBABU platform activity.</p>
+        <p className="text-muted-foreground">Overview of BetNexo platform activity.</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
