@@ -3,7 +3,7 @@
 
 import AppLayout from "@/components/AppLayout";
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarInset, SidebarFooter, SidebarTrigger } from "@/components/ui/sidebar";
-import { LayoutDashboard, Users, DollarSign, History, Briefcase, ShieldAlert, ListChecks, CreditCard, LogOut } from "lucide-react";
+import { LayoutDashboard, Users, DollarSign, History, Briefcase, ShieldAlert, ListChecks, CreditCard, LogOut, ChevronDown } from "lucide-react";
 import UserManagementTab from "@/components/admin/UserManagementTab";
 import BalanceControlTab from "@/components/admin/BalanceControlTab";
 import AgentManagementTab from "@/components/admin/AgentManagementTab";
@@ -12,6 +12,12 @@ import DashboardTab from "@/components/admin/DashboardTab";
 import BetHistoryTab from "@/components/admin/BetHistoryTab";
 import PaymentMethodsManagementTab from "@/components/admin/PaymentMethodsManagementTab";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
@@ -134,9 +140,24 @@ export default function AdminPage() {
           </Sidebar>
           <SidebarInset className="flex-1 bg-background">
             <header className="md:hidden flex items-center justify-between p-2 sm:p-4 border-b sticky top-16 bg-background/95 z-10">
-              <div className="flex items-center gap-2">
+               <div className="flex items-center gap-1">
                 <SidebarTrigger />
-                <h2 className="font-headline text-lg font-semibold">{activeSectionLabel}</h2>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="font-headline text-lg font-semibold flex items-center gap-1 px-2">
+                      {activeSectionLabel}
+                      <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-56">
+                    {navItems.map((item) => (
+                      <DropdownMenuItem key={item.id} onClick={() => setActiveSection(item.id)} className="text-md">
+                        <item.icon className="mr-2 h-4 w-4" />
+                        <span>{item.label}</span>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
               <Button variant="ghost" size="icon" onClick={handleLogout} className="text-muted-foreground">
                   <LogOut className="h-5 w-5" />
