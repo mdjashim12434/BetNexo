@@ -1,5 +1,5 @@
-# Firebase Studio
+# BetNexo
 
-This is a NextJS starter in Firebase Studio.
+Welcome to the BetNexo project, ready for final release.
 
-To get started, take a look at src/app/page.tsx.
+This application is built with Next.js, React, ShadCN UI, Tailwind CSS, and Genkit.
