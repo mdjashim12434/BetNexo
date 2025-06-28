@@ -16,7 +16,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import Image from 'next/image';
 import { format } from 'date-fns';
-import { fetchLiveFootballFixtures, fetchUpcomingFootballFixtures } from '@/services/sportmonksAPI';
 
 // Card component for Live Matches
 const LiveMatchCard = ({ match }: { match: ProcessedFixture }) => (
@@ -102,21 +101,26 @@ interface SportsCategoryClientContentProps {
   categorySlug: string;
   categoryName: string;
   leagueId?: string;
+  initialLiveMatches: ProcessedFixture[];
+  initialUpcomingMatches: ProcessedFixture[];
+  initialError: string | null;
 }
 
 export default function SportsCategoryClientContent({
   categorySlug,
   categoryName,
   leagueId,
+  initialLiveMatches,
+  initialUpcomingMatches,
+  initialError
 }: SportsCategoryClientContentProps) {
   const router = useRouter();
   const { user, loadingAuth } = useAuth();
   const { toast } = useToast();
 
-  const [liveMatches, setLiveMatches] = useState<ProcessedFixture[]>([]);
-  const [upcomingMatches, setUpcomingMatches] = useState<ProcessedFixture[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [liveMatches, setLiveMatches] = useState<ProcessedFixture[]>(initialLiveMatches);
+  const [upcomingMatches, setUpcomingMatches] = useState<ProcessedFixture[]>(initialUpcomingMatches);
+  const [fetchError, setFetchError] = useState<string | null>(initialError);
   
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -124,78 +128,18 @@ export default function SportsCategoryClientContent({
   const [loadingLeagues, setLoadingLeagues] = useState(false);
 
   const getDefaultTab = () => {
-    if (categorySlug === 'upcoming') return 'upcoming';
+    if (categorySlug === 'upcoming' && upcomingMatches.length > 0 && liveMatches.length === 0) return 'upcoming';
     return 'live';
   };
   const [activeTab, setActiveTab] = useState(getDefaultTab());
   
+  // This effect ensures state is updated if props change, e.g., on client-side navigation
   useEffect(() => {
-    const newDefaultTab = getDefaultTab();
-    if (activeTab !== newDefaultTab) {
-        setActiveTab(newDefaultTab);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categorySlug]);
+    setLiveMatches(initialLiveMatches);
+    setUpcomingMatches(initialUpcomingMatches);
+    setFetchError(initialError);
+  }, [initialLiveMatches, initialUpcomingMatches, initialError]);
 
-
-  useEffect(() => {
-    async function getMatchesForCategory() {
-      if (categorySlug === 'all-sports') {
-        setIsLoading(false);
-        return;
-      }
-      setIsLoading(true);
-      setFetchError(null);
-      setLiveMatches([]);
-      setUpcomingMatches([]);
-  
-      try {
-        const errorMessages: string[] = [];
-        const numericLeagueId = leagueId ? Number(leagueId) : undefined;
-  
-        const handleFetch = <T,>(promise: Promise<T>): Promise<T | []> =>
-          promise.catch(e => {
-              const message = e instanceof Error ? e.message : String(e);
-              console.error(`Error fetching data for ${categorySlug}:`, message);
-              errorMessages.push(message);
-              return [];
-          });
-  
-        let livePromise: Promise<ProcessedFixture[]> = Promise.resolve([]);
-        let upcomingPromise: Promise<ProcessedFixture[]> = Promise.resolve([]);
-        
-        if (categorySlug === 'live') {
-          livePromise = handleFetch(fetchLiveFootballFixtures(numericLeagueId));
-        } else if (categorySlug === 'upcoming') {
-          upcomingPromise = handleFetch(fetchUpcomingFootballFixtures(numericLeagueId));
-        } else if (categorySlug === 'football') {
-          livePromise = handleFetch(fetchLiveFootballFixtures(numericLeagueId));
-          upcomingPromise = handleFetch(fetchUpcomingFootballFixtures(numericLeagueId));
-        }
-
-        const [live, upcoming] = await Promise.all([livePromise, upcomingPromise]);
-  
-        const liveMatchIds = new Set(live.map(m => m.id));
-        const uniqueUpcoming = upcoming.filter(m => !liveMatchIds.has(m.id));
-  
-        live.sort((a, b) => new Date(a.startingAt).getTime() - new Date(b.startingAt).getTime());
-        uniqueUpcoming.sort((a, b) => new Date(a.startingAt).getTime() - new Date(b.startingAt).getTime());
-  
-        setLiveMatches(live);
-        setUpcomingMatches(uniqueUpcoming);
-  
-        if (errorMessages.length > 0) {
-          setFetchError(errorMessages.join('\n'));
-        }
-      } catch (e: any) {
-        setFetchError(e.message || "An unknown error occurred.");
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    
-    getMatchesForCategory();
-  }, [categorySlug, leagueId]);
 
   useEffect(() => {
     if (categorySlug === 'all-sports') {
@@ -296,24 +240,6 @@ export default function SportsCategoryClientContent({
     </>
   );
 
-  const renderSkeletons = () => (
-    <div className="space-y-3">
-        {[...Array(5)].map((_, i) => (
-            <Card key={i} className="p-3">
-                <div className="flex justify-between items-center mb-3">
-                    <Skeleton className="h-5 w-1/2" />
-                    <Skeleton className="h-5 w-1/4" />
-                </div>
-                <div className="flex justify-between items-center">
-                    <Skeleton className="h-8 w-1/3" />
-                    <Skeleton className="h-8 w-1/4" />
-                    <Skeleton className="h-8 w-1/3" />
-                </div>
-            </Card>
-        ))}
-    </div>
-  );
-
   const renderMatchList = () => {
     const isLiveList = (categorySlug === 'live') || (categorySlug === 'football' && activeTab === 'live');
 
@@ -330,8 +256,8 @@ export default function SportsCategoryClientContent({
 
   const renderNoMatches = () => {
     let message = 'No matches for this selection were found at this time.';
-    if(categorySlug === 'live') message = 'No live matches were found at this time.';
-    if(categorySlug === 'upcoming') message = 'No upcoming matches were found at this time.';
+    if(categorySlug === 'live' || (categorySlug === 'football' && activeTab === 'live')) message = 'No live matches were found at this time.';
+    if(categorySlug === 'upcoming' || (categorySlug === 'football' && activeTab === 'upcoming')) message = 'No upcoming matches were found at this time.';
 
     return (
       <div className="text-center text-muted-foreground py-10">
@@ -400,7 +326,7 @@ export default function SportsCategoryClientContent({
         </Tabs>
       )}
 
-      {isLoading ? renderSkeletons() : fetchError ? (
+      {fetchError ? (
          <div className="text-center text-destructive py-10 my-4 bg-destructive/10 rounded-lg">
             <AlertTriangle className="mx-auto h-12 w-12 mb-4" />
             <p className="text-lg font-semibold">Failed to load matches</p>
