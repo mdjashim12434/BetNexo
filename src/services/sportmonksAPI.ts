@@ -44,7 +44,8 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:9
 const handleApiResponse = async (response: Response) => {
     if (response.ok) return response.json();
     const errorJson = await response.json().catch(() => ({}));
-    const apiMessage = errorJson.message || 'The API did not provide a specific error message.';
+    // Check for `error` property from my own API routes, then `message` from external APIs.
+    const apiMessage = errorJson.error || errorJson.message || 'The API did not provide a specific error message.';
     let userFriendlyMessage: string;
     switch (response.status) {
         case 401: userFriendlyMessage = `Authentication Failed: The API key is likely invalid or missing.`; break;
