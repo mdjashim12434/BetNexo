@@ -16,8 +16,8 @@ const getTodayDateString = (): string => {
 // This route handles fetching all fixtures for today
 export async function GET(request: NextRequest) {
     if (!apiKey) {
-        console.error("SPORTMONKS_API_KEY is not set in environment variables.");
-        return NextResponse.json({ error: 'API key is not configured on the server.' }, { status: 500 });
+        console.warn("SPORTMONKS_API_KEY is not set. Returning empty data for today's fixtures. Please set the API key in your .env file.");
+        return NextResponse.json({ data: [] });
     }
     
     const todayDate = getTodayDateString();

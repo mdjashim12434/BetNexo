@@ -5,8 +5,8 @@ const apiKey = process.env.SPORTMONKS_API_KEY;
 
 export async function GET() {
   if (!apiKey) {
-    console.error("SPORTMONKS_API_KEY is not set in environment variables.");
-    return NextResponse.json({ error: 'API key is not configured on the server.' }, { status: 500 });
+    console.warn("SPORTMONKS_API_KEY is not set. Returning empty data for continents. Please set the API key in your .env file.");
+    return NextResponse.json({ data: [] });
   }
 
   // The user provided include is 'countries'

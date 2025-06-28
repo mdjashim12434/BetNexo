@@ -6,8 +6,8 @@ export async function GET() {
   const apiKey = process.env.THE_ODDS_API_KEY;
 
   if (!apiKey) {
-    console.error("THE_ODDS_API_KEY is not set in environment variables.");
-    return NextResponse.json({ error: "Odds API key is not configured on the server." }, { status: 500 });
+    console.warn("THE_ODDS_API_KEY is not set. Returning empty data for odds. Please set the API key in your .env file.");
+    return NextResponse.json([]);
   }
 
   // Using the 'upcoming' endpoint to get a wide range of odds across all sports.

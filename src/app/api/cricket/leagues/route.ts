@@ -7,11 +7,8 @@ const apiKey = process.env.SPORTMONKS_API_KEY;
 
 export async function GET() {
   if (!apiKey) {
-    console.error("SPORTMONKS_API_KEY is not set in environment variables.");
-    return new Response(JSON.stringify({ error: "API key is not configured on the server." }), { 
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    console.warn("SPORTMONKS_API_KEY is not set. Returning empty data for cricket leagues. Please set the API key in your .env file.");
+    return NextResponse.json({ data: [] });
   }
 
   const url = `${SPORTMONKS_CRICKET_API_URL}/leagues?api_token=${apiKey}`;

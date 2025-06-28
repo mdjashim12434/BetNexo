@@ -5,11 +5,8 @@ export async function GET() {
   const apiKey = process.env.SPORTMONKS_API_KEY;
 
   if (!apiKey) {
-    console.error("SPORTMONKS_API_KEY is not set in environment variables.");
-    return new Response(JSON.stringify({ error: "API key is not configured on the server." }), { 
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    console.warn("SPORTMONKS_API_KEY is not set. Returning empty list of leagues. Please set the API key in your .env file.");
+    return NextResponse.json({ leagues: [] });
   }
 
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:9002';
