@@ -1,42 +1,60 @@
 
 import {
-  fetchTodaysFootballFixtures,
+  fetchLiveFootballFixtures,
+  fetchUpcomingFootballFixtures,
 } from '@/services/sportmonksAPI';
 import HomeClientPage from './HomeClientPage';
 import type { ProcessedFixture } from '@/types/sportmonks';
 
 async function getHomePageMatches() {
-  let allTodaysMatches: ProcessedFixture[] = [];
+  let liveMatches: ProcessedFixture[] = [];
+  let upcomingMatches: ProcessedFixture[] = [];
   let error: string | null = null;
   
   try {
-    allTodaysMatches = await fetchTodaysFootballFixtures();
-  } catch (e: any) {
-    console.error("Home page: Failed to fetch today's football matches:", e);
-    // Let's provide a more specific message if the API key is missing or invalid
-    if (e.message && (e.message.includes("API key is not configured") || e.message.includes("Authentication Failed"))) {
-       error = "The Sportmonks API Key is missing or invalid. Please add it to your .env file to see match data.";
+    // Fetch live and upcoming matches concurrently for better performance.
+    // The `firstPageOnly` flag is used to limit the data for the homepage, making it faster.
+    const [liveResult, upcomingResult] = await Promise.allSettled([
+      fetchLiveFootballFixtures(undefined, true),
+      fetchUpcomingFootballFixtures(undefined, true)
+    ]);
+
+    if (liveResult.status === 'fulfilled') {
+      liveMatches = liveResult.value;
     } else {
-       error = e.message || "Could not fetch today's football matches.";
+      console.error("Home page: Failed to fetch live matches:", liveResult.reason);
+      const reason = liveResult.reason as Error;
+      error = (error ? error + '\n' : '') + (reason.message || "Could not fetch live matches.");
     }
+
+    if (upcomingResult.status === 'fulfilled') {
+      upcomingMatches = upcomingResult.value;
+    } else {
+      console.error("Home page: Failed to fetch upcoming matches:", upcomingResult.reason);
+      const reason = upcomingResult.reason as Error;
+      error = (error ? error + '\n' : '') + (reason.message || "Could not fetch upcoming matches.");
+    }
+    
+    // Ensure there are no duplicates if a match is both live and in the upcoming feed
+    const liveMatchIds = new Set(liveMatches.map(m => m.id));
+    const uniqueUpcomingMatches = upcomingMatches.filter(match => !liveMatchIds.has(match.id));
+
+    // Sort both lists by their starting time for a consistent order.
+    liveMatches.sort((a, b) => new Date(a.startingAt).getTime() - new Date(b.startingAt).getTime());
+    uniqueUpcomingMatches.sort((a, b) => new Date(a.startingAt).getTime() - new Date(b.startingAt).getTime());
+
+    return { 
+      liveMatches: liveMatches.slice(0, 10), 
+      upcomingMatches: uniqueUpcomingMatches.slice(0, 10), 
+      error: error
+    };
+    
+  } catch (e: any) {
+    // This is a fallback for any unexpected error in the Promise.allSettled logic itself.
+    console.error("Home page: Unexpected error in getHomePageMatches:", e);
+    error = e.message || "An unexpected error occurred while fetching matches.";
+    return { liveMatches: [], upcomingMatches: [], error };
   }
-
-  const now = new Date();
-  
-  // Split today's matches into live and upcoming
-  const liveMatches = allTodaysMatches.filter(m => m.isLive && !m.isFinished);
-  const upcomingMatches = allTodaysMatches.filter(m => !m.isLive && !m.isFinished && new Date(m.startingAt) > now);
-
-  // Sort both lists by their starting time for a consistent order.
-  liveMatches.sort((a, b) => new Date(a.startingAt).getTime() - new Date(b.startingAt).getTime());
-  upcomingMatches.sort((a, b) => new Date(a.startingAt).getTime() - new Date(b.startingAt).getTime());
-
-  // Return the processed, separated, and sliced arrays for the home page.
-  return { 
-    liveMatches: liveMatches.slice(0, 10), 
-    upcomingMatches: upcomingMatches.slice(0, 10), 
-    error: error 
-  };
 }
 
 
