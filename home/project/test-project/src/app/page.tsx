@@ -22,7 +22,8 @@ async function getHomePageMatches() {
       liveMatches = liveResult.value;
     } else {
       console.error("Home page: Failed to fetch live matches:", liveResult.reason);
-      error = (liveResult.reason as Error).message || "Could not fetch live matches.";
+      const reason = (liveResult.reason as Error).message || "Could not fetch live matches.";
+      error = `Error fetching live matches. This could be due to API plan limitations or a temporary network issue. Details: ${reason}`;
     }
 
     if (upcomingResult.status === 'fulfilled') {
@@ -31,9 +32,10 @@ async function getHomePageMatches() {
       upcomingMatches = upcomingResult.value.filter(m => !liveMatchIds.has(m.id));
     } else {
       console.error("Home page: Failed to fetch upcoming matches:", upcomingResult.reason);
-      const upcomingError = (upcomingResult.reason as Error).message || "Could not fetch upcoming matches.";
+      const upcomingErrorMsg = (upcomingResult.reason as Error).message || "Could not fetch upcoming matches.";
+      const upcomingError = `Error fetching upcoming matches. This could be due to API plan limitations or a temporary network issue. Details: ${upcomingErrorMsg}`;
       // Append error message
-      error = error ? `${error}\n${upcomingError}` : upcomingError;
+      error = error ? `${error}\n\n${upcomingError}` : upcomingError;
     }
 
   } catch (e: any) {
