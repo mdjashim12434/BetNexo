@@ -1,4 +1,5 @@
 
+
 // --- Common Types ---
 export interface SportmonksState {
     id: number;
@@ -123,16 +124,16 @@ export interface ProcessedComment {
 }
 
 export interface ProcessedFixture {
-    id: number;
+    id: number | string; // Changed to support string IDs from other APIs
     sportKey: 'football';
     name: string;
-    startingAt: string;
-    state: SportmonksState;
+    startingAt: string; // ISO String format
+    state: Partial<SportmonksState>; // Made partial as not all APIs provide this full object
     isLive: boolean;
     isFinished: boolean;
-    league: { id: number; name: string; countryName: string; };
-    homeTeam: { id: number; name: string; image_path?: string; };
-    awayTeam: { id: number; name: string; image_path?: string; };
+    league: { id?: number; name: string; countryName: string; };
+    homeTeam: { id?: number; name: string; image_path?: string; };
+    awayTeam: { id?: number; name: string; image_path?: string; };
     odds: {
         home?: number;
         draw?: number;
@@ -142,11 +143,13 @@ export interface ProcessedFixture {
         dnb?: { home?: number; away?: number; };
         dc?: { homeOrDraw?: number; awayOrDraw?: number; homeOrAway?: number; };
     };
+    homeScore?: string | number;
+    awayScore?: string | number;
+    
+    // Optional fields that may not be available from all APIs
     comments?: ProcessedComment[];
     venue?: { name: string; city: string; };
     referee?: { name: string; };
-    homeScore?: string | number;
-    awayScore?: string | number;
     minute?: number;
     latestEvent?: { text: string; isGoal: boolean; };
 }
