@@ -1,3 +1,4 @@
+
 import type { SVGProps } from 'react';
 
 // This component is no longer used and can be considered deprecated.
@@ -15,12 +16,7 @@ export function CricketIcon(props: SVGProps<SVGSVGElement>) {
       strokeLinejoin="round"
       {...props}
     >
-      <path d="m13.23 10.83 6.18-6.18a2.5 2.5 0 0 0-3.54-3.54l-6.18 6.18" />
-      <path d="m4.22 18.78 1.42-1.42" />
-      <path d="m9.37 13.63 1.42-1.42" />
-      <path d="M14.51 8.49l1.42-1.42" />
-      <path d="M19.66 3.34l1.42-1.42" />
-      <circle cx="6" cy="18" r="2" />
+      <path d="M12 2a10 10 0 1 0 10 10" />
     </svg>
   );
 }

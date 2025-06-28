@@ -61,3 +61,19 @@ export const processV3FootballFixtures = (fixtures: SportmonksV3Fixture[]): Proc
         };
     });
 };
+
+// New function to fetch fixture details from the client side via an API route
+export async function fetchFixtureDetails(fixtureId: number): Promise<ProcessedFixture | null> {
+    const res = await fetch(`/api/football/fixtures?fixtureId=${fixtureId}`);
+    if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to fetch fixture details.');
+    }
+    const apiResult: { data: SportmonksV3Fixture } = await res.json();
+    if (apiResult.data) {
+        // processV3FootballFixtures expects an array
+        const processedFixtures = processV3FootballFixtures([apiResult.data]);
+        return processedFixtures[0] || null;
+    }
+    return null;
+}
