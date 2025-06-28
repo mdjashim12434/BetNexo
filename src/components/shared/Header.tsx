@@ -39,7 +39,7 @@ export default function Header() {
         {/* Center Section */}
         <div className="flex-grow text-center">
           <Link href="/" className="text-4xl font-headline font-black italic tracking-tighter">
-            <span className="text-white">Bet</span><span className="text-primary">Nexo</span>
+            <span className="text-white">BET</span><span className="text-primary">BABU</span>
           </Link>
         </div>
 
