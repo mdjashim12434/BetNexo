@@ -258,3 +258,20 @@ export async function fetchFixtureDetails(fixtureId: number): Promise<ProcessedF
     const data: SportmonksSingleV3FixtureResponse = await handleApiResponse(fixtureResult.value);
     return processV3FootballFixtures([data.data], oddsData)[0];
 }
+
+export async function fetchTodaysFootballFixtures(): Promise<ProcessedFixture[]> {
+    const url = `${API_BASE_URL}/api/football/todays-fixtures`;
+    
+    const [fixtureResult, oddsResult] = await Promise.allSettled([
+      fetch(url, { cache: 'no-store' }),
+      fetchTheOddsApiData()
+    ]);
+
+    if (fixtureResult.status === 'rejected') {
+        throw fixtureResult.reason;
+    }
+
+    const oddsData = oddsResult.status === 'fulfilled' ? oddsResult.value : [];
+    const data: SportmonksV3FixturesResponse = await handleApiResponse(fixtureResult.value);
+    return processV3FootballFixtures(data?.data || [], oddsData);
+}
