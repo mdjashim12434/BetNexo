@@ -1,3 +1,4 @@
+
 'use client';
 
 import AppLayout from '@/components/AppLayout';
@@ -5,7 +6,7 @@ import BottomNav from '@/components/navigation/BottomNav';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { Star, Swords, Gamepad2, Dice5, Zap, Dribbble, Futbol, CheckSquare, Tablet, Circle, Disc, Image as ImageIcon } from 'lucide-react';
+import { Star, Swords, Gamepad2, Dice5, Zap, Dribbble, SoccerBall, CheckSquare, Tablet, Circle, Disc, Image as ImageIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -28,7 +29,7 @@ const topNavItems = [
 // --- Sports Grid Data ---
 const sportsGridItems = [
   { name: 'All', href: '/sports/all-sports', icon: CheckSquare },
-  { name: 'Football', href: '/sports/football', icon: Futbol },
+  { name: 'Football', href: '/sports/football', icon: SoccerBall },
   { name: 'Basketball', href: '#', icon: Dribbble },
   { name: 'Table Tennis', href: '#', icon: Tablet },
   { name: 'Tennis', href: '#', icon: Circle },
