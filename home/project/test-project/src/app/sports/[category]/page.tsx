@@ -1,7 +1,8 @@
 
 import AppLayout from '@/components/AppLayout';
 import SportsCategoryClientContent from '@/components/sports/SportsCategoryClientContent';
-import { fetchLiveFootballFixtures, fetchUpcomingFootballFixtures } from '@/services/sportmonksAPI';
+import { getLiveScoresFromServer, getUpcomingFixturesFromServer } from '@/lib/sportmonks-server';
+import { processV3FootballFixtures } from '@/services/sportmonksAPI';
 import type { ProcessedFixture } from '@/types/sportmonks';
 
 const validCategories = ['live', 'football', 'upcoming', 'all-sports'];
@@ -35,34 +36,34 @@ async function getMatchesForCategory(categorySlug: string, leagueId?: number) {
     
     const promisesToRun: Promise<ProcessedFixture[]>[] = [];
     
-    if (categorySlug === 'live' || categorySlug === 'football') {
-        promisesToRun.push(fetchLiveFootballFixtures(leagueId));
-    }
-    
-    if (categorySlug === 'upcoming' || categorySlug === 'football') {
-        promisesToRun.push(fetchUpcomingFootballFixtures(leagueId));
-    }
+    // Determine which fetches to run based on category
+    const shouldFetchLive = categorySlug === 'live' || categorySlug === 'football';
+    const shouldFetchUpcoming = categorySlug === 'upcoming' || categorySlug === 'football';
 
-    // Ensure we always have two promises for Promise.allSettled
-    while (promisesToRun.length < 2) {
-        promisesToRun.push(Promise.resolve([]));
-    }
+    const livePromise = shouldFetchLive 
+      ? getLiveScoresFromServer(leagueId).then(processV3FootballFixtures) 
+      : Promise.resolve([]);
+      
+    const upcomingPromise = shouldFetchUpcoming 
+      ? getUpcomingFixturesFromServer(leagueId).then(processV3FootballFixtures) 
+      : Promise.resolve([]);
     
-    const [liveResult, upcomingResult] = await Promise.allSettled(promisesToRun);
+    const [liveResult, upcomingResult] = await Promise.allSettled([livePromise, upcomingPromise]);
 
     if (liveResult.status === 'fulfilled') {
         liveMatches = liveResult.value;
-    } else {
+    } else if(shouldFetchLive) {
         const reason = (liveResult.reason as Error).message || "Could not fetch live matches.";
+        console.error(`Error fetching live matches for category '${categorySlug}':`, reason);
         errorMessages.push(`Error fetching live matches: ${reason}`);
     }
 
     if (upcomingResult.status === 'fulfilled') {
-        const upcomingData = upcomingResult.value;
         const liveMatchIds = new Set(liveMatches.map(m => m.id));
-        upcomingMatches = upcomingData.filter(m => !liveMatchIds.has(m.id));
-    } else {
+        upcomingMatches = upcomingResult.value.filter(m => !liveMatchIds.has(m.id));
+    } else if(shouldFetchUpcoming) {
         const reason = (upcomingResult.reason as Error).message || "Could not fetch upcoming matches.";
+        console.error(`Error fetching upcoming matches for category '${categorySlug}':`, reason);
         errorMessages.push(`Error fetching upcoming matches: ${reason}`);
     }
 

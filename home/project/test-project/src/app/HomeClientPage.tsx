@@ -9,12 +9,15 @@ import { Star, Swords, Gamepad2, Dice5, Zap, Goal, Image as ImageIcon, CopyCheck
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
-import HomeMatchesDisplay from '@/components/sports/FootballLiveScoresDisplay';
+import { Skeleton } from '@/components/ui/skeleton';
+import LiveFixtures from '@/components/LiveFixtures';
+import UpcomingFixtures from '@/components/UpcomingFixtures';
 import type { ProcessedFixture } from '@/types/sportmonks';
+
 
 // --- Top Navigation Data ---
 const topNavItems = [
@@ -28,7 +31,7 @@ const topNavItems = [
 // --- Sports Grid Data (Using reliable lucide-react icons) ---
 const sportsGridItems = [
   { name: 'All', href: '/sports/all-sports', icon: CopyCheck },
-  { name: 'Cricket', href: '#', icon: Disc },
+  { name: 'Cricket', href: '/sports/cricket', icon: Disc },
   { name: 'Football', href: '/sports/football', icon: Goal },
   { name: 'Basketball', href: '#', icon: Star },
   { name: 'Table Tennis', href: '#', icon: Zap },
@@ -76,8 +79,19 @@ export default function HomeClientPage({
   if (loadingAuth || !user) {
     return (
       <AppLayout>
-        <div className="flex items-center justify-center min-h-[calc(100vh-theme(spacing.32))]">
-          <div className="text-center p-10">Loading...</div>
+        <div className="container py-6">
+            <div className="space-y-4 md:space-y-6 pb-24">
+                {/* Skeletons for top navs and banners */}
+                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-32 w-full" />
+                <Skeleton className="h-28 w-full" />
+                 {/* Skeletons for matches */}
+                <div className="space-y-6">
+                  <LiveFixtures matches={[]} loading={true} error={null} />
+                  <UpcomingFixtures matches={[]} loading={true} error={null} />
+                </div>
+            </div>
         </div>
       </AppLayout>
     );
@@ -88,7 +102,6 @@ export default function HomeClientPage({
       <div className="container py-6">
         <div className="space-y-4 md:space-y-6 pb-24">
           
-          {/* Top Navigation */}
           <ScrollArea className="w-full whitespace-nowrap -mt-4">
             <div className="flex justify-between items-center p-2 gap-4">
               {topNavItems.map((item, index) => (
@@ -101,7 +114,6 @@ export default function HomeClientPage({
             <ScrollBar orientation="horizontal" className="hidden"/>
           </ScrollArea>
           
-          {/* Sports Grid */}
           <ScrollArea className="w-full whitespace-nowrap">
             <div className="flex gap-3 px-1 py-1">
               {sportsGridItems.map(sport => (
@@ -114,7 +126,6 @@ export default function HomeClientPage({
             <ScrollBar orientation="horizontal" className="hidden"/>
           </ScrollArea>
 
-          {/* Promotional Banners */}
           <ScrollArea className="w-full whitespace-nowrap">
             <div className="flex gap-3 px-1 py-1">
                 {promoBanners.map(banner => (
@@ -140,7 +151,6 @@ export default function HomeClientPage({
             <ScrollBar orientation="horizontal" className="hidden"/>
           </ScrollArea>
 
-          {/* Casino Quick Links */}
           <ScrollArea className="w-full whitespace-nowrap">
             <div className="flex gap-4 px-1 py-1">
               {casinoLinks.map(link => (
@@ -156,12 +166,10 @@ export default function HomeClientPage({
             <ScrollBar orientation="horizontal" className="hidden"/>
           </ScrollArea>
           
-          {/* Live & Upcoming Matches Section */}
-          <HomeMatchesDisplay
-            liveMatches={initialLiveMatches}
-            upcomingMatches={initialUpcomingMatches}
-            error={initialError}
-          />
+          <div className="space-y-6">
+            <LiveFixtures matches={initialLiveMatches} loading={false} error={initialError} />
+            <UpcomingFixtures matches={initialUpcomingMatches} loading={false} error={initialError} />
+          </div>
 
         </div>
       </div>

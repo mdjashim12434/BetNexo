@@ -1,57 +1,54 @@
-
-import {
-  fetchLiveFootballFixtures,
-  fetchUpcomingFootballFixtures,
-} from '@/services/sportmonksAPI';
 import HomeClientPage from './HomeClientPage';
-import type { ProcessedFixture } from '@/types/sportmonks';
+import type { ProcessedFixture, SportmonksV3Fixture } from '@/types/sportmonks';
+import { getLiveScoresFromServer, getUpcomingFixturesFromServer } from '@/lib/sportmonks-server';
+import { processV3FootballFixtures } from '@/services/sportmonksAPI';
 
 async function getHomePageMatches() {
   let liveMatches: ProcessedFixture[] = [];
   let upcomingMatches: ProcessedFixture[] = [];
   let error: string | null = null;
+  const errorMessages: string[] = [];
   
   try {
-    // Fetch both in parallel for performance, only getting the first page for the homepage.
     const [liveResult, upcomingResult] = await Promise.allSettled([
-      fetchLiveFootballFixtures(undefined, true),
-      fetchUpcomingFootballFixtures(undefined, true)
+      getLiveScoresFromServer(undefined, true),
+      getUpcomingFixturesFromServer(undefined, true)
     ]);
 
-    if (liveResult.status === 'fulfilled') {
-      liveMatches = liveResult.value;
-    } else {
-      console.error("Home page: Failed to fetch live matches:", liveResult.reason);
+    if (liveResult.status === 'fulfilled' && liveResult.value) {
+      liveMatches = processV3FootballFixtures(liveResult.value);
+    } else if (liveResult.status === 'rejected') {
       const reason = (liveResult.reason as Error).message || "Could not fetch live matches.";
-      error = `Error fetching live matches. This could be due to API plan limitations or a temporary network issue. Details: ${reason}`;
+      console.error("Home page: Failed to fetch live matches:", reason);
+      errorMessages.push(`Error fetching live matches: ${reason}`);
     }
 
-    if (upcomingResult.status === 'fulfilled') {
-      // Ensure there are no duplicates if a live match also appears in upcoming
+    if (upcomingResult.status === 'fulfilled' && upcomingResult.value) {
       const liveMatchIds = new Set(liveMatches.map(m => m.id));
-      upcomingMatches = upcomingResult.value.filter(m => !liveMatchIds.has(m.id));
-    } else {
-      console.error("Home page: Failed to fetch upcoming matches:", upcomingResult.reason);
-      const upcomingErrorMsg = (upcomingResult.reason as Error).message || "Could not fetch upcoming matches.";
-      const upcomingError = `Error fetching upcoming matches. This could be due to API plan limitations or a temporary network issue. Details: ${upcomingErrorMsg}`;
-      // Append error message
-      error = error ? `${error}\n\n${upcomingError}` : upcomingError;
+      const processedUpcoming = processV3FootballFixtures(upcomingResult.value);
+      upcomingMatches = processedUpcoming.filter(m => !liveMatchIds.has(m.id));
+    } else if (upcomingResult.status === 'rejected') {
+      const reason = (upcomingResult.reason as Error).message || "Could not fetch upcoming matches.";
+      console.error("Home page: Failed to fetch upcoming matches:", reason);
+      errorMessages.push(`Error fetching upcoming matches: ${reason}`);
+    }
+
+    if (errorMessages.length > 0) {
+      error = errorMessages.join('\n\n');
     }
 
   } catch (e: any) {
-    // This would catch issues with Promise.allSettled itself, which is unlikely.
     console.error("Home page: Generic failure fetching matches:", e);
     error = e.message || "An unexpected error occurred while fetching matches.";
   }
 
-  // Sort and slice the results.
   liveMatches.sort((a, b) => new Date(a.startingAt).getTime() - new Date(b.startingAt).getTime());
   upcomingMatches.sort((a, b) => new Date(a.startingAt).getTime() - new Date(b.startingAt).getTime());
 
   return { 
     liveMatches: liveMatches.slice(0, 10), 
     upcomingMatches: upcomingMatches.slice(0, 10), 
-    error: error 
+    error
   };
 }
 
