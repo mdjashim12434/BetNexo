@@ -6,7 +6,7 @@ import BottomNav from '@/components/navigation/BottomNav';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { Star, Swords, Gamepad2, Dice5, Zap, Goal, Image as ImageIcon, CopyCheck, Basketball, TableTennisPaddleBall, TennisBall, Hockey, Disc } from 'lucide-react';
+import { Star, Swords, Gamepad2, Dice5, Zap, Goal, Image as ImageIcon, CopyCheck, Basketball, TennisBall, Hockey, Disc } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -32,7 +32,7 @@ const sportsGridItems = [
   { name: 'Cricket', href: '#', icon: Disc },
   { name: 'Football', href: '/sports/football', icon: Goal },
   { name: 'Basketball', href: '#', icon: Basketball },
-  { name: 'Table Tennis', href: '#', icon: TableTennisPaddleBall },
+  { name: 'Table Tennis', href: '#', icon: Zap },
   { name: 'Tennis', href: '#', icon: TennisBall },
   { name: 'Ice Hockey', href: '#', icon: Hockey },
 ];
