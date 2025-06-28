@@ -40,7 +40,7 @@ const FINISHED_STATES_V3: string[] = ['FT', 'AET', 'Finished', 'POSTP', 'CANCL',
 const IS_SERVER = typeof window === 'undefined';
 // When on the server (for pages like HomePage), use the full absolute URL to connect to the API routes.
 // When on the client (for pages like SportsCategoryClientContent), use a relative path (empty base URL).
-const API_BASE_URL = IS_SERVER ? 'http://localhost:9002' : '';
+const API_BASE_URL = IS_SERVER ? (process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:9002') : '';
 
 // Helper to generate user-friendly error messages
 const handleApiResponse = async (response: Response) => {
@@ -88,11 +88,12 @@ async function fetchTheOddsApiData(): Promise<TheOddsApiOdd[]> {
 const processV3FootballFixtures = (fixtures: SportmonksV3Fixture[], theOddsApiData: TheOddsApiOdd[] = []): ProcessedFixture[] => {
     if (!Array.isArray(fixtures)) return [];
 
-    // More robust normalization for team names
+    // More robust normalization for team names to handle special characters
     const normalizeTeamName = (name: string) => {
         if (!name) return '';
         return name
             .toLowerCase()
+            .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Removes diacritics (e.g., á -> a)
             .replace(/&/g, 'and')
             .replace(/[.,]/g, '')
             .replace(/\s(fc|afc|sc|cf)$/, '')
