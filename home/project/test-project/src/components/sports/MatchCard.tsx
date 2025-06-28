@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -20,7 +21,7 @@ const MatchCard: FC<MatchCardProps> = ({ match }) => {
       <CardHeader className="p-4">
         <div className="flex justify-between items-start gap-2">
           <div className="flex-1">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+             <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
                 <Goal className="h-4 w-4 text-primary shrink-0" />
                 <span className="font-semibold truncate">{match.league.name}</span>
             </div>

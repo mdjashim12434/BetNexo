@@ -1,3 +1,4 @@
+
 import type { 
     SportmonksV3Fixture,
     ProcessedFixture, 
@@ -10,8 +11,7 @@ import type {
 
 // --- Centralized State Definitions ---
 const LIVE_STATES_V3: string[] = ['LIVE', 'HT', 'ET', 'PEN_LIVE', 'BREAK', 'INT'];
-// Corrected to only include states that definitively mean a match is over.
-const FINISHED_STATES_V3: string[] = ['FT', 'AET', 'Finished', 'AWARDED', 'WO', 'DELETED'];
+const FINISHED_STATES_V3: string[] = ['FT', 'AET', 'Finished', 'AWARDED', 'WO']; // Removed problematic states
 
 // Helper to robustly parse date strings
 const parseSportmonksDateStringToISO = (dateString: string): string => {
@@ -43,7 +43,6 @@ export const processV3FootballFixtures = (fixtures: SportmonksV3Fixture[]): Proc
             if (lastComment) return { text: `${lastComment.minute}' - ${lastComment.comment}`, isGoal: lastComment.is_goal };
             const lastEvent = (events && events.length > 0) ? [...events].sort((a,b) => b.minute - a.minute)[0] : null;
             if (lastEvent) return { text: `${lastEvent.minute}' - ${lastEvent.type?.name || 'Event'}`, isGoal: lastEvent.type?.code === 'GOAL' };
-            if (isFinished && state.name !== 'Finished') return { text: state.name, isGoal: false };
             if (isLive && state.name !== 'Live') return { text: state.name, isGoal: false };
             return undefined;
         };
@@ -62,58 +61,3 @@ export const processV3FootballFixtures = (fixtures: SportmonksV3Fixture[]): Proc
         };
     });
 };
-
-// --- CLIENT-SIDE Fetching Functions (call internal API routes) ---
-const getApiBaseUrl = () => {
-  if (typeof window === 'undefined') {
-    return process.env.API_BASE_URL || 'http://localhost:9002';
-  }
-  return '';
-};
-
-const handleApiResponse = async (response: Response) => {
-    if (response.ok) return response.json();
-    const errorJson = await response.json().catch(() => ({}));
-    const apiMessage = errorJson.error || 'The API did not provide a specific error message.';
-    throw new Error(apiMessage);
-};
-
-export async function fetchLiveFootballFixtures(leagueId?: number, firstPageOnly = false): Promise<ProcessedFixture[]> {
-    let path = leagueId ? `/api/football/live-scores?leagueId=${leagueId}` : '/api/football/live-scores';
-    if (firstPageOnly) {
-        path += path.includes('?') ? '&firstPageOnly=true' : '?firstPageOnly=true';
-    }
-    const url = `${getApiBaseUrl()}${path}`;
-    const response = await fetch(url, { cache: 'no-store' });
-    const data = await handleApiResponse(response);
-    return processV3FootballFixtures(data?.data || []);
-}
-
-export async function fetchUpcomingFootballFixtures(leagueId?: number, firstPageOnly = false): Promise<ProcessedFixture[]> {
-    let path = leagueId ? `/api/football/upcoming-fixtures?leagueId=${leagueId}` : '/api/football/upcoming-fixtures';
-     if (firstPageOnly) {
-        path += path.includes('?') ? '&firstPageOnly=true' : '?firstPageOnly=true';
-    }
-    const url = `${getApiBaseUrl()}${path}`;
-    const response = await fetch(url, { cache: 'no-store' });
-    const data = await handleApiResponse(response);
-    return processV3FootballFixtures(data?.data || []);
-}
-
-export async function fetchFixtureDetails(fixtureId: number): Promise<ProcessedFixture> {
-    const url = `${getApiBaseUrl()}/api/football/fixtures?fixtureId=${fixtureId}`;
-    const response = await fetch(url, { cache: 'no-store' });
-    const data = await handleApiResponse(response);
-    const processed = processV3FootballFixtures([data.data]);
-    if (!processed || processed.length === 0) {
-        throw new Error(`Could not process fixture details for ID ${fixtureId}.`);
-    }
-    return processed[0];
-}
-
-export async function fetchTodaysFootballFixtures(): Promise<ProcessedFixture[]> {
-    const url = `${getApiBaseUrl()}/api/football/todays-fixtures`;
-    const response = await fetch(url, { cache: 'no-store' });
-    const data = await handleApiResponse(response);
-    return processV3FootballFixtures(data?.data || []);
-}

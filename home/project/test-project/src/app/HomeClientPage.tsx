@@ -13,10 +13,10 @@ import { useEffect } from 'react';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
-import { Skeleton } from '@/components/ui/skeleton';
 import LiveFixtures from '@/components/LiveFixtures';
 import UpcomingFixtures from '@/components/UpcomingFixtures';
 import type { ProcessedFixture } from '@/types/sportmonks';
+import Loading from './loading';
 
 
 // --- Top Navigation Data ---
@@ -31,7 +31,6 @@ const topNavItems = [
 // --- Sports Grid Data (Using reliable lucide-react icons) ---
 const sportsGridItems = [
   { name: 'All', href: '/sports/all-sports', icon: CopyCheck },
-  { name: 'Cricket', href: '/sports/cricket', icon: Disc },
   { name: 'Football', href: '/sports/football', icon: Goal },
   { name: 'Basketball', href: '#', icon: Star },
   { name: 'Table Tennis', href: '#', icon: Zap },
@@ -77,24 +76,7 @@ export default function HomeClientPage({
   }, [user, loadingAuth, router]);
 
   if (loadingAuth || !user) {
-    return (
-      <AppLayout>
-        <div className="container py-6">
-            <div className="space-y-4 md:space-y-6 pb-24">
-                {/* Skeletons for top navs and banners */}
-                <Skeleton className="h-20 w-full" />
-                <Skeleton className="h-24 w-full" />
-                <Skeleton className="h-32 w-full" />
-                <Skeleton className="h-28 w-full" />
-                 {/* Skeletons for matches */}
-                <div className="space-y-6">
-                  <LiveFixtures matches={[]} loading={true} error={null} />
-                  <UpcomingFixtures matches={[]} loading={true} error={null} />
-                </div>
-            </div>
-        </div>
-      </AppLayout>
-    );
+    return <Loading />;
   }
 
   return (

@@ -1,5 +1,6 @@
+
 import HomeClientPage from './HomeClientPage';
-import type { ProcessedFixture, SportmonksV3Fixture } from '@/types/sportmonks';
+import type { ProcessedFixture } from '@/types/sportmonks';
 import { getLiveScoresFromServer, getUpcomingFixturesFromServer } from '@/lib/sportmonks-server';
 import { processV3FootballFixtures } from '@/services/sportmonksAPI';
 
@@ -26,7 +27,9 @@ async function getHomePageMatches() {
     if (upcomingResult.status === 'fulfilled' && upcomingResult.value) {
       const liveMatchIds = new Set(liveMatches.map(m => m.id));
       const processedUpcoming = processV3FootballFixtures(upcomingResult.value);
-      upcomingMatches = processedUpcoming.filter(m => !liveMatchIds.has(m.id));
+      const now = new Date();
+      // Filter for truly upcoming matches and exclude any that might be live now.
+      upcomingMatches = processedUpcoming.filter(m => !liveMatchIds.has(m.id) && new Date(m.startingAt) > now);
     } else if (upcomingResult.status === 'rejected') {
       const reason = (upcomingResult.reason as Error).message || "Could not fetch upcoming matches.";
       console.error("Home page: Failed to fetch upcoming matches:", reason);

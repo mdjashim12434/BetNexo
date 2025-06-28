@@ -53,18 +53,19 @@ export default function SportsCategoryClientContent({
   const [leagues, setLeagues] = useState<CombinedLeague[]>([]);
   const [loadingLeagues, setLoadingLeagues] = useState(false);
 
-  // This component now receives fetched data as props.
-  // The loading state is now for client-side operations like searching leagues, or initial page load.
-  const [isLoading, setIsLoading] = useState(true);
+  // The component receives fetched data as props, so we just manage the search term.
+  const [isLoading, setIsLoading] = useState(false);
 
   const getDefaultTab = () => {
-    if (categorySlug === 'upcoming' && initialUpcomingMatches.length > 0 && initialLiveMatches.length === 0) return 'upcoming';
-    return 'live';
+    if (categorySlug === 'upcoming') return 'upcoming';
+    if (categorySlug === 'live') return 'live';
+    if(initialLiveMatches.length > 0) return 'live';
+    return 'upcoming';
   };
+
   const [activeTab, setActiveTab] = useState(getDefaultTab());
   
   useEffect(() => {
-    setIsLoading(false); // Data is passed via props, so we are not loading here.
     const newDefaultTab = getDefaultTab();
     if (activeTab !== newDefaultTab) {
         setActiveTab(newDefaultTab);
@@ -176,7 +177,7 @@ export default function SportsCategoryClientContent({
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {[...Array(6)].map((_, i) => (
             <Card key={i} className="p-3 space-y-3">
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center mb-3">
                     <Skeleton className="h-5 w-1/2" />
                     <Skeleton className="h-5 w-1/4" />
                 </div>
@@ -203,8 +204,13 @@ export default function SportsCategoryClientContent({
 
   const renderNoMatches = () => {
     let message = 'No matches for this selection were found at this time.';
-    if(categorySlug === 'live' || (categorySlug === 'football' && activeTab === 'live')) message = 'No live matches were found at this time.';
-    if(categorySlug === 'upcoming' || (categorySlug === 'football' && activeTab === 'upcoming')) message = 'No upcoming matches were found at this time.';
+    if (searchTerm) {
+      message = `No matches found for "${searchTerm}".`
+    } else if(categorySlug === 'live' || (categorySlug === 'football' && activeTab === 'live')) {
+      message = 'No live matches were found for this selection.';
+    } else if(categorySlug === 'upcoming' || (categorySlug === 'football' && activeTab === 'upcoming')) {
+      message = 'No upcoming matches were found for this selection.';
+    }
 
     return (
       <div className="text-center text-muted-foreground py-10">

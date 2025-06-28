@@ -34,8 +34,6 @@ async function getMatchesForCategory(categorySlug: string, leagueId?: number) {
     let error: string | null = null;
     const errorMessages: string[] = [];
     
-    const promisesToRun: Promise<ProcessedFixture[]>[] = [];
-    
     // Determine which fetches to run based on category
     const shouldFetchLive = categorySlug === 'live' || categorySlug === 'football';
     const shouldFetchUpcoming = categorySlug === 'upcoming' || categorySlug === 'football';
@@ -51,7 +49,7 @@ async function getMatchesForCategory(categorySlug: string, leagueId?: number) {
     const [liveResult, upcomingResult] = await Promise.allSettled([livePromise, upcomingPromise]);
 
     if (liveResult.status === 'fulfilled') {
-        liveMatches = liveResult.value;
+        liveMatches = liveResult.value.filter(m => !m.isFinished);
     } else if(shouldFetchLive) {
         const reason = (liveResult.reason as Error).message || "Could not fetch live matches.";
         console.error(`Error fetching live matches for category '${categorySlug}':`, reason);
@@ -60,7 +58,8 @@ async function getMatchesForCategory(categorySlug: string, leagueId?: number) {
 
     if (upcomingResult.status === 'fulfilled') {
         const liveMatchIds = new Set(liveMatches.map(m => m.id));
-        upcomingMatches = upcomingResult.value.filter(m => !liveMatchIds.has(m.id));
+        const now = new Date();
+        upcomingMatches = upcomingResult.value.filter(m => !liveMatchIds.has(m.id) && new Date(m.startingAt) > now);
     } else if(shouldFetchUpcoming) {
         const reason = (upcomingResult.reason as Error).message || "Could not fetch upcoming matches.";
         console.error(`Error fetching upcoming matches for category '${categorySlug}':`, reason);
