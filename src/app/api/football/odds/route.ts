@@ -10,15 +10,13 @@ export async function GET() {
     return NextResponse.json({ error: "Odds API key is not configured on the server." }, { status: 500 });
   }
 
-  // Fetching for a few popular European leagues. 
-  // The free plan has a request limit. You can expand this list as needed per The Odds API docs.
+  // Using the 'upcoming' endpoint to get a wide range of odds across all sports.
+  // We will filter for soccer events after fetching.
   const regions = 'eu'; // Regions: uk, eu, au, us
-  const markets = 'h2h,spreads,totals'; // h2h is moneyline, spreads, and totals is over/under
+  const markets = 'h2h,totals'; // h2h is moneyline, and totals is over/under.
   const oddsFormat = 'decimal';
-  // A comma-separated string of sport_keys from The Odds API. Expanded to include more worldwide leagues.
-  const sportKeys = 'soccer_epl,soccer_spain_la_liga,soccer_italy_serie_a,soccer_germany_bundesliga,soccer_france_ligue_one,soccer_uefa_champs_league,soccer_uefa_europa_league,soccer_australia_a_league,soccer_austria_bundesliga,soccer_belgium_first_div,soccer_brazil_campeonato,soccer_denmark_superliga,soccer_greece_super_league,soccer_mexico_ligamx,soccer_netherlands_eredivisie,soccer_norway_eliteserien,soccer_portugal_primeira_liga,soccer_russia_premier_league,soccer_scotland_premier_league,soccer_sweden_allsvenskan,soccer_switzerland_super_league,soccer_turkey_super_lig,soccer_usa_mls';
-
-  const url = `https://api.the-odds-api.com/v4/sports/${sportKeys}/odds?apiKey=${apiKey}&regions=${regions}&markets=${markets}&oddsFormat=${oddsFormat}`;
+  
+  const url = `https://api.the-odds-api.com/v4/sports/upcoming/odds?apiKey=${apiKey}&regions=${regions}&markets=${markets}&oddsFormat=${oddsFormat}`;
   
   try {
     // Odds data changes frequently, so we fetch fresh data.
@@ -33,8 +31,12 @@ export async function GET() {
         return NextResponse.json({ error: message }, { status: apiResponse.status });
     }
 
-    const data = await apiResponse.json();
-    return NextResponse.json(data);
+    const allSportsOdds = await apiResponse.json();
+    
+    // Filter the results to only include football (soccer) odds
+    const footballOdds = allSportsOdds.filter((odd: any) => odd.sport_key && odd.sport_key.startsWith('soccer_'));
+
+    return NextResponse.json(footballOdds);
 
   } catch (error: any) {
     console.error("Error proxying request to The Odds API:", error);

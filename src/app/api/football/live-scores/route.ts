@@ -13,9 +13,6 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const leagueId = searchParams.get('leagueId');
   
-  // Directly targeting the livescores endpoint.
-  // This endpoint is optimized for speed and does not support complex includes like 'events' on all plans.
-  // Removing 'events' to prevent API errors. 'periods' is kept for the live minute.
   const includes = "participants;scores;league.country;state;periods";
   let baseUrl = `${SPORTMONKS_FOOTBALL_API_URL}/livescores?api_token=${apiKey}&include=${includes}&tz=UTC`;
 
@@ -24,25 +21,41 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const apiResponse = await fetch(baseUrl, {
-        cache: 'no-store' // Always fetch fresh data for live scores
-    });
+    let allFixtures: any[] = [];
+    let currentPage = 1;
+    let hasMore = true;
 
-    if (!apiResponse.ok) {
-        const errorData = await apiResponse.json().catch(() => ({}));
-        console.error("Error from Sportmonks Football Live API:", apiResponse.status, errorData);
-        let errorMessage = `Failed to fetch live football scores. Status: ${apiResponse.status}`;
-        if (apiResponse.status === 403 || (errorData.message && errorData.message.includes("plan"))) {
-            errorMessage = `Forbidden: Your current API plan does not allow access to this data.`;
-        } else if (errorData.message) {
-            errorMessage += ` - Message: ${errorData.message}`;
+    while (hasMore) {
+        const urlWithPage = `${baseUrl}&page=${currentPage}`;
+        const apiResponse = await fetch(urlWithPage, {
+            cache: 'no-store' // Always fetch fresh data for live scores
+        });
+
+        if (!apiResponse.ok) {
+            const errorData = await apiResponse.json().catch(() => ({}));
+            console.error("Error from Sportmonks Football Live API:", apiResponse.status, errorData);
+            let errorMessage = `Failed to fetch live football scores. Status: ${apiResponse.status}`;
+            if (apiResponse.status === 403 || (errorData.message && errorData.message.includes("plan"))) {
+                errorMessage = `Forbidden: Your current API plan does not allow access to this data.`;
+            } else if (errorData.message) {
+                errorMessage += ` - Message: ${errorData.message}`;
+            }
+            return NextResponse.json({ error: errorMessage }, { status: apiResponse.status });
         }
-        return NextResponse.json({ error: errorMessage }, { status: apiResponse.status });
-    }
 
-    const data = await apiResponse.json();
-    // The data from /livescores should only contain live matches, so no extra filtering is needed here.
-    return NextResponse.json(data);
+        const data = await apiResponse.json();
+        if (data.data && data.data.length > 0) {
+            allFixtures = allFixtures.concat(data.data);
+        }
+        
+        if (data.pagination && data.pagination.has_more) {
+            currentPage++;
+        } else {
+            hasMore = false;
+        }
+    }
+    
+    return NextResponse.json({ data: allFixtures });
 
   } catch (error: any) {
     console.error("Error fetching from Sportmonks Football Live API via proxy:", error);
