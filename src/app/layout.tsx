@@ -1,10 +1,11 @@
+
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { AppProviders } from '@/components/providers/AppProviders';
 
 export const metadata: Metadata = {
-  title: 'BETBABU',
+  title: 'BetNexo',
   description: 'Online gaming platform',
 };
 

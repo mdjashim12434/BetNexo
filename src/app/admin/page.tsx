@@ -1,3 +1,4 @@
+
 'use client';
 
 import AppLayout from "@/components/AppLayout";
@@ -93,7 +94,7 @@ export default function AdminPage() {
                  <div className="font-headline text-xl text-primary flex items-center group-data-[collapsible=icon]:hidden">
                     <ShieldAlert className="mr-2 h-6 w-6" /> 
                     <span className="font-black italic tracking-tighter">
-                      <span className="text-white">MEL</span><span className="text-primary">BET</span>
+                      <span className="text-white">Bet</span><span className="text-primary">Nexo</span>
                     </span>
                  </div>
                  <ShieldAlert className="h-7 w-7 text-primary hidden group-data-[collapsible=icon]:block" />

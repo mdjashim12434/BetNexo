@@ -1,3 +1,4 @@
+
 'use client' // Error components must be Client Components
 
 import type { Metadata } from 'next';
@@ -22,7 +23,7 @@ export default function GlobalError({
   return (
     <html lang="en" className="dark">
       <head>
-        <title>Error - BETBABU</title>
+        <title>Error - BetNexo</title>
         {/* You can include minimal styling or links here if necessary */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />

@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -192,7 +193,9 @@ export default function SignupPage() {
         <Card className="bg-card/10 backdrop-blur-lg border-white/20 text-white shadow-2xl rounded-lg">
           <CardHeader className="p-4">
              <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold text-white">BETBABU</h1>
+              <h1 className="text-3xl font-headline font-black italic tracking-tighter">
+                <span className="text-white">Bet</span><span className="text-primary">Nexo</span>
+              </h1>
               <div className="space-x-2">
                 <Button variant="ghost" asChild className="px-3 py-2 rounded-md text-white/70 hover:text-white hover:bg-white/10">
                     <Link href="/login">Log in</Link>
