@@ -1,3 +1,4 @@
+
 // Import the functions you need from the SDKs you need
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { 
@@ -35,9 +36,9 @@ import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "fire
 // Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyAAeONCc7rsrvOwlbxmHjxf-qUw3O1v9QY",
-  authDomain: "betnexo-prod.firebaseapp.com",
-  projectId: "betnexo-prod",
-  storageBucket: "betnexo-prod.appspot.com",
+  authDomain: "summer-function-461109-t2.firebaseapp.com",
+  projectId: "summer-function-461109-t2",
+  storageBucket: "summer-function-461109-t2.appspot.com",
   messagingSenderId: "404019274818",
   appId: "1:404019274818:web:e765b67dfb7710d4be79db",
   measurementId: "G-8FH69DQ5Q9"
