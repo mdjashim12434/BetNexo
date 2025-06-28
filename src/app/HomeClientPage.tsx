@@ -13,8 +13,8 @@ import { useEffect } from 'react';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
-import type { ProcessedFixture } from '@/types/sportmonks';
-import HomeMatchesDisplay from '@/components/sports/FootballLiveScoresDisplay';
+import LiveFixtures from '@/components/LiveFixtures';
+import UpcomingFixtures from '@/components/UpcomingFixtures';
 
 // --- Top Navigation Data ---
 const topNavItems = [
@@ -53,17 +53,8 @@ const casinoLinks = [
   { name: "Midgard Zombies", imageHint: "zombie cartoon", href: "/casino" },
 ];
 
-interface HomeClientPageProps {
-  initialLiveMatches: ProcessedFixture[];
-  initialUpcomingMatches: ProcessedFixture[];
-  initialError: string | null;
-}
 
-export default function HomeClientPage({
-  initialLiveMatches,
-  initialUpcomingMatches,
-  initialError,
-}: HomeClientPageProps) {
+export default function HomeClientPage() {
   const { user, loadingAuth } = useAuth();
   const router = useRouter();
 
@@ -158,11 +149,8 @@ export default function HomeClientPage({
           
           {/* Live & Upcoming Matches Section */}
           <div className="space-y-6">
-            <HomeMatchesDisplay 
-                liveMatches={initialLiveMatches}
-                upcomingMatches={initialUpcomingMatches}
-                error={initialError}
-             />
+            <LiveFixtures />
+            <UpcomingFixtures />
           </div>
 
         </div>
