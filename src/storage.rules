@@ -1,0 +1,29 @@
+
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Helper function to check if the user's role is Admin in Firestore
+    function isAdmin() {
+      // It fetches the user's document from Firestore to check their role.
+      // Includes an exists() check for robustness, preventing errors if the user doc is missing.
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin';
+    }
+
+    // Rules for payment method logos
+    match /payment-method-logos/{fileName} {
+      // Allow anyone to read (get) the logo images.
+      // This is necessary for the app to display them.
+      allow read: if true;
+      
+      // Allow write (create, update, delete) only if the user is authenticated and an Admin.
+      // This is checked by calling the isAdmin() helper function.
+      allow write: if request.auth != null && isAdmin();
+    }
+
+    // Default deny all other paths
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
