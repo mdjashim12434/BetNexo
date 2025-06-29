@@ -40,3 +40,8 @@ next-env.d.ts
 .firebase/
 .next/
 node_modules/
+
+# Ignore build artifacts
+.firebase/
+.next/
+node_modules/
