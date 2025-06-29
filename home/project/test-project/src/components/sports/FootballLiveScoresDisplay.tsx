@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import Image from 'next/image';
+import { SportIcon } from '../icons/SportIcon';
 
 interface HomeMatchesDisplayProps {
   liveMatches: ProcessedFixture[];
@@ -20,7 +21,7 @@ const LiveMatchCard = ({ match }: { match: ProcessedFixture }) => (
     <Card as="a" className="p-3 transition-all hover:bg-muted/50 cursor-pointer">
       <div className="flex justify-between items-center text-xs text-muted-foreground mb-3">
         <div className="flex items-center gap-2">
-          <Goal className="h-4 w-4 text-primary" />
+          <SportIcon sportKey={match.sportKey} className="h-4 w-4 text-primary" />
           <span className="font-semibold truncate">{match.league.name}</span>
         </div>
         <div className="flex items-center gap-2">
@@ -43,7 +44,7 @@ const LiveMatchCard = ({ match }: { match: ProcessedFixture }) => (
         </div>
       </div>
       
-      {match.minute && <p className="text-center text-xs text-yellow-500 mb-3">{match.minute}' - {match.state.name}</p>}
+      {match.minute && <p className="text-center text-xs text-yellow-500 font-bold">{match.state?.name}{match.minute ? `, ${match.minute}'` : ''}</p>}
     </Card>
   </Link>
 );
@@ -54,7 +55,7 @@ const UpcomingMatchCard = ({ match }: { match: ProcessedFixture }) => (
     <Card as="a" className="p-3 transition-all hover:bg-muted/50 cursor-pointer">
        <div className="flex justify-between items-center text-xs text-muted-foreground mb-3">
         <div className="flex items-center gap-2">
-          <Goal className="h-4 w-4 text-primary" />
+           <SportIcon sportKey={match.sportKey} className="h-4 w-4 text-primary" />
           <span className="font-semibold truncate">{match.league.name}</span>
         </div>
         <div className="flex items-center gap-2">

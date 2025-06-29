@@ -1,10 +1,11 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Bell, Star, Link2 } from "lucide-react";
+import { ArrowRight, Calendar, Goal } from "lucide-react";
 import type { FC } from 'react';
 import type { ProcessedFixture } from '@/types/sportmonks';
 import { format } from "date-fns";
+import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
 import { SportIcon } from '@/components/icons/SportIcon';
 
@@ -15,20 +16,22 @@ interface MatchCardProps {
 const MatchCard: FC<MatchCardProps> = ({ match }) => {
   return (
     <Link href={`/match/${match.id}`} className="block">
-      <Card className="overflow-hidden shadow-sm hover:shadow-lg transition-shadow duration-300 bg-card/50">
-        <CardContent className="p-3 space-y-3">
-          <div className="flex justify-between items-center text-xs text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <SportIcon sportKey={match.sportKey} className="h-4 w-4 text-primary" />
-              <span className="font-semibold truncate">{match.league.name}</span>
+      <Card className="overflow-hidden shadow-lg hover:shadow-primary/20 transition-shadow duration-300 flex flex-col">
+        <CardHeader className="p-4">
+          <div className="flex justify-between items-start gap-2">
+            <div className="flex-1">
+               <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+                  <SportIcon sportKey={match.sportKey} className="h-4 w-4 text-primary shrink-0" />
+                  <span className="font-semibold truncate">{match.league.name}</span>
+              </div>
+              <CardTitle className="font-headline text-base leading-tight truncate">{match.name}</CardTitle>
             </div>
-            <div className="flex items-center gap-2 text-muted-foreground">
-              {match.isLive && <Link2 className="h-4 w-4" />}
-              <Bell className="h-4 w-4" />
-              <Star className="h-4 w-4" />
-            </div>
+            {match.isLive && (
+              <Badge variant="destructive" className="animate-pulse">LIVE</Badge>
+            )}
           </div>
-          
+        </CardHeader>
+        <CardContent className="flex-grow p-4 space-y-3">
           {match.isLive ? (
             <div className="space-y-2">
               <div className="grid grid-cols-3 items-center text-center">
@@ -46,8 +49,8 @@ const MatchCard: FC<MatchCardProps> = ({ match }) => {
                   <span className="text-sm font-semibold truncate w-full">{match.awayTeam.name}</span>
                 </div>
               </div>
-              <div className="text-xs text-center text-muted-foreground">
-                {match.state?.name}, {match.minute}'
+              <div className="text-xs text-center text-yellow-500 font-bold">
+                 {match.state?.name}{match.minute ? `, ${match.minute}'` : ''}
               </div>
               <div className="space-y-1 pt-2">
                 <p className="text-sm font-medium text-center text-muted-foreground">Team Wins</p>
@@ -84,21 +87,28 @@ const MatchCard: FC<MatchCardProps> = ({ match }) => {
                 <div className="grid grid-cols-3 gap-2">
                    <Button variant="outline" size="sm" className="w-full h-auto py-1 flex justify-between bg-card hover:bg-accent">
                     <span>W1</span>
-                    <span className="font-bold">{match.odds.home?.toFixed(3) || '-'}</span>
+                    <span className="font-bold">{match.odds.home?.toFixed(2) || '-'}</span>
                   </Button>
                    <Button variant="outline" size="sm" className="w-full h-auto py-1 flex justify-between bg-card hover:bg-accent">
                     <span>X</span>
-                    <span className="font-bold">{match.odds.draw?.toFixed(3) || '-'}</span>
+                    <span className="font-bold">{match.odds.draw?.toFixed(2) || '-'}</span>
                   </Button>
                    <Button variant="outline" size="sm" className="w-full h-auto py-1 flex justify-between bg-card hover:bg-accent">
                     <span>W2</span>
-                    <span className="font-bold">{match.odds.away?.toFixed(3) || '-'}</span>
+                    <span className="font-bold">{match.odds.away?.toFixed(2) || '-'}</span>
                   </Button>
                 </div>
               </div>
             </div>
           )}
         </CardContent>
+        <CardFooter className="p-2 mt-auto">
+            <Button variant="default" className="w-full" asChild>
+            <Link href={`/match/${match.id}`}>
+                View Details <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+            </Button>
+        </CardFooter>
       </Card>
     </Link>
   );
