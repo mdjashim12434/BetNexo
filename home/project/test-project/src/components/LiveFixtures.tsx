@@ -48,7 +48,7 @@ export default function LiveFixtures({ matches, loading, error }: LiveFixturesPr
       return (
         <section>
           <div className="mb-2 flex justify-between items-center">
-            <h2 className="font-headline text-xl font-bold text-foreground">Top LIVE <Button variant="ghost" size="sm" className="ml-1 text-primary">Sport</Button></h2>
+            <h2 className="font-headline text-xl font-bold text-foreground">Top LIVE <Button variant="outline" size="sm" className="ml-2 rounded-full h-auto px-3 py-1 text-xs">Sport</Button></h2>
              <Button variant="link" asChild><Link href="/sports/live">All</Link></Button>
           </div>
           <div className="text-center py-10 text-muted-foreground min-h-[100px] flex flex-col items-center justify-center">
@@ -62,7 +62,7 @@ export default function LiveFixtures({ matches, loading, error }: LiveFixturesPr
   return (
     <section>
       <div className="mb-2 flex justify-between items-center">
-        <h2 className="font-headline text-xl font-bold text-foreground">Top LIVE <Button variant="ghost" size="sm" className="ml-1 text-primary">Sport</Button></h2>
+        <h2 className="font-headline text-xl font-bold text-foreground">Top LIVE <Button variant="outline" size="sm" className="ml-2 rounded-full h-auto px-3 py-1 text-xs">Sport</Button></h2>
         <Button variant="link" asChild><Link href="/sports/live">All</Link></Button>
       </div>
       <div className="space-y-3">
