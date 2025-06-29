@@ -1,30 +1,32 @@
-
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import Link from "next/link";
-import { Calendar } from "lucide-react";
+import { Calendar, Goal } from "lucide-react";
 import type { FC } from 'react';
 import type { ProcessedFixture } from '@/types/sportmonks';
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
 import { SportIcon } from '@/components/icons/SportIcon';
+import { Button } from "@/components/ui/button";
 
 interface MatchCardProps {
   match: ProcessedFixture;
 }
 
 const MatchCard: FC<MatchCardProps> = ({ match }) => {
+  const isUpcoming = !match.isLive && !match.isFinished;
+
   return (
-    <Link href={`/match/${match.id}`} className="block">
+    <Link href={`/match/${match.id}`} className="block h-full">
       <Card className="overflow-hidden shadow-lg hover:shadow-primary/20 transition-shadow duration-300 flex flex-col h-full">
-        <CardHeader className="p-3">
+        <CardHeader className="p-4">
           <div className="flex justify-between items-start gap-2">
             <div className="flex-1">
                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
                   <SportIcon sportKey={match.sportKey} className="h-4 w-4 text-primary shrink-0" />
                   <span className="font-semibold truncate">{match.league.name}</span>
               </div>
-              <CardTitle className="font-headline text-sm leading-tight truncate">{match.name}</CardTitle>
+              <CardTitle className="font-headline text-base leading-tight truncate">{match.name}</CardTitle>
             </div>
             {match.isLive && (
               <Badge variant="destructive" className="animate-pulse">LIVE</Badge>
@@ -34,7 +36,7 @@ const MatchCard: FC<MatchCardProps> = ({ match }) => {
             )}
           </div>
         </CardHeader>
-        <CardContent className="flex-grow p-3 flex flex-col justify-center">
+        <CardContent className="flex-grow p-4 space-y-3">
           {match.isLive ? (
             <div className="space-y-1">
               <div className="flex justify-between items-center text-lg font-semibold">
@@ -65,11 +67,29 @@ const MatchCard: FC<MatchCardProps> = ({ match }) => {
               </div>
               <div className="flex items-center text-xs text-muted-foreground mt-3">
                   <Calendar className="h-3 w-3 mr-1.5" />
-                  <span>{format(new Date(match.startingAt), "dd.MM.yy hh:mm a")}</span>
+                  <span>{format(new Date(match.startingAt), "PPp")}</span>
               </div>
             </div>
           )}
         </CardContent>
+        {isUpcoming && (
+          <CardFooter className="p-2 border-t mt-auto">
+            <div className="flex justify-between items-center gap-2 w-full">
+              <Button variant="outline" className="flex-1 flex-col h-auto py-1 text-xs">
+                <span className="text-muted-foreground">W1</span>
+                <span className="font-bold">{match.odds.home?.toFixed(2) || '-'}</span>
+              </Button>
+              <Button variant="outline" className="flex-1 flex-col h-auto py-1 text-xs">
+                <span className="text-muted-foreground">X</span>
+                <span className="font-bold">{match.odds.draw?.toFixed(2) || '-'}</span>
+              </Button>
+              <Button variant="outline" className="flex-1 flex-col h-auto py-1 text-xs">
+                <span className="text-xs text-muted-foreground">W2</span>
+                <span className="font-bold">{match.odds.away?.toFixed(2) || '-'}</span>
+              </Button>
+            </div>
+          </CardFooter>
+        )}
       </Card>
     </Link>
   );
