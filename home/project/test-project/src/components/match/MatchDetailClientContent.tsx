@@ -15,6 +15,9 @@ import { useState, useEffect } from 'react';
 import { db, addDoc, collection, serverTimestamp } from '@/lib/firebase';
 import { Input } from '@/components/ui/input';
 import Image from 'next/image';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { ScrollArea } from '../ui/scroll-area';
+
 
 type BetOutcome =
   | 'teamA' | 'draw' | 'teamB' // H2H
@@ -274,7 +277,11 @@ export default function MatchDetailClientContent({ initialMatch }: MatchDetailCl
           </div>
         </div>
         
-        <p className="text-center text-xs font-semibold">{isLive ? `Half time, (${match.homeScore}-${match.awayScore}, 0-0)` : `Starts at ${format(new Date(match.startingAt), 'HH:mm')}`}</p>
+        <p className="text-center text-xs font-semibold">
+          {isLive 
+            ? `${match.state?.name || 'Live'}${match.minute ? `, ${String(match.minute).padStart(2, '0')}'` : ''}` 
+            : `Starts at ${format(new Date(match.startingAt), 'HH:mm')}`}
+        </p>
       </div>
       
       {/* Tabs and Odds */}

@@ -1,14 +1,14 @@
 
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Calendar } from "lucide-react";
+import { ArrowRight, Calendar, Goal } from "lucide-react";
 import type { FC } from 'react';
 import type { ProcessedFixture } from '@/types/sportmonks';
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
 import { SportIcon } from '@/components/icons/SportIcon';
-import { Button } from "@/components/ui/button";
 
 interface MatchCardProps {
   match: ProcessedFixture;
@@ -51,7 +51,7 @@ const MatchCard: FC<MatchCardProps> = ({ match }) => {
                       <Image src={match.awayTeam.image_path || `https://placehold.co/40x40.png`} alt={match.awayTeam.name} width={20} height={20} className="rounded-full" data-ai-hint="team logo" />
                   </div>
               </div>
-              {match.minute && <p className="text-center text-xs text-yellow-500 font-bold">{match.state?.name}{match.minute ? `, ${String(match.minute).padStart(2, '0')}` : ''}</p>}
+              {match.isLive && <p className="text-center text-xs text-yellow-500 font-bold">{match.state?.name}{match.minute ? `, ${String(match.minute).padStart(2, '0')}'` : ''}</p>}
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center text-center">
