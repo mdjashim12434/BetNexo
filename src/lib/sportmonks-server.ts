@@ -1,4 +1,3 @@
-
 // This file contains the server-side logic for fetching data directly from the Sportmonks API.
 // It is intended to be used by Server Components and API Routes to avoid server-to-server HTTP calls.
 
@@ -55,7 +54,7 @@ async function fetchPaginatedData(baseUrl: string) {
 }
 
 export async function getLiveScoresFromServer(leagueId?: number, firstPageOnly = false) {
-    const includes = "formations;scores;sidelined;sport;round;stage;group;aggregate;league;season;referees;coaches;tvStations;venue;state;weatherReport;lineups;events;timeline;comments;trends;statistics;periods;participants;odds;inplayOdds;prematchNews;metadata;predictions;ballCoordinates";
+    const includes = "formations;scores;sidelined;sport;round;stage;group;aggregate;league;season;referees;coaches;tvStations;venue;state;weatherReport;lineups;events;timeline;comments;trends;statistics;periods;participants;odds;inplayOdds;metadata;predictions;ballCoordinates";
     let baseUrl = `${SPORTMONKS_FOOTBALL_API_URL}/livescores/inplay?api_token=${apiToken}&include=${includes}&tz=UTC`;
     if (leagueId) {
         baseUrl += `&leagues=${leagueId}`;
