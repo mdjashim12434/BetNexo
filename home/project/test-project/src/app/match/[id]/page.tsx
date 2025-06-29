@@ -1,7 +1,8 @@
 
 import AppLayout from '@/components/AppLayout';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, AlertTriangle } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getFixtureDetailsFromServer } from '@/lib/sportmonks-server';
@@ -12,6 +13,7 @@ interface MatchDetailPageProps {
   params: { id: string };
 }
 
+// Helper function to fetch and process data on the server
 async function getMatchDetails(id: string) {
   const numericMatchId = Number(id);
   if (isNaN(numericMatchId)) {
@@ -27,6 +29,7 @@ async function getMatchDetails(id: string) {
       return { match: null, error: `Match with ID ${numericMatchId} not found.` };
     }
 
+    // Since processV3FootballFixtures expects an array, wrap the single fixture
     const processedFixtures = processV3FootballFixtures([apiFixture]);
     const match = processedFixtures[0] || null;
 
@@ -41,6 +44,7 @@ async function getMatchDetails(id: string) {
     return { match: null, error: err.message || `Failed to fetch match details for football.` };
   }
 }
+
 
 export default async function MatchDetailPage({ params }: MatchDetailPageProps) {
   const { id } = params;
@@ -67,7 +71,8 @@ export default async function MatchDetailPage({ params }: MatchDetailPageProps) 
   if (!match) {
     notFound();
   }
-
+  
+  // The client component receives the server-fetched data as a prop
   return (
     <AppLayout>
       <div className="container py-6">
