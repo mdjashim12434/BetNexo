@@ -8,13 +8,14 @@ import { notFound } from 'next/navigation';
 import { getFixtureDetailsFromServer } from '@/lib/sportmonks-server';
 import { processV3FootballFixtures } from '@/services/sportmonksAPI';
 import MatchDetailClientContent from '@/components/match/MatchDetailClientContent';
+import type { ProcessedFixture } from '@/types/sportmonks';
 
 interface MatchDetailPageProps {
   params: { id: string };
 }
 
 // Helper function to fetch and process data on the server
-async function getMatchDetails(id: string) {
+async function getMatchDetails(id: string): Promise<{ match: ProcessedFixture | null; error: string | null }> {
   const numericMatchId = Number(id);
   if (isNaN(numericMatchId)) {
     return { match: null, error: `Invalid Match ID provided: "${id}". The link may be broken or incorrect.` };
@@ -41,7 +42,7 @@ async function getMatchDetails(id: string) {
     return { match, error: null };
   } catch (err: any) {
     console.error(`MatchDetailPage Server: Error fetching fixture ${id}:`, err);
-    return { match: null, error: err.message || `Failed to fetch match details for football.` };
+    return { match: null, error: err.message || `Failed to fetch match details.` };
   }
 }
 
