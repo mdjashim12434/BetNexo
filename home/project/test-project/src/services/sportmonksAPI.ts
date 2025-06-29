@@ -55,18 +55,19 @@ export const processV3FootballFixtures = (fixtures: SportmonksV3Fixture[]): Proc
         const allOdds = fixture.odds || [];
         
         // Market ID: 1 = 1X2 (Match Winner)
-        const matchWinnerOdds = findOddsForMarket(allOdds, 1)?.bookmaker?.data?.[0]?.odds?.data || [];
-        if (matchWinnerOdds.length > 0) {
-            processedOdds.home = matchWinnerOdds.find(o => o.label === '1')?.value;
-            processedOdds.draw = matchWinnerOdds.find(o => o.label === 'X')?.value;
-            processedOdds.away = matchWinnerOdds.find(o => o.label === '2')?.value;
+        const matchWinnerOddsData = findOddsForMarket(allOdds, 1);
+        if (matchWinnerOddsData) {
+            processedOdds.home = matchWinnerOddsData.bookmaker?.data?.[0]?.odds?.data.find(o => o.label === '1')?.value;
+            processedOdds.draw = matchWinnerOddsData.bookmaker?.data?.[0]?.odds?.data.find(o => o.label === 'X')?.value;
+            processedOdds.away = matchWinnerOddsData.bookmaker?.data?.[0]?.odds?.data.find(o => o.label === '2')?.value;
         }
 
         // Market ID: 10 = Over/Under
-        const overUnderOdds = findOddsForMarket(allOdds, 10)?.bookmaker?.data?.[0]?.odds?.data || [];
-        if (overUnderOdds.length > 0) {
-            const over = overUnderOdds.find(o => o.label === 'Over');
-            const under = overUnderOdds.find(o => o.label === 'Under');
+        const overUnderOddsData = findOddsForMarket(allOdds, 10);
+        if (overUnderOddsData) {
+            const ouOdds = overUnderOddsData.bookmaker?.data?.[0]?.odds?.data || [];
+            const over = ouOdds.find(o => o.label === 'Over');
+            const under = ouOdds.find(o => o.label === 'Under');
             if(over && under){
                 processedOdds.overUnder = {
                     over: over.value,
@@ -77,30 +78,30 @@ export const processV3FootballFixtures = (fixtures: SportmonksV3Fixture[]): Proc
         }
         
         // Market ID: 976077 = Both Teams to Score
-        const bttsOdds = findOddsForMarket(allOdds, 976077)?.bookmaker?.data?.[0]?.odds?.data || [];
-        if (bttsOdds.length > 0) {
+        const bttsOddsData = findOddsForMarket(allOdds, 976077);
+        if (bttsOddsData) {
              processedOdds.btts = {
-                yes: bttsOdds.find(o => o.label === 'Yes')?.value,
-                no: bttsOdds.find(o => o.label === 'No')?.value
+                yes: bttsOddsData.bookmaker?.data?.[0]?.odds?.data.find(o => o.label === 'Yes')?.value,
+                no: bttsOddsData.bookmaker?.data?.[0]?.odds?.data.find(o => o.label === 'No')?.value
             };
         }
 
         // Market ID: 74 = Draw No Bet
-        const dnbOdds = findOddsForMarket(allOdds, 74)?.bookmaker?.data?.[0]?.odds?.data || [];
-        if (dnbOdds.length > 0) {
+        const dnbOddsData = findOddsForMarket(allOdds, 74);
+        if (dnbOddsData) {
             processedOdds.dnb = {
-                home: dnbOdds.find(o => o.label === '1')?.value,
-                away: dnbOdds.find(o => o.label === '2')?.value
+                home: dnbOddsData.bookmaker?.data?.[0]?.odds?.data.find(o => o.label === '1')?.value,
+                away: dnbOddsData.bookmaker?.data?.[0]?.odds?.data.find(o => o.label === '2')?.value
             };
         }
 
         // Market ID: 12 = Double Chance
-        const dcOdds = findOddsForMarket(allOdds, 12)?.bookmaker?.data?.[0]?.odds?.data || [];
-        if (dcOdds.length > 0) {
+        const dcOddsData = findOddsForMarket(allOdds, 12);
+        if (dcOddsData) {
             processedOdds.dc = {
-                homeOrDraw: dcOdds.find(o => o.label === '1X')?.value,
-                awayOrDraw: dcOdds.find(o => o.label === 'X2')?.value,
-                homeOrAway: dcOdds.find(o => o.label === '12')?.value
+                homeOrDraw: dcOddsData.bookmaker?.data?.[0]?.odds?.data.find(o => o.label === '1X')?.value,
+                awayOrDraw: dcOddsData.bookmaker?.data?.[0]?.odds?.data.find(o => o.label === 'X2')?.value,
+                homeOrAway: dcOddsData.bookmaker?.data?.[0]?.odds?.data.find(o => o.label === '12')?.value
             };
         }
 
@@ -118,19 +119,3 @@ export const processV3FootballFixtures = (fixtures: SportmonksV3Fixture[]): Proc
         };
     });
 };
-
-// New function to fetch fixture details from the client side via an API route
-export async function fetchFixtureDetails(fixtureId: number): Promise<ProcessedFixture | null> {
-    const res = await fetch(`/api/football/fixtures?fixtureId=${fixtureId}`);
-    if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || 'Failed to fetch fixture details.');
-    }
-    const apiResult: { data: SportmonksV3Fixture } = await res.json();
-    if (apiResult.data) {
-        // processV3FootballFixtures expects an array
-        const processedFixtures = processV3FootballFixtures([apiResult.data]);
-        return processedFixtures[0] || null;
-    }
-    return null;
-}

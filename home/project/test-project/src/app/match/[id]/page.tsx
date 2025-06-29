@@ -1,82 +1,57 @@
-
-'use client'; // This page now fetches data client-side
-
-import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation'; // For App Router
 import AppLayout from '@/components/AppLayout';
-import type { ProcessedFixture } from '@/types/sportmonks';
-import MatchDetailClientContent from '@/components/match/MatchDetailClientContent';
-import { fetchFixtureDetails } from '@/services/sportmonksAPI';
-import { Skeleton } from '@/components/ui/skeleton'; // For loading state
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, AlertTriangle } from 'lucide-react';
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
+import { getFixtureDetailsFromServer } from '@/lib/sportmonks-server';
+import { processV3FootballFixtures } from '@/services/sportmonksAPI';
+import MatchDetailClientContent from '@/components/match/MatchDetailClientContent';
 
-export default function MatchDetailPage() {
-  const params = useParams();
-  const router = useRouter();
+interface MatchDetailPageProps {
+  params: { id: string };
+}
 
-  const matchId = params.id as string;
-
-  const [match, setMatch] = useState<ProcessedFixture | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (matchId) {
-      const numericMatchId = Number(matchId);
-      // Validate that the matchId is a valid number before making an API call.
-      if (isNaN(numericMatchId)) {
-        setError(`Invalid Match ID provided: "${matchId}". The link may be broken or incorrect.`);
-        setLoading(false);
-        return;
-      }
-
-      console.log(`MatchDetailPage Client: Fetching football fixtureId: ${numericMatchId}`);
-      setLoading(true);
-      setError(null);
-      fetchFixtureDetails(numericMatchId)
-        .then(apiFixture => {
-          if (apiFixture) {
-            console.log(`MatchDetailPage Client: Found API fixture ${numericMatchId}. Transformed.`);
-            setMatch(apiFixture);
-          } else {
-            console.warn(`MatchDetailPage Client: API fixture ${numericMatchId} not found.`);
-            setError(`Match with ID ${numericMatchId} not found. The match might no longer be available or the API did not return data for it.`);
-          }
-        })
-        .catch(err => {
-          console.error(`MatchDetailPage Client: Error fetching fixture ${numericMatchId}:`, err);
-          setError(err.message || `Failed to fetch match details for football.`);
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    } else {
-      setError('Match ID is missing from the URL.');
-      setLoading(false);
-    }
-  }, [matchId]);
-
-  if (loading) {
-    return (
-      <AppLayout>
-        <div className="container py-6">
-          <div className="space-y-6">
-            <Skeleton className="h-10 w-32" /> {/* Back button skeleton */}
-            <Skeleton className="h-96 w-full" /> {/* Main card skeleton */}
-          </div>
-        </div>
-      </AppLayout>
-    );
+async function getMatchDetails(id: string) {
+  const numericMatchId = Number(id);
+  if (isNaN(numericMatchId)) {
+    return { match: null, error: `Invalid Match ID provided: "${id}". The link may be broken or incorrect.` };
   }
 
+  try {
+    console.log(`MatchDetailPage Server: Fetching football fixtureId: ${numericMatchId}`);
+    const apiFixture = await getFixtureDetailsFromServer(numericMatchId);
+    
+    if (!apiFixture) {
+       console.warn(`MatchDetailPage Server: API fixture ${numericMatchId} not found.`);
+      return { match: null, error: `Match with ID ${numericMatchId} not found.` };
+    }
+
+    const processedFixtures = processV3FootballFixtures([apiFixture]);
+    const match = processedFixtures[0] || null;
+
+    if (!match) {
+        console.warn(`MatchDetailPage Server: Failed to process fixture ${numericMatchId}.`);
+        return { match: null, error: `Could not process data for match ID ${numericMatchId}.` };
+    }
+
+    return { match, error: null };
+  } catch (err: any) {
+    console.error(`MatchDetailPage Server: Error fetching fixture ${id}:`, err);
+    return { match: null, error: err.message || `Failed to fetch match details for football.` };
+  }
+}
+
+export default async function MatchDetailPage({ params }: MatchDetailPageProps) {
+  const { id } = params;
+  const { match, error } = await getMatchDetails(id);
+
   if (error) {
-    return (
+     return (
       <AppLayout>
         <div className="container py-6">
-           <Button variant="outline" onClick={() => router.back()} className="self-start mb-6">
-              <ArrowLeft className="mr-2 h-4 w-4" /> Back to Matches
-            </Button>
+          <Button variant="outline" asChild className="self-start mb-6">
+            <Link href="/"><ArrowLeft className="mr-2 h-4 w-4" /> Back to Matches</Link>
+          </Button>
           <div className="text-center p-10 bg-destructive/10 rounded-lg">
             <AlertTriangle className="mx-auto h-12 w-12 mb-4 text-destructive" />
             <h1 className="text-2xl font-bold mb-4 text-destructive">Error Loading Match</h1>
@@ -89,19 +64,7 @@ export default function MatchDetailPage() {
   }
 
   if (!match) {
-     return (
-      <AppLayout>
-        <div className="container py-6">
-          <Button variant="outline" onClick={() => router.back()} className="self-start mb-6">
-              <ArrowLeft className="mr-2 h-4 w-4" /> Back to Matches
-          </Button>
-          <div className="text-center p-10">
-            <h1 className="text-2xl font-bold mb-4">Match Not Found</h1>
-            <p className="text-muted-foreground">Could not find details for match ID: {matchId}.</p>
-          </div>
-        </div>
-      </AppLayout>
-    );
+    notFound();
   }
 
   return (

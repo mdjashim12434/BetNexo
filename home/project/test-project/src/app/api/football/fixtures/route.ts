@@ -1,23 +1,13 @@
 
-
 import { NextResponse, type NextRequest } from 'next/server';
-import { getFixtureDetailsFromServer } from '@/lib/sportmonks-server';
 
-// This route handles fetching fixtures by fixture ID
+// This route is deprecated as its functionality has been moved to a server component
+// in /app/match/[id]/page.tsx to improve performance and simplify the architecture.
 export async function GET(request: NextRequest) {
-    try {
-        const { searchParams } = new URL(request.url);
-        const fixtureId = searchParams.get('fixtureId');
-        
-        if (!fixtureId) {
-            return NextResponse.json({ error: 'A fixtureId must be provided to get match details.' }, { status: 400 });
-        }
-
-        const data = await getFixtureDetailsFromServer(Number(fixtureId));
-        return NextResponse.json({ data });
-
-    } catch (error: any) {
-        console.error('Error in football fixtures proxy route:', error);
-        return NextResponse.json({ error: 'An internal server error occurred: ' + error.message }, { status: 500 });
-    }
+    return NextResponse.json(
+      { 
+        error: 'This endpoint is deprecated. Match details are now fetched server-side.' 
+      }, 
+      { status: 410 } // HTTP 410 Gone
+    );
 }
