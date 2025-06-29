@@ -1,3 +1,4 @@
+
 import AppLayout from '@/components/AppLayout';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, AlertTriangle } from 'lucide-react';
