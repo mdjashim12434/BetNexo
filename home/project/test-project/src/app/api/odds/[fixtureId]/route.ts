@@ -1,4 +1,3 @@
-
 import { NextResponse } from 'next/server';
 
 // This route is deprecated. Odds data is now fetched via Sportmonks on the match detail page.

@@ -1,4 +1,3 @@
-
 import { NextResponse } from 'next/server';
 
 // This route is deprecated. Match details are now fetched server-side.

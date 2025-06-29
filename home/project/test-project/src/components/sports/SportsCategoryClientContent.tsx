@@ -45,7 +45,7 @@ export default function SportsCategoryClientContent({
   
   const [searchTerm, setSearchTerm] = useState('');
   
-  // All data is now passed via props, so internal loading state is not required.
+  // Data is now passed via props, so internal loading state is not required.
   const isLoading = false; 
 
   const getDefaultTab = () => {

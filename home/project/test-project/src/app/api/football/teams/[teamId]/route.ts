@@ -1,4 +1,3 @@
-
 import { NextResponse } from 'next/server';
 
 // This route is deprecated as it's currently unused.
