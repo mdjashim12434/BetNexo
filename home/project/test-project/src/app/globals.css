@@ -1,0 +1,59 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 220 13% 95%; /* #f0f2f5 - Light Gray */
+    --foreground: 220 10% 10%; /* #1c1e21 - Dark Gray */
+    --card: 0 0% 100%; /* #ffffff - White */
+    --card-foreground: 220 10% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 10% 10%;
+    --primary: 217 91% 61%; /* Saturated Blue */
+    --primary-foreground: 220 13% 95%; /* Light text for blue */
+    --secondary: 220 13% 91%; /* #e9ebee */
+    --secondary-foreground: 220 10% 10%;
+    --muted: 220 13% 91%;
+    --muted-foreground: 220 4% 42%; /* #65676b - Medium Gray */
+    --accent: 43 100% 67%; /* Yellow */
+    --accent-foreground: 220 10% 10%; /* Dark text for yellow */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 10% 88%; /* #dddee2 - Light Border */
+    --input: 220 10% 88%;
+    --ring: 217 91% 61%; /* Blue */
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 220 13% 10%;
+    --foreground: 220 13% 95%;
+    --card: 220 13% 15%;
+    --card-foreground: 220 13% 95%;
+    --popover: 220 13% 15%;
+    --popover-foreground: 220 13% 95%;
+    --primary: 217 91% 61%; /* Saturated Blue */
+    --primary-foreground: 220 13% 95%; /* Light text for blue */
+    --secondary: 220 13% 20%;
+    --secondary-foreground: 220 13% 95%;
+    --muted: 220 13% 20%;
+    --muted-foreground: 220 4% 62%;
+    --accent: 43 100% 67%; /* Yellow */
+    --accent-foreground: 220 10% 10%; /* Dark text for yellow */
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 13% 25%;
+    --input: 220 13% 25%;
+    --ring: 217 91% 61%; /* Blue for ring */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}

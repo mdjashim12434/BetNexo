@@ -4,19 +4,17 @@
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, BarChart2, Info, Goal, BookText, ShieldQuestion, MapPin, Gavel } from 'lucide-react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { ArrowLeft, Zap, MoreVertical, Pin, TrendingUp, Goal, BookText, ShieldQuestion, MapPin, Gavel, Info } from 'lucide-react';
 import type { ProcessedFixture } from '@/types/sportmonks';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import { db, addDoc, collection, serverTimestamp } from '@/lib/firebase';
 import { Input } from '@/components/ui/input';
-import { TrendingUp } from 'lucide-react';
-
+import Image from 'next/image';
 
 type BetOutcome =
   | 'teamA' | 'draw' | 'teamB' // H2H
@@ -27,7 +25,7 @@ type BetOutcome =
 
 interface SelectedBetInfo {
   outcome: BetOutcome;
-  point?: number; // For Over/Under bets
+  point?: number;
 }
 
 interface MatchDetailClientContentProps {
@@ -95,7 +93,7 @@ export default function MatchDetailClientContent({ initialMatch }: MatchDetailCl
     }
   };
 
-  const handlePlaceBet = async () => {
+    const handlePlaceBet = async () => {
     if (!user || !user.customUserId || !match || !selectedBet || !betAmount) {
       toast({ title: "Missing Information", description: "User, outcome, or bet amount is missing.", variant: "destructive" });
       return;
@@ -172,36 +170,52 @@ export default function MatchDetailClientContent({ initialMatch }: MatchDetailCl
     }
   };
 
-  if (loadingAuth) {
-    return <div className="text-center p-10">Loading user session...</div>;
+
+  if (loadingAuth || !user) {
+    return <div className="text-center p-10">Loading...</div>;
   }
   
   const isFinished = match.isFinished;
   const isLive = match.isLive;
 
-  const getOutcomeButton = (outcomeType: BetOutcome, label: string, oddsValue?: number, pointValue?: number, icon?: React.ElementType) => {
-    if (oddsValue === undefined || oddsValue === null || oddsValue <=0) return null;
+  const getOutcomeButton = (outcomeType: BetOutcome, label: string, oddsValue?: number, pointValue?: number, className?: string) => {
+    if (oddsValue === undefined || oddsValue === null || oddsValue <= 0) {
+      return <div className={cn("flex-1 h-16 bg-muted/30 rounded-md", className)} />;
+    }
     const isSelected = selectedBet?.outcome === outcomeType && selectedBet?.point === pointValue;
-    const IconComponent = icon;
     return (
       <Button
-        variant={isSelected ? "default" : "outline"}
+        variant={isSelected ? "default" : "secondary"}
         size="lg"
-        className={cn("h-auto py-3 flex-1", { "ring-2 ring-primary ring-offset-2 ring-offset-background": isSelected })}
+        className={cn("h-auto py-2 flex-1 flex flex-col items-center justify-center leading-tight", { "ring-2 ring-primary ring-offset-2 ring-offset-background": isSelected }, className)}
         onClick={() => handleOutcomeSelect(outcomeType, pointValue)}
         disabled={isFinished || isPlacingBet}
       >
-        <div className="flex flex-col items-center">
-          <span className="text-sm text-muted-foreground flex items-center">
-            {IconComponent && <IconComponent className="h-4 w-4 mr-1.5" />}
-            {label}
-          </span>
-          <span className="text-xl font-bold">{oddsValue.toFixed(2)}</span>
-        </div>
+        <span className="text-xs text-muted-foreground">{label}</span>
+        <span className="text-lg font-bold">{oddsValue.toFixed(3)}</span>
       </Button>
     );
   };
 
+  const renderOddsMarket = (market: { title: string; odds: (React.ReactNode | null)[] }) => {
+    if (market.odds.every(o => o === null)) return null;
+    return (
+      <AccordionItem value={market.title.replace(/\s/g, '-')}>
+        <AccordionTrigger>
+          <div className="flex items-center gap-2">
+            <h3 className="font-semibold text-foreground">{market.title}</h3>
+            <span className="text-muted-foreground text-xs">({market.odds.filter(Boolean).length})</span>
+          </div>
+        </AccordionTrigger>
+        <AccordionContent>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {market.odds}
+          </div>
+        </AccordionContent>
+      </AccordionItem>
+    );
+  };
+  
   const selectedOutcomeTextDisplay = (): string => {
     if (!selectedBet || !match) return '';
     switch (selectedBet.outcome) {
@@ -220,237 +234,96 @@ export default function MatchDetailClientContent({ initialMatch }: MatchDetailCl
       default: return 'N/A';
     }
   };
-  
+
   const hasAnyFootballOdds = (match.odds.home || (match.odds.overUnder && match.odds.overUnder.over) || (match.odds.btts && match.odds.btts.yes) || (match.odds.dnb && match.odds.dnb.home) || (match.odds.dc && match.odds.dc.homeOrDraw));
 
   return (
-    <div className="space-y-6">
-      <Button variant="outline" onClick={() => router.back()} className="self-start" disabled={isPlacingBet}>
-        <ArrowLeft className="mr-2 h-4 w-4" /> Back to Matches
-      </Button>
+    <div className="bg-background">
+      {/* Header section */}
+      <div className="bg-primary/90 text-primary-foreground p-2 flex items-center justify-between sticky top-0 z-20 shadow-md">
+        <Button variant="ghost" size="icon" onClick={() => router.back()} className="hover:bg-primary">
+          <ArrowLeft />
+        </Button>
+        <div className="text-center">
+          <h1 className="font-semibold text-sm leading-tight truncate max-w-[200px]">{match.league.name}</h1>
+          <p className="text-xs opacity-80">{match.league.countryName}</p>
+        </div>
+        <div className="flex items-center">
+          <Button variant="ghost" size="icon" className="hover:bg-primary"><Zap /></Button>
+          <Button variant="ghost" size="icon" className="hover:bg-primary"><MoreVertical /></Button>
+        </div>
+      </div>
 
-      <Card className="overflow-hidden shadow-xl">
-        <CardHeader>
-          <CardTitle className="font-headline text-3xl">{match.name}</CardTitle>
-          <CardDescription className="text-lg">{match.league.name} | {format(new Date(match.startingAt), "PPp")}</CardDescription>
-            {(isLive || isFinished) && (
-              <span className={cn("w-fit text-white px-3 py-1.5 text-sm font-bold rounded", { "bg-red-600 animate-pulse": isLive, "bg-gray-600": isFinished })}>
-                {isLive ? `LIVE - ${match.minute || 0}'` : "FINISHED"}
-              </span>
-            )}
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="odds" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 mb-4">
-              <TabsTrigger value="odds">Odds & Bet</TabsTrigger>
-              <TabsTrigger value="stats">Stats</TabsTrigger>
-              <TabsTrigger value="info">Info</TabsTrigger>
-              <TabsTrigger value="commentary">Commentary</TabsTrigger>
+      {/* Match Info Card */}
+      <div className="relative h-48 flex flex-col justify-between p-4 text-white">
+        <Image src="https://placehold.co/800x300.png" alt="Stadium background" layout="fill" objectFit="cover" className="absolute inset-0 z-0 opacity-10" data-ai-hint="stadium crowd" />
+         <div className="absolute inset-0 bg-gradient-to-b from-card to-background z-[-1]"></div>
+        <p className="text-center text-xs font-semibold">Round {match.state.round_id || '17'}</p>
+
+        <div className="flex justify-around items-center">
+          <div className="flex-1 flex flex-col items-center text-center gap-2">
+            <Image src={match.homeTeam.image_path || 'https://placehold.co/80x80.png'} width={56} height={56} alt={match.homeTeam.name} data-ai-hint="team logo" />
+            <span className="font-bold text-sm">{match.homeTeam.name}</span>
+          </div>
+          <div className="text-center">
+            <p className="text-5xl font-black">{match.homeScore} : {match.awayScore}</p>
+          </div>
+          <div className="flex-1 flex flex-col items-center text-center gap-2">
+            <Image src={match.awayTeam.image_path || 'https://placehold.co/80x80.png'} width={56} height={56} alt={match.awayTeam.name} data-ai-hint="team logo" />
+            <span className="font-bold text-sm">{match.awayTeam.name}</span>
+          </div>
+        </div>
+        
+        <p className="text-center text-xs font-semibold">{isLive ? `Half time, (${match.homeScore}-${match.awayScore}, 0-0)` : `Starts at ${format(new Date(match.startingAt), 'HH:mm')}`}</p>
+      </div>
+      
+      {/* Tabs and Odds */}
+      <div className="bg-card rounded-t-2xl -mt-4 z-10 relative p-2">
+         <Tabs defaultValue="odds" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 bg-muted/50 mb-2">
+                <TabsTrigger value="odds">Information</TabsTrigger>
+                <TabsTrigger value="stream" disabled>Stream</TabsTrigger>
             </TabsList>
-            <TabsContent value="odds">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="font-headline">Place Your Bet</CardTitle>
-                  <CardDescription>Select an outcome and enter your stake.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {/* H2H Odds */}
-                  {(match.odds.home || match.odds.away) && (
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium text-muted-foreground">Match Winner:</p>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-stretch">
-                        {getOutcomeButton('teamA', match.homeTeam.name, match.odds.home)}
-                        {getOutcomeButton('draw', 'Draw', match.odds.draw)}
-                        {getOutcomeButton('teamB', match.awayTeam.name, match.odds.away)}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Over/Under Odds */}
-                  {match.odds.overUnder?.point && (
-                     <div className="space-y-2">
-                        <p className="text-sm font-medium text-muted-foreground">Total Goals Over/Under ({match.odds.overUnder.point}):</p>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-stretch">
-                            {getOutcomeButton('over', `Over ${match.odds.overUnder.point}`, match.odds.overUnder?.over, match.odds.overUnder.point)}
-                            {getOutcomeButton('under', `Under ${match.odds.overUnder.point}`, match.odds.overUnder?.under, match.odds.overUnder.point)}
-                        </div>
-                    </div>
-                  )}
-
-                   {/* BTTS Odds */}
-                  {match.odds.btts && (
-                     <div className="space-y-2">
-                        <p className="text-sm font-medium text-muted-foreground">Both Teams to Score?</p>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-stretch">
-                            {getOutcomeButton('bttsYes', 'Yes', match.odds.btts?.yes)}
-                            {getOutcomeButton('bttsNo', 'No', match.odds.btts?.no)}
-                        </div>
-                    </div>
-                  )}
-                  
-                  {/* DNB Odds */}
-                  {match.odds.dnb && (
-                     <div className="space-y-2">
-                        <p className="text-sm font-medium text-muted-foreground">Draw No Bet:</p>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-stretch">
-                            {getOutcomeButton('dnbHome', match.homeTeam.name, match.odds.dnb?.home)}
-                            {getOutcomeButton('dnbAway', match.awayTeam.name, match.odds.dnb?.away)}
-                        </div>
-                    </div>
-                  )}
-
-                   {/* DC Odds */}
-                  {match.odds.dc && (
-                     <div className="space-y-2">
-                        <p className="text-sm font-medium text-muted-foreground">Double Chance:</p>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-stretch">
-                            {getOutcomeButton('dc1X', `${match.homeTeam.name} or Draw`, match.odds.dc?.homeOrDraw)}
-                            {getOutcomeButton('dcX2', `${match.awayTeam.name} or Draw`, match.odds.dc?.awayOrDraw)}
-                             {getOutcomeButton('dc12', `${match.homeTeam.name} or ${match.awayTeam.name}`, match.odds.dc?.homeOrAway)}
-                        </div>
-                    </div>
-                  )}
-
-
-                   {/* No Odds Available */}
-                   {!hasAnyFootballOdds && !isFinished && (
-                        <div className="text-center py-10 text-muted-foreground flex flex-col items-center justify-center">
-                            <ShieldQuestion className="h-10 w-10 mb-3 text-primary/50" />
-                            <p className="font-semibold">Odds not available for this match yet.</p>
-                            <p className="text-sm">Please check back closer to the start time.</p>
-                        </div>
-                   )}
-
-                  {selectedBet && (
-                    <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
-                      <h3 className="font-semibold text-lg text-center">
-                        Betting on: {selectedOutcomeTextDisplay()}
-                      </h3>
-                      <div>
-                        <label htmlFor="betAmount" className="block text-sm font-medium text-foreground mb-1">
-                          Bet Amount ({currency})
-                        </label>
-                        <Input
-                          id="betAmount"
-                          type="number"
-                          value={betAmount}
-                          onChange={(e) => setBetAmount(e.target.value)}
-                          placeholder={`Min 1 ${currency}`}
-                          min="1"
-                          step="any"
-                          className="text-lg"
-                          disabled={isFinished || isPlacingBet}
-                        />
-                      </div>
-                      {potentialWinnings > 0 && (
-                        <p className="text-sm text-center text-green-500 dark:text-green-400 flex items-center justify-center">
-                          <TrendingUp className="h-4 w-4 mr-1" /> Potential Winnings: {currency} {potentialWinnings.toFixed(2)}
-                        </p>
-                      )}
-                      <Button
-                        className="w-full font-semibold text-lg py-3 bg-accent text-accent-foreground hover:bg-accent/90"
-                        onClick={handlePlaceBet}
-                        disabled={isPlacingBet || !selectedBet || !betAmount || parseFloat(betAmount) <= 0 || isFinished || parseFloat(betAmount) > balance}
-                      >
-                        {isPlacingBet ? 'Placing Bet...' : 'Place Bet'}
-                      </Button>
-                      {parseFloat(betAmount) > balance && (
-                        <p className="text-xs text-destructive text-center">Insufficient balance.</p>
-                      )}
-                    </div>
-                  )}
-                  {!selectedBet && !isFinished && hasAnyFootballOdds && (
-                    <p className="text-sm text-muted-foreground text-center py-4">
-                      Please select an outcome above to place a bet.
-                    </p>
-                  )}
-
-                  <p className="text-xs text-muted-foreground text-center">
-                    Odds are subject to change. Please bet responsibly. Max stake applies.
-                    {isFinished && <span className="block font-semibold text-destructive mt-1">This match has finished. Betting is closed.</span>}
-                  </p>
-                </CardContent>
-              </Card>
+            <TabsContent value="odds" className="pt-2">
+                <div className="space-y-2">
+                    <Accordion type="multiple" defaultValue={['1X2', 'Double-Chance', 'Both-Teams-To-Score']} className="w-full">
+                        {renderOddsMarket({ title: '1X2', odds: [ getOutcomeButton('teamA', 'W1', match.odds.home), getOutcomeButton('draw', 'X', match.odds.draw), getOutcomeButton('teamB', 'W2', match.odds.away) ]})}
+                        {renderOddsMarket({ title: 'Double Chance', odds: [ getOutcomeButton('dc1X', '1X', match.odds.dc?.homeOrDraw), getOutcomeButton('dc12', '12', match.odds.dc?.homeOrAway), getOutcomeButton('dcX2', '2X', match.odds.dc?.awayOrDraw) ]})}
+                        {renderOddsMarket({ title: 'Both Teams To Score', odds: [ getOutcomeButton('bttsYes', 'Yes', match.odds.btts?.yes, undefined, 'col-span-1'), getOutcomeButton('bttsNo', 'No', match.odds.btts?.no, undefined, 'col-span-1') ]})}
+                        {match.odds.overUnder && renderOddsMarket({ title: `Total Over/Under (${match.odds.overUnder.point})`, odds: [ getOutcomeButton('over', 'Over', match.odds.overUnder.over, match.odds.overUnder.point, 'col-span-1'), getOutcomeButton('under', 'Under', match.odds.overUnder.under, match.odds.overUnder.point, 'col-span-1') ]})}
+                    </Accordion>
+                </div>
             </TabsContent>
-            <TabsContent value="stats">
-              <Card>
-                <CardHeader><CardTitle className="font-headline flex items-center"><BarChart2 className="mr-2 h-5 w-5" />Match Statistics</CardTitle></CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">Detailed match statistics for football will be available here.</p>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            <TabsContent value="info">
-              <Card>
-                <CardHeader><CardTitle className="font-headline flex items-center"><Info className="mr-2 h-5 w-5" />Match Information</CardTitle></CardHeader>
-                <CardContent>
-                   <div className="space-y-4 text-sm">
-                      <div>
-                        <h4 className="font-semibold text-muted-foreground">League</h4>
-                        <p>{match.league.name}{match.league.countryName !== 'N/A' && ` - ${match.league.countryName}`}</p>
-                      </div>
-                      {match.venue && (
-                        <div className="flex items-start">
-                          <MapPin className="h-4 w-4 mr-2 mt-1 text-muted-foreground"/>
-                          <div>
-                            <h4 className="font-semibold text-muted-foreground">Venue</h4>
-                            <p>{match.venue.name}, {match.venue.city}</p>
-                          </div>
-                        </div>
-                      )}
-                      {match.referee && (
-                        <div className="flex items-start">
-                           <Gavel className="h-4 w-4 mr-2 mt-1 text-muted-foreground"/>
-                           <div>
-                            <h4 className="font-semibold text-muted-foreground">Referee</h4>
-                            <p>{match.referee.name}</p>
-                           </div>
-                        </div>
-                      )}
-                      {!match.venue && !match.referee && (
-                        <p className="text-muted-foreground">Detailed match information is not available.</p>
-                      )}
-                    </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            <TabsContent value="commentary">
-              <Card>
-                <CardHeader><CardTitle className="font-headline flex items-center"><BookText className="mr-2 h-5 w-5"/>Live Commentary</CardTitle></CardHeader>
-                <CardContent>
-                  {match.comments && match.comments.length > 0 ? (
-                    <ScrollArea className="h-72 w-full rounded-md border p-4">
-                      <div className="space-y-4">
-                        {match.comments.map((comment) => (
-                          <div key={comment.id} className="flex items-start gap-3">
-                            <div className="flex-shrink-0">
-                              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-sm font-semibold">
-                                {comment.minute}'
-                              </span>
-                            </div>
-                            <div className="pt-1">
-                              <p className={cn("text-sm", { "font-bold text-primary": comment.is_goal })}>
-                                {comment.is_goal && <Goal className="inline-block h-4 w-4 mr-1.5 text-green-500" />}
-                                {comment.comment}
-                              </p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </ScrollArea>
-                  ) : (
-                    <div className="text-center py-10 text-muted-foreground flex flex-col items-center justify-center">
-                      <ShieldQuestion className="h-10 w-10 mb-3 text-primary/50" />
-                      <p className="font-semibold">No live commentary available for this match.</p>
-                      <p className="text-sm">Commentary usually appears when the match is live.</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+        </Tabs>
+      </div>
+
+      {/* Bet Slip Area */}
+      {selectedBet && (
+        <div className="sticky bottom-16 md:bottom-0 left-0 right-0 p-4 bg-background border-t-2 border-primary shadow-2xl z-20">
+             <h3 className="font-semibold text-lg text-center mb-2">
+                Your Bet: <span className="text-primary">{selectedOutcomeTextDisplay()}</span>
+            </h3>
+            <div className="flex gap-2 items-end">
+                <div className="flex-grow">
+                    <label htmlFor="betAmount" className="block text-xs font-medium text-muted-foreground mb-1">
+                        Amount ({currency})
+                    </label>
+                    <Input id="betAmount" type="number" value={betAmount} onChange={(e) => setBetAmount(e.target.value)} placeholder="0.00" min="1" step="any" className="text-lg" disabled={isPlacingBet} />
+                </div>
+                <Button className="h-12 text-lg" onClick={handlePlaceBet} disabled={isPlacingBet || !betAmount || parseFloat(betAmount) <= 0 || parseFloat(betAmount) > balance}>
+                    Place Bet
+                </Button>
+            </div>
+            {potentialWinnings > 0 && (
+                <p className="text-xs text-center text-green-500 mt-2 flex items-center justify-center">
+                    <TrendingUp className="h-3 w-3 mr-1" /> Potential Winnings: {currency} {potentialWinnings.toFixed(2)}
+                </p>
+            )}
+            {betAmount && parseFloat(betAmount) > balance && (
+                <p className="text-xs text-destructive text-center mt-1">Insufficient balance.</p>
+            )}
+        </div>
+      )}
     </div>
   );
 }
