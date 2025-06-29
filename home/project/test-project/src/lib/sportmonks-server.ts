@@ -2,7 +2,7 @@
 // It is intended to be used by Server Components and API Routes to avoid server-to-server HTTP calls.
 
 const SPORTMONKS_FOOTBALL_API_URL = 'https://api.sportmonks.com/v3/football';
-const apiKey = process.env.SPORTMONKS_API_KEY;
+const apiKey = process.env.SPORTMONKS_API_TOKEN;
 
 // Helper to format date to YYYY-MM-DD
 const getFormattedDate = (date: Date): string => {
@@ -10,11 +10,13 @@ const getFormattedDate = (date: Date): string => {
 };
 
 async function fetchFromSportmonks(url: string) {
+    console.log(`[Sportmonks Fetch] API Token available: ${!!apiKey}`);
     if (!apiKey) {
-        console.warn("SPORTMONKS_API_KEY is not set. Returning empty data.");
+        console.warn("SPORTMONKS_API_TOKEN is not set in environment variables. Returning empty data.");
         return { data: [], pagination: { has_more: false } };
     }
 
+    console.log(`[Sportmonks Fetch] Fetching URL: ${url.replace(apiKey, 'REDACTED_API_TOKEN')}`);
     const response = await fetch(url, {
         cache: 'no-store' // Ensure fresh data
     });
@@ -52,7 +54,7 @@ async function fetchPaginatedData(baseUrl: string) {
 }
 
 export async function getLiveScoresFromServer(leagueId?: number, firstPageOnly = false) {
-    const includes = "formations;scores;sidelined;sport;round;stage;group;aggregate;league;season;referees;coaches;tvStations;venue;state;weatherReport;lineups;events;timeline;comments;trends;statistics;periods;participants;odds;inplayOdds;prematchNews;metadata;predictions;ballCoordinates";
+    const includes = "formations;scores;sidelined;sport;round;stage;group;aggregate;league;season;referees;coaches;tvStations;venue;state;weatherReport;lineups;events;timeline;comments;trends;statistics;periods;participants;odds;inplayOdds;metadata;ballCoordinates";
     let baseUrl = `${SPORTMONKS_FOOTBALL_API_URL}/livescores/inplay?api_token=${apiKey}&include=${includes}&tz=UTC`;
     if (leagueId) {
         baseUrl += `&leagues=${leagueId}`;
