@@ -1,6 +1,7 @@
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
-import { Calendar, Goal } from "lucide-react";
+import { Calendar } from "lucide-react";
 import type { FC } from 'react';
 import type { ProcessedFixture } from '@/types/sportmonks';
 import { format } from "date-fns";
