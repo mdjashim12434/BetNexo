@@ -1,16 +1,15 @@
 
-
+import AppLayout from '@/components/AppLayout';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle } from 'lucide-react';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
-import { notFound, useRouter } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { getFixtureDetailsFromServer } from '@/lib/sportmonks-server';
 import { processV3FootballFixtures } from '@/services/sportmonksAPI';
 import MatchDetailClientContent from '@/components/match/MatchDetailClientContent';
 import type { ProcessedFixture } from '@/types/sportmonks';
 import BottomNav from '@/components/navigation/BottomNav';
-
 
 interface MatchDetailPageProps {
   params: { id: string };
@@ -53,6 +52,7 @@ export default async function MatchDetailPage({ params }: MatchDetailPageProps) 
 
   if (error) {
      return (
+      <AppLayout>
         <div className="container py-6">
           <Button variant="outline" asChild className="self-start mb-6">
             <Link href="/"><ArrowLeft className="mr-2 h-4 w-4" /> Back to Matches</Link>
@@ -64,6 +64,7 @@ export default async function MatchDetailPage({ params }: MatchDetailPageProps) 
             <p className="text-muted-foreground mt-2">This could be due to an invalid link or an API issue.</p>
           </div>
         </div>
+      </AppLayout>
     );
   }
 
@@ -72,9 +73,11 @@ export default async function MatchDetailPage({ params }: MatchDetailPageProps) 
   }
   
   return (
-    <div className="pb-24">
-      <MatchDetailClientContent initialMatch={match} />
-      <BottomNav />
-    </div>
+    <AppLayout>
+        <div className="pb-24">
+            <MatchDetailClientContent initialMatch={match} />
+            <BottomNav />
+        </div>
+    </AppLayout>
   );
 }

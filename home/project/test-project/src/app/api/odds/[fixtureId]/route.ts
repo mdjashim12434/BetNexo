@@ -1,12 +1,10 @@
 
 import { NextResponse } from 'next/server';
 
-// This file is deprecated. Odds data is no longer fetched this way.
+// This route is deprecated. Odds data is now fetched via Sportmonks on the match detail page.
 export async function GET() {
   return NextResponse.json(
-    { 
-      error: 'This endpoint is deprecated. The main application no longer uses this odds endpoint.' 
-    }, 
+    { error: 'This API endpoint is deprecated and no longer in use.' },
     { status: 410 } // HTTP 410 Gone
   );
 }

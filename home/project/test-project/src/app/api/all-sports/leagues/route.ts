@@ -1,13 +1,10 @@
 
 import { NextResponse } from 'next/server';
 
-// This route is deprecated. League data is now fetched server-side in the
-// /sports/[category] page component to improve performance and reliability.
+// This route is deprecated. League data is now fetched server-side.
 export async function GET() {
   return NextResponse.json(
-    { 
-      error: 'This endpoint is deprecated. Please update client components to receive league data via props.' 
-    }, 
+    { error: 'This API endpoint is deprecated and no longer in use.' },
     { status: 410 } // HTTP 410 Gone
   );
 }

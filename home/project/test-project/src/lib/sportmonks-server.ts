@@ -56,7 +56,7 @@ async function fetchPaginatedData(baseUrl: string) {
 
 export async function getLiveScoresFromServer(leagueId?: number, firstPageOnly = false) {
     // A more focused include string to avoid plan limitations.
-    const includes = "participants;league;state;scores;periods;events;comments";
+    const includes = "participants;league;state;scores;periods;events;comments;odds";
     let baseUrl = `${SPORTMONKS_FOOTBALL_API_URL}/livescores/inplay?api_token=${apiKey}&include=${includes}&tz=UTC`;
     if (leagueId) {
         baseUrl += `&leagues=${leagueId}`;
@@ -91,7 +91,7 @@ export async function getUpcomingFixturesFromServer(leagueId?: number, firstPage
 }
 
 export async function getFixtureDetailsFromServer(fixtureId: number) {
-    const includes = "participants;league.country;state;scores;periods;comments;venue;referee;odds;inplayOdds;statistics;trends";
+    const includes = "participants;league.country;state;scores;periods;comments;venue;referee;odds;inplayOdds";
     const url = `${SPORTMONKS_FOOTBALL_API_URL}/fixtures/${fixtureId}?api_token=${apiKey}&include=${includes}&tz=UTC`;
     const result = await fetchFromSportmonks(url);
     return result.data;
