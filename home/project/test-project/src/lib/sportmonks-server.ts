@@ -91,7 +91,7 @@ export async function getUpcomingFixturesFromServer(leagueId?: number, firstPage
 }
 
 export async function getFixtureDetailsFromServer(fixtureId: number) {
-    const includes = "participants;league.country;state;scores;periods;comments;venue;referee;odds;inplayOdds";
+    const includes = "participants;league.country;state;scores;periods;comments;venue;referee;odds";
     const url = `${SPORTMONKS_FOOTBALL_API_URL}/fixtures/${fixtureId}?api_token=${apiKey}&include=${includes}&tz=UTC`;
     const result = await fetchFromSportmonks(url);
     return result.data;

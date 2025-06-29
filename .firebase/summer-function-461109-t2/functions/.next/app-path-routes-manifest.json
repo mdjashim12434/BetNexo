@@ -1,5 +1,4 @@
 {
-  "/_not-found/page": "/_not-found",
   "/api/all-sports/leagues/route": "/api/all-sports/leagues",
   "/api/core/continents/route": "/api/core/continents",
   "/api/cricket/fixtures/route": "/api/cricket/fixtures",
@@ -16,6 +15,7 @@
   "/api/football/upcoming-fixtures/route": "/api/football/upcoming-fixtures",
   "/api/leagues/route": "/api/leagues",
   "/api/odds/[fixtureId]/route": "/api/odds/[fixtureId]",
+  "/_not-found/page": "/_not-found",
   "/favicon.ico/route": "/favicon.ico",
   "/admin/page": "/admin",
   "/all-sports/page": "/all-sports",
